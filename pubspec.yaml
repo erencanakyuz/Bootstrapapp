@@ -22,8 +22,9 @@ dependencies:
   lottie: ^3.1.3
   confetti: ^0.8.0
   fl_chart: ^1.1.1
-  flutter_local_notifications: ^19.5.0
-  timezone: ^0.10.1
+  # Temporarily disabled for Windows build - works on mobile
+  # flutter_local_notifications: ^19.5.0
+  # timezone: ^0.10.1
   path_provider: ^2.1.4
   share_plus: ^12.0.1
   file_picker: ^10.3.3

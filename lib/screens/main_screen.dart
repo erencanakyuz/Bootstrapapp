@@ -55,8 +55,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         onUpdateHabit: _handleUpdateHabit,
         onDeleteHabit: _handleDeleteHabit,
         themeController: widget.themeController,
-        onOpenThemeSheet: _toggleThemeSheet,
-        onRefresh: refresh,
       ),
       HomeScreen(
         habits: habits,
@@ -238,10 +236,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Future<void> _handleDeleteHabit(String habitId) async {
     await ref.read(habitsProvider.notifier).deleteHabit(habitId);
-  }
-
-  void _toggleThemeSheet() {
-    setState(() => _showingThemeSheet = true);
   }
 
   void _onTabSelected(int index) {

@@ -162,8 +162,9 @@ class HabitFilterState {
   }
 }
 
-class HabitFilterController extends StateNotifier<HabitFilterState> {
-  HabitFilterController() : super(const HabitFilterState());
+class HabitFilterController extends Notifier<HabitFilterState> {
+  @override
+  HabitFilterState build() => const HabitFilterState();
 
   void setQuery(String value) => state = state.copyWith(query: value);
 
@@ -183,8 +184,8 @@ class HabitFilterController extends StateNotifier<HabitFilterState> {
 }
 
 final habitFilterProvider =
-    StateNotifierProvider<HabitFilterController, HabitFilterState>(
-  (ref) => HabitFilterController(),
+    NotifierProvider<HabitFilterController, HabitFilterState>(
+  HabitFilterController.new,
 );
 
 final filteredHabitsProvider = Provider<List<Habit>>((ref) {
