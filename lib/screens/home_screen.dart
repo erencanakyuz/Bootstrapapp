@@ -7,11 +7,13 @@ import '../widgets/modern_button.dart';
 class HomeScreen extends StatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onUpdateHabit;
+  final Future<void> Function()? onRefresh;
 
   const HomeScreen({
     super.key,
     required this.habits,
     required this.onUpdateHabit,
+    this.onRefresh,
   });
 
   @override
@@ -78,28 +80,30 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Month selector
-              _buildMonthSelector(colors, textStyles),
-              const SizedBox(height: 24),
-
-              // Date label
-              Text(
-                DateFormat('MMMM yyyy').format(_selectedMonth),
-                style: textStyles.bodyBold.copyWith(
-                  color: colors.textSecondary,
+      body: RefreshIndicator.adaptive(
+        color: colors.primary,
+        onRefresh: widget.onRefresh ?? () async {},
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMonthSelector(colors, textStyles),
+                const SizedBox(height: 24),
+                Text(
+                  DateFormat('MMMM yyyy').format(_selectedMonth),
+                  style: textStyles.bodyBold.copyWith(
+                    color: colors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Challenge grid
-              _buildChallengeGrid(colors, daysInMonth),
-            ],
+                const SizedBox(height: 12),
+                _buildChallengeGrid(colors, daysInMonth),
+              ],
+            ),
           ),
         ),
       ),

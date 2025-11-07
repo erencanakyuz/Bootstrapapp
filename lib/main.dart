@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'providers/app_settings_providers.dart';
+import 'providers/theme_provider.dart';
 import 'screens/main_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,53 +18,52 @@ void main() {
     ),
   );
 
-  runApp(const BootstrapApp());
+  runApp(const ProviderScope(child: BootstrapApp()));
 }
 
-class BootstrapApp extends StatefulWidget {
+class BootstrapApp extends ConsumerWidget {
   const BootstrapApp({super.key});
 
   @override
-  State<BootstrapApp> createState() => _BootstrapAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeController = ref.watch(themeControllerProvider);
+    final onboardingState = ref.watch(onboardingCompletedProvider);
 
-class _BootstrapAppState extends State<BootstrapApp> {
-  final ThemeController _themeController = ThemeController(
-    initialPalette: AppPalette.modern,
-  );
-
-  @override
-  void dispose() {
-    _themeController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _themeController,
+      animation: themeController,
       builder: (context, child) {
-        return MaterialApp(
-          title: 'Bootstrap Your Life',
-          debugShowCheckedModeBanner: false,
-          theme: _themeController.theme,
-          home: MainScreenWrapper(themeController: _themeController),
+        return onboardingState.when(
+          loading: () => MaterialApp(
+            title: 'Bootstrap Your Life',
+            debugShowCheckedModeBanner: false,
+            theme: themeController.theme,
+            home: Scaffold(
+              backgroundColor: themeController.colors.background,
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: themeController.colors.primary,
+                ),
+              ),
+            ),
+          ),
+          error: (error, _) => MaterialApp(
+            title: 'Bootstrap Your Life',
+            debugShowCheckedModeBanner: false,
+            theme: themeController.theme,
+            home: Scaffold(
+              body: Center(child: Text('Error: $error')),
+            ),
+          ),
+          data: (completed) => MaterialApp(
+            title: 'Bootstrap Your Life',
+            debugShowCheckedModeBanner: false,
+            theme: themeController.theme,
+            home: completed
+                ? MainScreen(themeController: themeController)
+                : const OnboardingScreen(),
+          ),
         );
       },
     );
-  }
-}
-
-class MainScreenWrapper extends StatelessWidget {
-  final ThemeController themeController;
-
-  const MainScreenWrapper({
-    super.key,
-    required this.themeController,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return MainScreen(themeController: themeController);
   }
 }

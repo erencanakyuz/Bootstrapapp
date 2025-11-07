@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/habit.dart';
 
@@ -13,7 +14,7 @@ class HabitStorage {
       final jsonString = jsonEncode(habitsJson);
       await prefs.setString(_habitsKey, jsonString);
     } catch (e) {
-      print('Error saving habits: $e');
+      debugPrint('Error saving habits: $e');
     }
   }
 
@@ -30,7 +31,7 @@ class HabitStorage {
       final List<dynamic> jsonList = jsonDecode(jsonString);
       return jsonList.map((json) => Habit.fromJson(json)).toList();
     } catch (e) {
-      print('Error loading habits: $e');
+      debugPrint('Error loading habits: $e');
       return _getDefaultHabits();
     }
   }
@@ -41,20 +42,12 @@ class HabitStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_habitsKey);
     } catch (e) {
-      print('Error clearing data: $e');
+      debugPrint('Error clearing data: $e');
     }
   }
 
   /// Get default habits (for first launch)
   List<Habit> _getDefaultHabits() {
-    return HabitTemplates.templates
-        .map((template) => Habit(
-              id: DateTime.now().millisecondsSinceEpoch.toString() +
-                  template['title'],
-              title: template['title'],
-              icon: template['icon'],
-              color: template['color'],
-            ))
-        .toList();
+    return HabitTemplates.buildTemplates();
   }
 }

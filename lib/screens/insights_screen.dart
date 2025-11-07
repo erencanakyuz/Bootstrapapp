@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../widgets/stats_card.dart';
+import 'achievements_screen.dart';
+import 'analytics_dashboard_screen.dart';
 
 class InsightsScreen extends StatelessWidget {
   final List<Habit> habits;
@@ -74,6 +75,26 @@ class InsightsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.paddingL),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                Row(
+                  children: [
+                    Expanded(
+                      child: _QuickActionButton(
+                        label: 'Analytics',
+                        icon: Icons.dashboard_customize,
+                        onTap: () => _openAnalytics(context),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.paddingL),
+                    Expanded(
+                      child: _QuickActionButton(
+                        label: 'Achievements',
+                        icon: Icons.emoji_events,
+                        onTap: () => _openAchievements(context),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.paddingXL),
                 // Stats overview
                 Text(
                   'Your Progress',
@@ -279,6 +300,51 @@ class InsightsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _openAnalytics(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AnalyticsDashboardScreen()),
+    );
+  }
+
+  void _openAchievements(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AchievementsScreen()),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colors.surface,
+        foregroundColor: colors.textPrimary,
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingL),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+          side: BorderSide(color: colors.outline),
+        ),
+      ),
+      icon: Icon(icon),
+      label: Text(label),
     );
   }
 }

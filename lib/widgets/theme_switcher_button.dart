@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_constants.dart';
 
 /// Button that cycles through available theme palettes
 class ThemeSwitcherButton extends StatelessWidget {
   final ThemeController controller;
   final bool compact;
+  final VoidCallback? onPressed;
 
   const ThemeSwitcherButton({
     super.key,
     required this.controller,
     this.compact = false,
+    this.onPressed,
   });
 
   void _handleTap(BuildContext context) {
     HapticFeedback.lightImpact();
+
+    if (onPressed != null) {
+      onPressed!.call();
+      return;
+    }
 
     // Get current palette and cycle to next
     final currentPalette = controller.palette;
