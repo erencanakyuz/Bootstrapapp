@@ -17,16 +17,50 @@ void main() {
   runApp(const BootstrapApp());
 }
 
-class BootstrapApp extends StatelessWidget {
+class BootstrapApp extends StatefulWidget {
   const BootstrapApp({super.key});
 
   @override
+  State<BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<BootstrapApp> {
+  final ThemeController _themeController = ThemeController(
+    initialPalette: AppPalette.modern,
+  );
+
+  @override
+  void dispose() {
+    _themeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bootstrap Your Life',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(AppPalette.modern),
-      home: const MainScreen(),
+    return AnimatedBuilder(
+      animation: _themeController,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Bootstrap Your Life',
+          debugShowCheckedModeBanner: false,
+          theme: _themeController.theme,
+          home: MainScreenWrapper(themeController: _themeController),
+        );
+      },
     );
+  }
+}
+
+class MainScreenWrapper extends StatelessWidget {
+  final ThemeController themeController;
+
+  const MainScreenWrapper({
+    super.key,
+    required this.themeController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MainScreen(themeController: themeController);
   }
 }
