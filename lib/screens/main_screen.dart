@@ -38,6 +38,37 @@ class _MainScreenState extends State<MainScreen> {
     await _storage.saveHabits(_habits);
   }
 
+  void _updateHabits(List<Habit> updatedHabits) {
+    setState(() {
+      _habits = updatedHabits;
+    });
+    _saveHabits();
+  }
+
+  void _addHabit(Habit habit) {
+    setState(() {
+      _habits.add(habit);
+    });
+    _saveHabits();
+  }
+
+  void _updateHabit(Habit updatedHabit) {
+    setState(() {
+      final index = _habits.indexWhere((h) => h.id == updatedHabit.id);
+      if (index != -1) {
+        _habits[index] = updatedHabit;
+      }
+    });
+    _saveHabits();
+  }
+
+  void _deleteHabit(String habitId) {
+    setState(() {
+      _habits.removeWhere((h) => h.id == habitId);
+    });
+    _saveHabits();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -52,8 +83,16 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     final List<Widget> screens = [
-      const HomeScreenNew(),
-      const HomeScreen(), // Calendar grid view
+      HomeScreenNew(
+        habits: _habits,
+        onAddHabit: _addHabit,
+        onUpdateHabit: _updateHabit,
+        onDeleteHabit: _deleteHabit,
+      ),
+      HomeScreen(
+        habits: _habits,
+        onUpdateHabit: _updateHabit,
+      ),
       InsightsScreen(habits: _habits),
     ];
 

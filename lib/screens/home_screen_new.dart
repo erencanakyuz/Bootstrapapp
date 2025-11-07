@@ -8,20 +8,29 @@ import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
 
 class HomeScreenNew extends StatefulWidget {
-  const HomeScreenNew({super.key});
+  final List<Habit> habits;
+  final Function(Habit) onAddHabit;
+  final Function(Habit) onUpdateHabit;
+  final Function(String) onDeleteHabit;
+
+  const HomeScreenNew({
+    super.key,
+    required this.habits,
+    required this.onAddHabit,
+    required this.onUpdateHabit,
+    required this.onDeleteHabit,
+  });
 
   @override
   State<HomeScreenNew> createState() => _HomeScreenNewState();
 }
 
 class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProviderStateMixin {
-  List<Habit> _habits = [];
   late AnimationController _fabAnimationController;
 
   @override
   void initState() {
     super.initState();
-    _loadDefaultHabits();
     _fabAnimationController = AnimationController(
       vsync: this,
       duration: AppAnimations.normal,
@@ -34,25 +43,9 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
     super.dispose();
   }
 
-  void _loadDefaultHabits() {
-    _habits = HabitTemplates.templates
-        .map((template) => Habit(
-              id: DateTime.now().millisecondsSinceEpoch.toString() +
-                  template['title'],
-              title: template['title'],
-              icon: template['icon'],
-              color: template['color'],
-            ))
-        .toList();
-  }
-
   void _toggleHabitCompletion(Habit habit) {
-    setState(() {
-      final index = _habits.indexWhere((h) => h.id == habit.id);
-      if (index != -1) {
-        _habits[index] = habit.toggleCompletion(DateTime.now());
-      }
-    });
+    final updatedHabit = habit.toggleCompletion(DateTime.now());
+    widget.onUpdateHabit(updatedHabit);
   }
 
   Future<void> _showAddHabitModal({Habit? habitToEdit}) async {
@@ -64,34 +57,20 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
     );
 
     if (result != null) {
-      setState(() {
-        if (habitToEdit != null) {
-          final index = _habits.indexWhere((h) => h.id == habitToEdit.id);
-          if (index != -1) {
-            _habits[index] = result;
-          }
-        } else {
-          _habits.add(result);
-        }
-      });
+      if (habitToEdit != null) {
+        widget.onUpdateHabit(result);
+      } else {
+        widget.onAddHabit(result);
+      }
     }
   }
 
   void _deleteHabit(Habit habit) {
-    setState(() {
-      _habits.removeWhere((h) => h.id == habit.id);
-    });
+    widget.onDeleteHabit(habit.id);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${habit.title} deleted'),
-        action: SnackBarAction(
-          label: 'UNDO',
-          onPressed: () {
-            setState(() {
-              _habits.add(habit);
-            });
-          },
-        ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -100,7 +79,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final today = DateTime.now();
-    final completedToday = _habits.where((h) => h.isCompletedOn(today)).length;
+    final completedToday = widget.habits.where((h) => h.isCompletedOn(today)).length;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -194,7 +173,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
                     ),
                   ),
                   Text(
-                    '${_habits.length} total',
+                    '${widget.habits.length} total',
                     style: TextStyle(
                       fontSize: 14,
                       color: colors.textTertiary,
@@ -206,7 +185,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
           ),
 
           // Habits list
-          if (_habits.isEmpty)
+          if (widget.habits.isEmpty)
             SliverToBoxAdapter(
               child: _buildEmptyState(colors),
             )
@@ -216,14 +195,14 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final habit = _habits[index];
+                    final habit = widget.habits[index];
                     return HabitCard(
                       habit: habit,
                       onTap: () => _toggleHabitCompletion(habit),
                       onLongPress: () => _showHabitOptions(habit),
                     );
                   },
-                  childCount: _habits.length,
+                  childCount: widget.habits.length,
                 ),
               ),
             ),
@@ -255,7 +234,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
   }
 
   Widget _buildProgressCard(int completed, AppColors colors) {
-    final total = _habits.length;
+    final total = widget.habits.length;
     final progress = total > 0 ? completed / total : 0.0;
 
     return Container(

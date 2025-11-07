@@ -5,7 +5,14 @@ import '../theme/app_theme.dart';
 import '../widgets/modern_button.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final List<Habit> habits;
+  final Function(Habit) onUpdateHabit;
+
+  const HomeScreen({
+    super.key,
+    required this.habits,
+    required this.onUpdateHabit,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -13,34 +20,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _selectedMonth = DateTime.now();
-  List<Habit> _habits = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDefaultHabits();
-  }
-
-  void _loadDefaultHabits() {
-    // Create default habits from templates
-    _habits = HabitTemplates.templates
-        .map((template) => Habit(
-              id: DateTime.now().millisecondsSinceEpoch.toString() +
-                  template['title'],
-              title: template['title'],
-              icon: template['icon'],
-              color: template['color'],
-            ))
-        .toList();
-  }
 
   void _toggleHabitCompletion(Habit habit, DateTime date) {
-    setState(() {
-      final index = _habits.indexWhere((h) => h.id == habit.id);
-      if (index != -1) {
-        _habits[index] = habit.toggleCompletion(date);
-      }
-    });
+    final updatedHabit = habit.toggleCompletion(date);
+    widget.onUpdateHabit(updatedHabit);
   }
 
   void _previousMonth() {
@@ -195,10 +178,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _habits.length,
+            itemCount: widget.habits.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              return _buildHabitRow(colors, _habits[index], daysInMonth);
+              return _buildHabitRow(colors, widget.habits[index], daysInMonth);
             },
           ),
         ],
