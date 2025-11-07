@@ -7,21 +7,31 @@ final appSettingsServiceProvider = Provider<AppSettingsService>((ref) {
   return AppSettingsService();
 });
 
-final themeControllerProvider = ChangeNotifierProvider<ThemeController>((ref) {
-  final service = ref.watch(appSettingsServiceProvider);
-  final controller = ThemeController();
+// Custom notifier that wraps ThemeController
+class ThemeNotifier extends Notifier<ThemeController> {
+  @override
+  ThemeController build() {
+    final service = ref.watch(appSettingsServiceProvider);
+    final controller = ThemeController();
 
-  service.loadPalette().then(controller.setPalette);
+    service.loadPalette().then(controller.setPalette);
 
-  void persistPalette() {
-    service.persistPalette(controller.palette);
+    void persistPalette() {
+      service.persistPalette(controller.palette);
+      // Notify listeners when palette changes
+      ref.notifyListeners();
+    }
+
+    controller.addListener(persistPalette);
+    ref.onDispose(() {
+      controller.removeListener(persistPalette);
+      controller.dispose();
+    });
+
+    return controller;
   }
+}
 
-  controller.addListener(persistPalette);
-  ref.onDispose(() {
-    controller.removeListener(persistPalette);
-    controller.dispose();
-  });
-
-  return controller;
+final themeControllerProvider = NotifierProvider<ThemeNotifier, ThemeController>(() {
+  return ThemeNotifier();
 });

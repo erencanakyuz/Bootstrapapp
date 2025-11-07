@@ -1,29 +1,36 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
+// Notifications temporarily disabled for Windows development
+// Uncomment the imports below when building for mobile platforms
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:timezone/data/latest_all.dart' as tz;
+// import 'package:timezone/timezone.dart' as tz;
 
 import '../models/habit.dart';
 
 class NotificationService {
-  NotificationService()
-      : _plugin = FlutterLocalNotificationsPlugin();
+  NotificationService();
+  // : _plugin = FlutterLocalNotificationsPlugin();
 
-  final FlutterLocalNotificationsPlugin _plugin;
+  // final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
   Future<void> initialize() async {
     if (_initialized) return;
 
-    tz.initializeTimeZones();
+    // Notifications disabled for Windows build
+    // Uncomment when building for mobile:
+    // tz.initializeTimeZones();
+    // const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // const initializationSettings = InitializationSettings(android: android);
+    // await _plugin.initialize(initializationSettings);
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initializationSettings = InitializationSettings(android: android);
-    await _plugin.initialize(initializationSettings);
     _initialized = true;
   }
 
   Future<void> scheduleReminder(Habit habit, HabitReminder reminder) async {
     await initialize();
+    // Notifications disabled for Windows build
+    // Uncomment when building for mobile:
+    /*
     final id = reminder.id.hashCode & 0x7fffffff;
     final now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduleDate = tz.TZDateTime(
@@ -55,16 +62,18 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
+    */
   }
 
   Future<void> cancelReminder(HabitReminder reminder) async {
     await initialize();
+    // Notifications disabled for Windows build
+    /*
     final id = reminder.id.hashCode & 0x7fffffff;
     await _plugin.cancel(id);
+    */
   }
 
   Future<void> cancelHabitReminders(Habit habit) async {
