@@ -1,0 +1,79 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../theme/app_theme.dart';
+
+class AppSettingsService {
+  static const _onboardingKey = 'onboarding_complete';
+  static const _themeKey = 'theme_palette';
+  static const _notificationsKey = 'notifications_enabled';
+  static const _hapticsKey = 'haptics_enabled';
+  static const _userNameKey = 'user_name';
+  static const _avatarSeedKey = 'avatar_seed';
+
+  Future<SharedPreferences> get _prefs async => SharedPreferences.getInstance();
+
+  Future<bool> hasCompletedOnboarding() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_onboardingKey) ?? false;
+  }
+
+  Future<void> setOnboardingComplete(bool value) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_onboardingKey, value);
+  }
+
+  Future<AppPalette> loadPalette({AppPalette fallback = AppPalette.modern}) async {
+    final prefs = await _prefs;
+    final paletteName = prefs.getString(_themeKey);
+    if (paletteName == null) return fallback;
+    return AppPalette.values.firstWhere(
+      (palette) => palette.name == paletteName,
+      orElse: () => fallback,
+    );
+  }
+
+  Future<void> persistPalette(AppPalette palette) async {
+    final prefs = await _prefs;
+    await prefs.setString(_themeKey, palette.name);
+  }
+
+  Future<bool> notificationsEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_notificationsKey) ?? true;
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_notificationsKey, enabled);
+  }
+
+  Future<bool> hapticsEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_hapticsKey) ?? true;
+  }
+
+  Future<void> setHapticsEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_hapticsKey, enabled);
+  }
+
+  Future<String> userName() async {
+    final prefs = await _prefs;
+    return prefs.getString(_userNameKey) ?? 'Bootstrapper';
+  }
+
+  Future<void> setUserName(String value) async {
+    final prefs = await _prefs;
+    await prefs.setString(_userNameKey, value);
+  }
+
+  Future<int> avatarSeed() async {
+    final prefs = await _prefs;
+    return prefs.getInt(_avatarSeedKey) ?? 42;
+  }
+
+  Future<void> setAvatarSeed(int seed) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_avatarSeedKey, seed);
+  }
+}

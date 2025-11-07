@@ -1,0 +1,16 @@
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="focusGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3D8BFF" />
+      <stop offset="100%" stop-color="#22C55E" />
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" rx="32" fill="#111827" />
+  <circle cx="160" cy="120" r="78" fill="#1F2933" stroke="url(#focusGradient)" stroke-width="6" />
+  <circle cx="160" cy="120" r="36" fill="#0EA5E9" opacity="0.65" />
+  <path d="M160 60 V40" stroke="#22C55E" stroke-width="4" stroke-linecap="round" />
+  <path d="M160 200 V180" stroke="#22C55E" stroke-width="4" stroke-linecap="round" />
+  <path d="M220 120 H240" stroke="#22C55E" stroke-width="4" stroke-linecap="round" />
+  <path d="M80 120 H100" stroke="#22C55E" stroke-width="4" stroke-linecap="round" />
+  <circle cx="160" cy="120" r="8" fill="#FFFFFF" />
+</svg>

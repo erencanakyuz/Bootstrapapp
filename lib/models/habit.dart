@@ -1,4 +1,227 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
+/// Distinct categories that power analytics, filters, and custom icons
+enum HabitCategory { health, productivity, learning, mindfulness, wellness, creativity }
+
+extension HabitCategoryDetails on HabitCategory {
+  String get label {
+    switch (this) {
+      case HabitCategory.health:
+        return 'Health';
+      case HabitCategory.productivity:
+        return 'Productivity';
+      case HabitCategory.learning:
+        return 'Learning';
+      case HabitCategory.mindfulness:
+        return 'Mindfulness';
+      case HabitCategory.wellness:
+        return 'Wellness';
+      case HabitCategory.creativity:
+        return 'Creativity';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case HabitCategory.health:
+        return 'Energy, sleep, hydration, and movement';
+      case HabitCategory.productivity:
+        return 'Planning, focus, deep work, routines';
+      case HabitCategory.learning:
+        return 'Reading, study, languages, practice';
+      case HabitCategory.mindfulness:
+        return 'Meditation, journaling, reflection';
+      case HabitCategory.wellness:
+        return 'Self-care, recovery, nourishment';
+      case HabitCategory.creativity:
+        return 'Art, writing, music, building skills';
+    }
+  }
+
+  String get iconAsset {
+    switch (this) {
+      case HabitCategory.health:
+        return 'assets/icons/categories/health.svg';
+      case HabitCategory.productivity:
+        return 'assets/icons/categories/productivity.svg';
+      case HabitCategory.learning:
+        return 'assets/icons/categories/learning.svg';
+      case HabitCategory.mindfulness:
+        return 'assets/icons/categories/mindfulness.svg';
+      case HabitCategory.wellness:
+        return 'assets/icons/categories/wellness.svg';
+      case HabitCategory.creativity:
+        return 'assets/icons/categories/creativity.svg';
+    }
+  }
+}
+
+/// Preferred time for the habit. Powers reminders and filters
+enum HabitTimeBlock { morning, afternoon, evening, anytime }
+
+extension HabitTimeBlockDetails on HabitTimeBlock {
+  String get label {
+    switch (this) {
+      case HabitTimeBlock.morning:
+        return 'Morning';
+      case HabitTimeBlock.afternoon:
+        return 'Afternoon';
+      case HabitTimeBlock.evening:
+        return 'Evening';
+      case HabitTimeBlock.anytime:
+        return 'Anytime';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case HabitTimeBlock.morning:
+        return Icons.wb_sunny_rounded;
+      case HabitTimeBlock.afternoon:
+        return Icons.waterfall_chart_rounded;
+      case HabitTimeBlock.evening:
+        return Icons.nightlight_round;
+      case HabitTimeBlock.anytime:
+        return Icons.all_inclusive_rounded;
+    }
+  }
+}
+
+/// Difficulty determines points and challenge for gamification
+enum HabitDifficulty { easy, medium, hard }
+
+extension HabitDifficultyDetails on HabitDifficulty {
+  String get label {
+    switch (this) {
+      case HabitDifficulty.easy:
+        return 'Easy';
+      case HabitDifficulty.medium:
+        return 'Medium';
+      case HabitDifficulty.hard:
+        return 'Hard';
+    }
+  }
+
+  int get points {
+    switch (this) {
+      case HabitDifficulty.easy:
+        return 5;
+      case HabitDifficulty.medium:
+        return 8;
+      case HabitDifficulty.hard:
+        return 13;
+    }
+  }
+
+  Color get badgeColor {
+    switch (this) {
+      case HabitDifficulty.easy:
+        return const Color(0xFF34D399);
+      case HabitDifficulty.medium:
+        return const Color(0xFFFBBF24);
+      case HabitDifficulty.hard:
+        return const Color(0xFFFB7185);
+    }
+  }
+}
+
+/// Reminder configuration for a habit
+class HabitReminder {
+  final String id;
+  final int hour;
+  final int minute;
+  final List<int> weekdays; // 1 = Monday ... 7 = Sunday
+  final bool enabled;
+
+  const HabitReminder({
+    required this.id,
+    required this.hour,
+    required this.minute,
+    this.weekdays = const [1, 2, 3, 4, 5, 6, 7],
+    this.enabled = true,
+  });
+
+  factory HabitReminder.daily({required TimeOfDay time}) {
+    return HabitReminder(
+      id: _uuid.v4(),
+      hour: time.hour,
+      minute: time.minute,
+    );
+  }
+
+  TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
+
+  HabitReminder copyWith({
+    int? hour,
+    int? minute,
+    List<int>? weekdays,
+    bool? enabled,
+  }) {
+    return HabitReminder(
+      id: id,
+      hour: hour ?? this.hour,
+      minute: minute ?? this.minute,
+      weekdays: weekdays ?? this.weekdays,
+      enabled: enabled ?? this.enabled,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'hour': hour,
+      'minute': minute,
+      'weekdays': weekdays,
+      'enabled': enabled,
+    };
+  }
+
+  factory HabitReminder.fromJson(Map<String, dynamic> json) {
+    return HabitReminder(
+      id: json['id'] ?? _uuid.v4(),
+      hour: json['hour'] ?? 8,
+      minute: json['minute'] ?? 0,
+      weekdays: json['weekdays'] != null
+          ? List<int>.from(json['weekdays'])
+          : const [1, 2, 3, 4, 5, 6, 7],
+      enabled: json['enabled'] ?? true,
+    );
+  }
+}
+
+/// Per-day notes for reflections and journaling
+class HabitNote {
+  final String id;
+  final DateTime date;
+  final String text;
+
+  HabitNote({
+    String? id,
+    required this.date,
+    required this.text,
+  }) : id = id ?? _uuid.v4();
+
+  String get dayKey => '${date.year}-${date.month}-${date.day}';
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'date': date.toIso8601String(),
+      'text': text,
+    };
+  }
+
+  factory HabitNote.fromJson(Map<String, dynamic> json) {
+    return HabitNote(
+      id: json['id'],
+      date: DateTime.parse(json['date']),
+      text: json['text'] ?? '',
+    );
+  }
+}
 
 /// Represents a single habit or goal to track
 class Habit {
@@ -9,6 +232,19 @@ class Habit {
   final IconData icon;
   final List<DateTime> completedDates;
   final DateTime createdAt;
+  final HabitCategory category;
+  final HabitTimeBlock timeBlock;
+  final HabitDifficulty difficulty;
+  final List<HabitReminder> reminders;
+  final Map<String, HabitNote> notes;
+  final bool archived;
+  final DateTime? archivedAt;
+  final int weeklyTarget;
+  final int monthlyTarget;
+  final List<String> dependencyIds;
+  final int freezeUsesThisWeek;
+  final DateTime? lastFreezeReset;
+  final List<String> tags;
 
   Habit({
     required this.id,
@@ -18,50 +254,84 @@ class Habit {
     required this.icon,
     List<DateTime>? completedDates,
     DateTime? createdAt,
-  })  : completedDates = completedDates ?? [],
-        createdAt = createdAt ?? DateTime.now();
+    this.category = HabitCategory.productivity,
+    this.timeBlock = HabitTimeBlock.anytime,
+    this.difficulty = HabitDifficulty.medium,
+    List<HabitReminder>? reminders,
+    Map<String, HabitNote>? notes,
+    this.archived = false,
+    this.archivedAt,
+    this.weeklyTarget = 5,
+    this.monthlyTarget = 20,
+    List<String>? dependencyIds,
+    this.freezeUsesThisWeek = 0,
+    this.lastFreezeReset,
+    List<String>? tags,
+  })  : completedDates = List.unmodifiable(completedDates ?? []),
+        createdAt = createdAt ?? DateTime.now(),
+        reminders = List.unmodifiable(reminders ?? []),
+        notes = Map.unmodifiable(notes ?? {}),
+        dependencyIds = List.unmodifiable(dependencyIds ?? []),
+        tags = List.unmodifiable(tags ?? const []);
 
   /// Check if habit is completed on a specific date
   bool isCompletedOn(DateTime date) {
-    return completedDates.any((completedDate) =>
-        completedDate.year == date.year &&
-        completedDate.month == date.month &&
-        completedDate.day == date.day);
+    final normalized = DateTime(date.year, date.month, date.day);
+    return completedDates.any((completedDate) {
+      final normalizedCompleted = DateTime(
+        completedDate.year,
+        completedDate.month,
+        completedDate.day,
+      );
+      return normalizedCompleted == normalized;
+    });
   }
 
   /// Toggle completion status for a specific date
   Habit toggleCompletion(DateTime date) {
-    final List<DateTime> newCompletedDates = List.from(completedDates);
+    final List<DateTime> newCompletedDates = List<DateTime>.from(completedDates);
+    final normalizedDate = DateTime(date.year, date.month, date.day);
 
     if (isCompletedOn(date)) {
       newCompletedDates.removeWhere((d) =>
-          d.year == date.year && d.month == date.month && d.day == date.day);
+          d.year == normalizedDate.year &&
+          d.month == normalizedDate.month &&
+          d.day == normalizedDate.day);
     } else {
-      newCompletedDates.add(date);
+      newCompletedDates.add(normalizedDate);
     }
 
-    return Habit(
-      id: id,
-      title: title,
-      description: description,
-      color: color,
-      icon: icon,
-      completedDates: newCompletedDates,
-      createdAt: createdAt,
-    );
+    return copyWith(completedDates: newCompletedDates);
   }
 
-  /// Get current streak (consecutive completed days)
-  int getCurrentStreak() {
+  /// Add or update a note for a date
+  Habit upsertNote(HabitNote note) {
+    final updated = Map<String, HabitNote>.from(notes);
+    updated[note.dayKey] = note;
+    return copyWith(notes: updated);
+  }
+
+  /// Remove note for date
+  Habit removeNoteForDay(DateTime date) {
+    final updated = Map<String, HabitNote>.from(notes);
+    updated.remove('${date.year}-${date.month}-${date.day}');
+    return copyWith(notes: updated);
+  }
+
+  /// Get note for a day if present
+  HabitNote? noteFor(DateTime date) => notes['${date.year}-${date.month}-${date.day}'];
+
+  /// Current streak (consecutive completed days)
+  int getCurrentStreak({DateTime? referenceDate}) {
     if (completedDates.isEmpty) return 0;
 
     final sortedDates = List<DateTime>.from(completedDates)
       ..sort((a, b) => b.compareTo(a));
 
     int streak = 0;
-    DateTime checkDate = DateTime.now();
+    DateTime checkDate = referenceDate ?? DateTime.now();
 
-    for (var completedDate in sortedDates) {
+    for (final completedDate in sortedDates) {
       final normalizedCompleted = DateTime(
         completedDate.year,
         completedDate.month,
@@ -76,43 +346,76 @@ class Habit {
       if (normalizedCompleted == normalizedCheck) {
         streak++;
         checkDate = checkDate.subtract(const Duration(days: 1));
-      } else {
-        break;
+      } else if (normalizedCompleted.isBefore(normalizedCheck)) {
+        // Break streak if a day is missed
+        if (normalizedCheck.difference(normalizedCompleted).inDays > 0) {
+          break;
+        }
       }
     }
 
     return streak;
   }
 
-  /// Get total completion count
-  int get totalCompletions => completedDates.length;
+  /// Longest streak historically
+  int get bestStreak {
+    if (completedDates.isEmpty) return 0;
+    final sortedDates = List<DateTime>.from(completedDates)
+      ..sort((a, b) => a.compareTo(b));
 
-  /// Convert to JSON for storage
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'color': color.value,
-      'icon': icon.codePoint,
-      'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
-      'createdAt': createdAt.toIso8601String(),
-    };
+    int best = 0;
+    int current = 1;
+
+    for (int i = 1; i < sortedDates.length; i++) {
+      final prev = sortedDates[i - 1];
+      final currentDate = sortedDates[i];
+      if (currentDate.difference(prev).inDays == 1) {
+        current++;
+      } else {
+        best = current > best ? current : best;
+        current = 1;
+      }
+    }
+
+    return current > best ? current : best;
   }
 
-  /// Create from JSON
-  factory Habit.fromJson(Map<String, dynamic> json) {
-    return Habit(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      color: Color(json['color']),
-      icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
-      completedDates: (json['completedDates'] as List)
-          .map((d) => DateTime.parse(d))
-          .toList(),
-      createdAt: DateTime.parse(json['createdAt']),
-    );
+  /// Total completion count
+  int get totalCompletions => completedDates.length;
+
+  /// Completion rate for last [days]
+  double completionRate({int days = 30}) {
+    if (completedDates.isEmpty) return 0;
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    final recent = completedDates.where((d) => d.isAfter(cutoff)).length;
+    return (recent / days).clamp(0, 1);
+  }
+
+  /// Consistency score: proportion of days since creation with at least one completion
+  double get consistencyScore {
+    final totalDays = DateTime.now().difference(createdAt).inDays + 1;
+    if (totalDays <= 0) return 0;
+    return (totalCompletions / totalDays).clamp(0, 1);
+  }
+
+  bool get isArchived => archived;
+
+  Habit archive() => copyWith(archived: true, archivedAt: DateTime.now());
+
+  Habit restore() => copyWith(archived: false, archivedAt: null);
+
+  Habit resetFreezeWeekIfNeeded() {
+    final now = DateTime.now();
+    final lastReset = lastFreezeReset ?? now;
+    final needReset = now.difference(_startOfWeek(lastReset)).inDays >= 7;
+    return needReset
+        ? copyWith(freezeUsesThisWeek: 0, lastFreezeReset: now)
+        : this;
+  }
+
+  static DateTime _startOfWeek(DateTime date) {
+    final weekday = date.weekday; // Monday = 1
+    return DateTime(date.year, date.month, date.day).subtract(Duration(days: weekday - 1));
   }
 
   Habit copyWith({
@@ -123,6 +426,19 @@ class Habit {
     IconData? icon,
     List<DateTime>? completedDates,
     DateTime? createdAt,
+    HabitCategory? category,
+    HabitTimeBlock? timeBlock,
+    HabitDifficulty? difficulty,
+    List<HabitReminder>? reminders,
+    Map<String, HabitNote>? notes,
+    bool? archived,
+    DateTime? archivedAt,
+    int? weeklyTarget,
+    int? monthlyTarget,
+    List<String>? dependencyIds,
+    int? freezeUsesThisWeek,
+    DateTime? lastFreezeReset,
+    List<String>? tags,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -132,52 +448,157 @@ class Habit {
       icon: icon ?? this.icon,
       completedDates: completedDates ?? this.completedDates,
       createdAt: createdAt ?? this.createdAt,
+      category: category ?? this.category,
+      timeBlock: timeBlock ?? this.timeBlock,
+      difficulty: difficulty ?? this.difficulty,
+      reminders: reminders ?? this.reminders,
+      notes: notes ?? this.notes,
+      archived: archived ?? this.archived,
+      archivedAt: archivedAt ?? this.archivedAt,
+      weeklyTarget: weeklyTarget ?? this.weeklyTarget,
+      monthlyTarget: monthlyTarget ?? this.monthlyTarget,
+      dependencyIds: dependencyIds ?? this.dependencyIds,
+      freezeUsesThisWeek: freezeUsesThisWeek ?? this.freezeUsesThisWeek,
+      lastFreezeReset: lastFreezeReset ?? this.lastFreezeReset,
+      tags: tags ?? this.tags,
+    );
+  }
+
+  /// Convert to JSON for storage
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'color': (color.alpha << 24) |
+          (color.red << 16) |
+          (color.green << 8) |
+          color.blue,
+      'icon': icon.codePoint,
+      'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+      'category': category.name,
+      'timeBlock': timeBlock.name,
+      'difficulty': difficulty.name,
+      'reminders': reminders.map((r) => r.toJson()).toList(),
+      'notes': notes.map((key, note) => MapEntry(key, note.toJson())),
+      'archived': archived,
+      'archivedAt': archivedAt?.toIso8601String(),
+      'weeklyTarget': weeklyTarget,
+      'monthlyTarget': monthlyTarget,
+      'dependencyIds': dependencyIds,
+      'freezeUsesThisWeek': freezeUsesThisWeek,
+      'lastFreezeReset': lastFreezeReset?.toIso8601String(),
+      'tags': tags,
+    };
+  }
+
+  /// Create from JSON
+  factory Habit.fromJson(Map<String, dynamic> json) {
+    return Habit(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      color: Color((json['color'] as int?) ?? 0xFF3D8BFF),
+      icon: IconData(json['icon'] ?? Icons.emoji_events.codePoint, fontFamily: 'MaterialIcons'),
+      completedDates: (json['completedDates'] as List<dynamic>? ?? [])
+          .map((d) => DateTime.parse(d))
+          .toList(),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      category: HabitCategory.values.firstWhere(
+        (c) => c.name == json['category'],
+        orElse: () => HabitCategory.productivity,
+      ),
+      timeBlock: HabitTimeBlock.values.firstWhere(
+        (c) => c.name == json['timeBlock'],
+        orElse: () => HabitTimeBlock.anytime,
+      ),
+      difficulty: HabitDifficulty.values.firstWhere(
+        (c) => c.name == json['difficulty'],
+        orElse: () => HabitDifficulty.medium,
+      ),
+      reminders: (json['reminders'] as List<dynamic>? ?? [])
+          .map((r) => HabitReminder.fromJson(Map<String, dynamic>.from(r)))
+          .toList(),
+      notes: (json['notes'] as Map<String, dynamic>? ?? {})
+          .map((key, value) => MapEntry(key, HabitNote.fromJson(Map<String, dynamic>.from(value)))),
+      archived: json['archived'] ?? false,
+      archivedAt: json['archivedAt'] != null ? DateTime.parse(json['archivedAt']) : null,
+      weeklyTarget: json['weeklyTarget'] ?? 5,
+      monthlyTarget: json['monthlyTarget'] ?? 20,
+      dependencyIds: (json['dependencyIds'] as List<dynamic>? ?? []).cast<String>(),
+      freezeUsesThisWeek: json['freezeUsesThisWeek'] ?? 0,
+      lastFreezeReset:
+          json['lastFreezeReset'] != null ? DateTime.parse(json['lastFreezeReset']) : null,
+      tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),
     );
   }
 }
 
-/// Pre-defined habit templates
+/// Pre-defined habit templates with modern presets
 class HabitTemplates {
-  static List<Map<String, dynamic>> get templates => [
-        {
-          'title': 'Sleep 8+ hours',
-          'icon': Icons.bedtime,
-          'color': const Color(0xFF3D8BFF),
-        },
-        {
-          'title': 'Meditation (60+ mins)',
-          'icon': Icons.self_improvement,
-          'color': const Color(0xFF9C27B0),
-        },
-        {
-          'title': 'Morning Pages (1 letter)',
-          'icon': Icons.edit_note,
-          'color': const Color(0xFFF0B429),
-        },
-        {
-          'title': 'Review Goals (10+ mins)',
-          'icon': Icons.check_circle,
-          'color': const Color(0xFF22C55E),
-        },
-        {
-          'title': 'Physical Training (30+ mins)',
-          'icon': Icons.fitness_center,
-          'color': const Color(0xFFEF4444),
-        },
-        {
-          'title': 'Bulletproof Diet',
-          'icon': Icons.restaurant,
-          'color': const Color(0xFF00A699),
-        },
-        {
-          'title': 'Zero Alcohol',
-          'icon': Icons.no_drinks,
-          'color': const Color(0xFF607D8B),
-        },
-        {
-          'title': 'Tactical',
-          'icon': Icons.military_tech,
-          'color': const Color(0xFF8D6E63),
-        },
-      ];
+  static List<Habit> buildTemplates() {
+    return [
+      Habit(
+        id: _uuid.v4(),
+        title: 'Sleep 8 hours',
+        description: 'Lights out by 10:30pm to earn your recovery badge',
+        color: const Color(0xFF3D8BFF),
+        icon: Icons.bedtime,
+        category: HabitCategory.health,
+        timeBlock: HabitTimeBlock.evening,
+        difficulty: HabitDifficulty.medium,
+      ),
+      Habit(
+        id: _uuid.v4(),
+        title: 'Meditation 15m',
+        description: 'Deep breathing and mindfulness reset',
+        color: const Color(0xFF9C27B0),
+        icon: Icons.self_improvement,
+        category: HabitCategory.mindfulness,
+        timeBlock: HabitTimeBlock.morning,
+        difficulty: HabitDifficulty.easy,
+      ),
+      Habit(
+        id: _uuid.v4(),
+        title: 'Deep Work Block',
+        description: '90 minutes distraction-free creation',
+        color: const Color(0xFF22C55E),
+        icon: Icons.bolt,
+        category: HabitCategory.productivity,
+        timeBlock: HabitTimeBlock.afternoon,
+        difficulty: HabitDifficulty.hard,
+      ),
+      Habit(
+        id: _uuid.v4(),
+        title: 'Hydration Hero',
+        description: '3 full bottles before lunch',
+        color: const Color(0xFF0EA5E9),
+        icon: Icons.water_drop,
+        category: HabitCategory.health,
+        timeBlock: HabitTimeBlock.morning,
+        difficulty: HabitDifficulty.easy,
+      ),
+      Habit(
+        id: _uuid.v4(),
+        title: 'Read 20 pages',
+        description: 'Fuel your thinking with a focused reading sprint',
+        color: const Color(0xFFF0B429),
+        icon: Icons.menu_book,
+        category: HabitCategory.learning,
+        timeBlock: HabitTimeBlock.evening,
+        difficulty: HabitDifficulty.medium,
+      ),
+      Habit(
+        id: _uuid.v4(),
+        title: 'Creative Sketch',
+        description: 'Ship one creative output daily',
+        color: const Color(0xFFF472B6),
+        icon: Icons.brush,
+        category: HabitCategory.creativity,
+        timeBlock: HabitTimeBlock.anytime,
+        difficulty: HabitDifficulty.medium,
+      ),
+    ];
+  }
 }

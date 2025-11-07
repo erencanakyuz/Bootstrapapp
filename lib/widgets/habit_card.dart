@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_constants.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onCompletionToggle;
 
   const HabitCard({
     super.key,
     required this.habit,
     this.onTap,
     this.onLongPress,
+    this.onCompletionToggle,
   });
 
   @override
@@ -22,8 +26,9 @@ class HabitCard extends StatelessWidget {
     final today = DateTime.now();
     final isCompletedToday = habit.isCompletedOn(today);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSizes.paddingL),
+    final completionRate = habit.completionRate(days: 14);
+
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppSizes.radiusXL),
@@ -42,23 +47,16 @@ class HabitCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    // Habit icon with color
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         color: habit.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       ),
-                      child: Icon(
-                        habit.icon,
-                        color: habit.color,
-                        size: AppSizes.iconL,
-                      ),
+                      child: Icon(habit.icon, color: habit.color),
                     ),
                     const SizedBox(width: AppSizes.paddingL),
-
-                    // Habit title and description
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +64,7 @@ class HabitCard extends StatelessWidget {
                           Text(
                             habit.title,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.w600,
                               color: colors.textPrimary,
                             ),
@@ -86,22 +84,42 @@ class HabitCard extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    // Completion status
-                    _buildCompletionBadge(isCompletedToday, habit.color),
+                    GestureDetector(
+                      onTap: onCompletionToggle,
+                      child: _buildCompletionBadge(
+                        isCompletedToday,
+                        habit.color,
+                      ),
+                    ),
                   ],
                 ),
-
-                const SizedBox(height: AppSizes.paddingL),
-
-                // Stats row
+                const SizedBox(height: AppSizes.paddingM),
+                _buildMetadataRow(habit, colors),
+                const SizedBox(height: AppSizes.paddingM),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusCircle),
+                  child: LinearProgressIndicator(
+                    value: completionRate,
+                    minHeight: 6,
+                    backgroundColor: colors.outline.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation(habit.color),
+                  ),
+                ),
+                const SizedBox(height: AppSizes.paddingM),
                 Row(
                   children: [
                     _buildStatItem(
                       icon: Icons.local_fire_department,
                       label: 'Streak',
-                      value: '$streak days',
+                      value: '$streak d',
                       color: streak > 0 ? Colors.orange : colors.textTertiary,
+                    ),
+                    const SizedBox(width: AppSizes.paddingXXL),
+                    _buildStatItem(
+                      icon: Icons.leaderboard,
+                      label: 'Best',
+                      value: '${habit.bestStreak} d',
+                      color: colors.accentBlue,
                     ),
                     const SizedBox(width: AppSizes.paddingXXL),
                     _buildStatItem(
@@ -174,6 +192,59 @@ class HabitCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetadataRow(Habit habit, AppColors colors) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.paddingS,
+            vertical: AppSizes.paddingXS,
+          ),
+          decoration: BoxDecoration(
+            color: colors.primarySoft,
+            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+          ),
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                habit.category.iconAsset,
+                width: 18,
+                height: 18,
+                colorFilter: ColorFilter.mode(habit.color, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                habit.category.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSizes.paddingS),
+        Chip(
+          label: Text(habit.timeBlock.label),
+          avatar: Icon(
+            habit.timeBlock.icon,
+            size: 16,
+            color: colors.textPrimary,
+          ),
+        ),
+        const SizedBox(width: AppSizes.paddingS),
+        Chip(
+          label: Text(habit.difficulty.label),
+          backgroundColor: habit.difficulty.badgeColor.withValues(alpha: 0.15),
+          labelStyle: TextStyle(
+            color: habit.difficulty.badgeColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:uuid/uuid.dart';
+
+import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_constants.dart';
 import 'modern_button.dart';
+
+const _uuid = Uuid();
 
 class AddHabitModal extends StatefulWidget {
   final Habit? habitToEdit;
@@ -19,19 +24,25 @@ class _AddHabitModalState extends State<AddHabitModal> {
 
   late Color _selectedColor;
   late IconData _selectedIcon;
+  late HabitCategory _selectedCategory;
+  late HabitTimeBlock _selectedTimeBlock;
+  late HabitDifficulty _selectedDifficulty;
+  late int _weeklyTarget;
+  late int _monthlyTarget;
+  List<HabitReminder> _reminders = [];
 
-  final List<Color> _colors = [
-    const Color(0xFF3D8BFF),
-    const Color(0xFF22C55E),
-    const Color(0xFFEF4444),
-    const Color(0xFFF0B429),
-    const Color(0xFF9C27B0),
-    const Color(0xFF00A699),
-    const Color(0xFFFF6B6B),
-    const Color(0xFF607D8B),
+  final List<Color> _colors = const [
+    Color(0xFF3D8BFF),
+    Color(0xFF22C55E),
+    Color(0xFFEF4444),
+    Color(0xFFF0B429),
+    Color(0xFF9C27B0),
+    Color(0xFF00A699),
+    Color(0xFFFF6B6B),
+    Color(0xFF607D8B),
   ];
 
-  final List<IconData> _icons = [
+  final List<IconData> _icons = const [
     Icons.fitness_center,
     Icons.self_improvement,
     Icons.book,
@@ -50,13 +61,26 @@ class _AddHabitModalState extends State<AddHabitModal> {
   void initState() {
     super.initState();
     if (widget.habitToEdit != null) {
-      _titleController.text = widget.habitToEdit!.title;
-      _descriptionController.text = widget.habitToEdit!.description ?? '';
-      _selectedColor = widget.habitToEdit!.color;
-      _selectedIcon = widget.habitToEdit!.icon;
+      final habit = widget.habitToEdit!;
+      _titleController.text = habit.title;
+      _descriptionController.text = habit.description ?? '';
+      _selectedColor = habit.color;
+      _selectedIcon = habit.icon;
+      _selectedCategory = habit.category;
+      _selectedTimeBlock = habit.timeBlock;
+      _selectedDifficulty = habit.difficulty;
+      _weeklyTarget = habit.weeklyTarget;
+      _monthlyTarget = habit.monthlyTarget;
+      _reminders = List<HabitReminder>.from(habit.reminders);
     } else {
-      _selectedColor = _colors[0];
-      _selectedIcon = _icons[0];
+      _selectedColor = _colors.first;
+      _selectedIcon = _icons.first;
+      _selectedCategory = HabitCategory.productivity;
+      _selectedTimeBlock = HabitTimeBlock.morning;
+      _selectedDifficulty = HabitDifficulty.medium;
+      _weeklyTarget = 5;
+      _monthlyTarget = 20;
+      _reminders = [];
     }
   }
 
@@ -65,6 +89,327 @@ class _AddHabitModalState extends State<AddHabitModal> {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusXXL),
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSizes.paddingXXL),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.outline,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            Text(
+              widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildTextField(
+              controller: _titleController,
+              label: 'Habit Title',
+              hint: 'e.g., Morning Meditation',
+              colors: colors,
+            ),
+            const SizedBox(height: AppSizes.paddingL),
+            _buildTextField(
+              controller: _descriptionController,
+              label: 'Description (optional)',
+              hint: 'e.g., 10 mindful minutes',
+              colors: colors,
+              maxLines: 2,
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Category', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            SizedBox(
+              height: 42,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: HabitCategory.values.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final category = HabitCategory.values[index];
+                  final isSelected = category == _selectedCategory;
+                  return ChoiceChip(
+                    label: Text(category.label),
+                    selected: isSelected,
+                    avatar: SvgPicture.asset(
+                      category.iconAsset,
+                      width: 18,
+                      height: 18,
+                      colorFilter: ColorFilter.mode(
+                        isSelected ? colors.primary : colors.textSecondary,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    onSelected: (selected) {
+                      if (!selected) return;
+                      setState(() => _selectedCategory = category);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Time of day', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            Wrap(
+              spacing: AppSizes.paddingS,
+              children: HabitTimeBlock.values.map((block) {
+                final isSelected = block == _selectedTimeBlock;
+                return FilterChip(
+                  label: Text(block.label),
+                  avatar: Icon(block.icon, size: 16),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (!selected) return;
+                    setState(() => _selectedTimeBlock = block);
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Difficulty', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            Wrap(
+              spacing: AppSizes.paddingS,
+              children: HabitDifficulty.values.map((difficulty) {
+                final isSelected = difficulty == _selectedDifficulty;
+                return ChoiceChip(
+                  label: Text(difficulty.label),
+                  selected: isSelected,
+                  selectedColor:
+                      difficulty.badgeColor.withValues(alpha: 0.15),
+                  onSelected: (selected) {
+                    if (!selected) return;
+                    setState(() => _selectedDifficulty = difficulty);
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Weekly & Monthly Targets', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            _buildSlider(
+              label: 'Weekly target: $_weeklyTarget days',
+              value: _weeklyTarget.toDouble(),
+              min: 1,
+              max: 7,
+              onChanged: (value) => setState(() => _weeklyTarget = value.toInt()),
+            ),
+            _buildSlider(
+              label: 'Monthly target: $_monthlyTarget check-ins',
+              value: _monthlyTarget.toDouble(),
+              min: 5,
+              max: 60,
+              onChanged: (value) =>
+                  setState(() => _monthlyTarget = value.toInt()),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Reminders', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            if (_reminders.isEmpty)
+              Text(
+                'No reminders yet. Add one to get nudged at the perfect time.',
+                style: TextStyle(color: colors.textSecondary),
+              )
+            else
+              Column(
+                children: _reminders
+                    .map(
+                      (reminder) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.alarm, color: colors.primary),
+                        title: Text(
+                          _formatTimeOfDay(
+                            TimeOfDay(hour: reminder.hour, minute: reminder.minute),
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(
+                            () => _reminders.remove(reminder),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: AppSizes.paddingS),
+            TextButton.icon(
+              onPressed: _addReminder,
+              icon: const Icon(Icons.add_alarm),
+              label: const Text('Add reminder'),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Icon & Accent Color', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            _buildIconSelector(colors),
+            const SizedBox(height: AppSizes.paddingL),
+            _buildColorSelector(colors),
+            const SizedBox(height: AppSizes.paddingXXXL),
+            ModernButton(
+              text:
+                  widget.habitToEdit != null ? 'Save Changes' : 'Create Habit',
+              onPressed: _saveHabit,
+              icon: Icons.check,
+              width: double.infinity,
+            ),
+            const SizedBox(height: AppSizes.paddingM),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required AppColors colors,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusM),
+        ),
+        filled: true,
+        fillColor: colors.surface,
+      ),
+      maxLines: maxLines,
+    );
+  }
+
+  Widget _buildSectionTitle(String title, AppColors colors) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: colors.textPrimary,
+      ),
+    );
+  }
+
+  Widget _buildSlider({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        Slider(value: value, min: min, max: max, onChanged: onChanged),
+      ],
+    );
+  }
+
+  Widget _buildIconSelector(AppColors colors) {
+    return Wrap(
+      spacing: AppSizes.paddingM,
+      runSpacing: AppSizes.paddingM,
+      children: _icons.map((icon) {
+        final isSelected = icon == _selectedIcon;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedIcon = icon),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color:
+                  isSelected ? _selectedColor.withValues(alpha: 0.2) : colors.surface,
+              border: Border.all(
+                color: isSelected ? _selectedColor : colors.outline,
+                width: isSelected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(AppSizes.radiusM),
+            ),
+            child: Icon(
+              icon,
+              color: isSelected ? _selectedColor : colors.textSecondary,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildColorSelector(AppColors colors) {
+    return Wrap(
+      spacing: AppSizes.paddingM,
+      runSpacing: AppSizes.paddingM,
+      children: _colors.map((color) {
+        final isSelected = color == _selectedColor;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedColor = color),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: isSelected
+                  ? Border.all(color: colors.textPrimary, width: 3)
+                  : null,
+              boxShadow: isSelected ? AppShadows.colored(color) : null,
+            ),
+            child: isSelected
+                ? const Icon(Icons.check, color: Colors.white)
+                : null,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _addReminder() async {
+    final timeOfDay = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (timeOfDay != null) {
+      setState(() {
+        _reminders.add(
+          HabitReminder(
+            id: _uuid.v4(),
+            hour: timeOfDay.hour,
+            minute: timeOfDay.minute,
+          ),
+        );
+      });
+    }
   }
 
   void _saveHabit() {
@@ -82,189 +427,35 @@ class _AddHabitModalState extends State<AddHabitModal> {
               : _descriptionController.text.trim(),
           color: _selectedColor,
           icon: _selectedIcon,
+          category: _selectedCategory,
+          timeBlock: _selectedTimeBlock,
+          difficulty: _selectedDifficulty,
+          weeklyTarget: _weeklyTarget,
+          monthlyTarget: _monthlyTarget,
+          reminders: _reminders,
         ) ??
         Habit(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: _uuid.v4(),
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
           color: _selectedColor,
           icon: _selectedIcon,
+          category: _selectedCategory,
+          timeBlock: _selectedTimeBlock,
+          difficulty: _selectedDifficulty,
+          weeklyTarget: _weeklyTarget,
+          monthlyTarget: _monthlyTarget,
+          reminders: _reminders,
         );
 
     Navigator.of(context).pop(habit);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusXXL),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.paddingXXL),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.outline,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-
-              // Title
-              Text(
-                widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-
-              // Habit title input
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Habit Title',
-                  hintText: 'e.g., Morning Meditation',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                  ),
-                  filled: true,
-                  fillColor: colors.surface,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-
-              // Description input
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Description (optional)',
-                  hintText: 'e.g., 10 minutes daily',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                  ),
-                  filled: true,
-                  fillColor: colors.surface,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-
-              // Icon selector
-              Text(
-                'Choose Icon',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              Wrap(
-                spacing: AppSizes.paddingM,
-                runSpacing: AppSizes.paddingM,
-                children: _icons.map((icon) {
-                  final isSelected = icon == _selectedIcon;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedIcon = icon),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? _selectedColor.withValues(alpha: 0.2)
-                            : colors.surface,
-                        border: Border.all(
-                          color: isSelected
-                              ? _selectedColor
-                              : colors.outline,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isSelected ? _selectedColor : colors.textSecondary,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-
-              // Color selector
-              Text(
-                'Choose Color',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              Wrap(
-                spacing: AppSizes.paddingM,
-                runSpacing: AppSizes.paddingM,
-                children: _colors.map((color) {
-                  final isSelected = color == _selectedColor;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedColor = color),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(color: colors.textPrimary, width: 3)
-                            : null,
-                        boxShadow: isSelected
-                            ? AppShadows.colored(color)
-                            : null,
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white)
-                          : null,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: AppSizes.paddingXXXL),
-
-              // Save button
-              ModernButton(
-                text: widget.habitToEdit != null ? 'Save Changes' : 'Create Habit',
-                onPressed: _saveHabit,
-                icon: Icons.check,
-                width: double.infinity,
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _formatTimeOfDay(TimeOfDay time) {
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return TimeOfDay.fromDateTime(dt).format(context);
   }
 }
