@@ -8,7 +8,12 @@ import '../models/habit.dart';
 import '../services/habit_storage.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final ThemeController themeController;
+
+  const MainScreen({
+    super.key,
+    required this.themeController,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -88,6 +93,7 @@ class _MainScreenState extends State<MainScreen> {
         onAddHabit: _addHabit,
         onUpdateHabit: _updateHabit,
         onDeleteHabit: _deleteHabit,
+        themeController: widget.themeController,
       ),
       HomeScreen(
         habits: _habits,

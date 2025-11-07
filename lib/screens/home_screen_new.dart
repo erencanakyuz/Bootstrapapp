@@ -6,12 +6,14 @@ import '../constants/app_constants.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
+import '../widgets/theme_switcher_button.dart';
 
 class HomeScreenNew extends StatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onAddHabit;
   final Function(Habit) onUpdateHabit;
   final Function(String) onDeleteHabit;
+  final ThemeController? themeController;
 
   const HomeScreenNew({
     super.key,
@@ -19,6 +21,7 @@ class HomeScreenNew extends StatefulWidget {
     required this.onAddHabit,
     required this.onUpdateHabit,
     required this.onDeleteHabit,
+    this.themeController,
   });
 
   @override
@@ -126,15 +129,11 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
               ),
             ),
             actions: [
-              ModernIconButton(
-                icon: Icons.palette_outlined,
-                onPressed: () {
-                  // TODO: Theme switcher
-                },
-                backgroundColor: colors.surface,
-                iconColor: colors.textPrimary,
-                size: 40,
-              ),
+              if (widget.themeController != null)
+                ThemeSwitcherButton(
+                  controller: widget.themeController!,
+                  compact: false,
+                ),
               const SizedBox(width: AppSizes.paddingL),
             ],
           ),
