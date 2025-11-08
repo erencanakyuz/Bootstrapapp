@@ -3,7 +3,8 @@
     "allow": [
       "Bash(flutter pub get:*)",
       "Bash(where:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(flutter run:*)"
     ],
     "deny": [],
     "ask": []
