@@ -226,6 +226,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
               )
             else
               Column(
+                mainAxisSize: MainAxisSize.min,
                 children: _reminders
                     .map(
                       (reminder) => ListTile(
@@ -315,6 +316,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(label),
         Slider(value: value, min: min, max: max, onChanged: onChanged),

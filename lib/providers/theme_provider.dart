@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/app_settings_service.dart';
@@ -14,7 +15,14 @@ class ThemeNotifier extends Notifier<ThemeController> {
     final service = ref.watch(appSettingsServiceProvider);
     final controller = ThemeController();
 
-    service.loadPalette().then(controller.setPalette);
+    // Load palette asynchronously with error handling
+    service.loadPalette().then(
+      (palette) => controller.setPalette(palette),
+      onError: (error, stackTrace) {
+        debugPrint('Failed to load theme palette: $error');
+        // Use default palette on error
+      },
+    );
 
     void persistPalette() {
       service.persistPalette(controller.palette);

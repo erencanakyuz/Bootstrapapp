@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
+import '../screens/notification_test_screen.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -87,7 +88,15 @@ class ProfileScreen extends ConsumerWidget {
                     .read(profileSettingsProvider.notifier)
                     .toggleHaptics(value),
                 title: const Text('Haptic feedback'),
-                subtitle: const Text('Enable micro-interactions'),
+                subtitle: const Text('Vibration feedback for theme switching and UI interactions'),
+              ),
+              SwitchListTile(
+                value: settings.allowPastDatesBeforeCreation,
+                onChanged: (value) => ref
+                    .read(profileSettingsProvider.notifier)
+                    .toggleAllowPastDatesBeforeCreation(value),
+                title: const Text('Allow past dates before creation'),
+                subtitle: const Text('Mark habits completed before they were created'),
               ),
               const Divider(height: 40),
               Text(
@@ -115,6 +124,28 @@ class ProfileScreen extends ConsumerWidget {
                 leading: Icon(Icons.delete_forever, color: colors.statusIncomplete),
                 title: const Text('Clear all data'),
                 onTap: () => _confirmClear(context, ref),
+              ),
+              const Divider(height: 40),
+              Text(
+                'Developer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSizes.paddingL),
+              ListTile(
+                leading: const Icon(Icons.notifications_active),
+                title: const Text('Notification Test Screen'),
+                subtitle: const Text('Test all notification scenarios'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationTestScreen(),
+                    ),
+                  );
+                },
               ),
               if (archived.isNotEmpty) ...[
                 const Divider(height: 40),
@@ -161,7 +192,12 @@ class ProfileScreen extends ConsumerWidget {
     final tempDir = await getTemporaryDirectory();
     final file = File('${tempDir.path}/bootstrap_habits.json');
     await file.writeAsString(json);
-    await Share.shareXFiles([XFile(file.path)], text: 'Habit backup ready.');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Habit backup ready.',
+      ),
+    );
   }
 
   Future<void> _importHabits(WidgetRef ref) async {

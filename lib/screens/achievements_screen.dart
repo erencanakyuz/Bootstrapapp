@@ -90,7 +90,7 @@ class AchievementsScreen extends ConsumerWidget {
   }
 
   void _share(int unlocked) {
-    Share.share('I unlocked $unlocked Bootstrap achievements today!');
+    SharePlus.instance.share(ShareParams(text: 'I unlocked $unlocked Bootstrap achievements today!'));
   }
 }
 

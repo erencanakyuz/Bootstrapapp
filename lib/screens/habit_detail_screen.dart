@@ -28,7 +28,46 @@ class HabitDetailScreen extends ConsumerWidget {
         body: Center(child: Text('Error: $error')),
       ),
       data: (habits) {
-        final habit = habits.firstWhere((h) => h.id == habitId);
+        // Safe habit lookup - handle case where habit was deleted
+        final matchingHabits = habits.where((h) => h.id == habitId);
+        if (matchingHabits.isEmpty) {
+          // Habit not found (deleted or invalid ID) - show error screen
+          return Scaffold(
+            backgroundColor: colors.background,
+            appBar: AppBar(
+              title: const Text('Habit Not Found'),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_outlined, color: colors.textSecondary, size: 64),
+                  const SizedBox(height: AppSizes.paddingXL),
+                  Text(
+                    'This habit no longer exists',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.paddingS),
+                  Text(
+                    'It may have been deleted',
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSizes.paddingXL),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        final habit = matchingHabits.first;
         final last30Days = _generateLastDays(30);
         final streak = habit.getCurrentStreak();
 
@@ -375,7 +414,7 @@ class HabitDetailScreen extends ConsumerWidget {
   void _shareHabit(Habit habit) {
     final message =
         'I’m on a ${habit.getCurrentStreak()} day streak with ${habit.title}!';
-    Share.share(message);
+    SharePlus.instance.share(ShareParams(text: message));
   }
 }
 
@@ -396,7 +435,10 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingXL),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingXL,
+        vertical: AppSizes.paddingM,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
@@ -404,20 +446,27 @@ class _StatTile extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: AppSizes.paddingS),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: AppSizes.paddingXS),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: colors.textPrimary,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             title,
-            style: TextStyle(color: colors.textSecondary),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 12,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

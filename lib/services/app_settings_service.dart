@@ -9,6 +9,7 @@ class AppSettingsService {
   static const _hapticsKey = 'haptics_enabled';
   static const _userNameKey = 'user_name';
   static const _avatarSeedKey = 'avatar_seed';
+  static const _allowPastDatesKey = 'allow_past_dates_before_creation';
 
   Future<SharedPreferences> get _prefs async => SharedPreferences.getInstance();
 
@@ -75,5 +76,15 @@ class AppSettingsService {
   Future<void> setAvatarSeed(int seed) async {
     final prefs = await _prefs;
     await prefs.setInt(_avatarSeedKey, seed);
+  }
+
+  Future<bool> allowPastDatesBeforeCreation() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_allowPastDatesKey) ?? false;
+  }
+
+  Future<void> setAllowPastDatesBeforeCreation(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_allowPastDatesKey, enabled);
   }
 }
