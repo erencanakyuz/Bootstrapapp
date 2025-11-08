@@ -3,37 +3,30 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Theme palettes for bootstrap motivation app
-enum AppPalette { modern, minimal, nordic, midnight }
+/// Only modern (light) is active, dark is reserved for future use
+enum AppPalette { modern, dark }
 
 extension AppPaletteInfo on AppPalette {
   String get label {
     switch (this) {
       case AppPalette.modern:
         return 'Modern Clean';
-      case AppPalette.minimal:
-        return 'Minimal';
-      case AppPalette.nordic:
-        return 'Nordic';
-      case AppPalette.midnight:
-        return 'Midnight';
+      case AppPalette.dark:
+        return 'Dark Mode';
     }
   }
 
   IconData get icon {
     switch (this) {
       case AppPalette.modern:
-        return Icons.adjust_rounded;
-      case AppPalette.minimal:
-        return Icons.minimize_rounded;
-      case AppPalette.nordic:
-        return Icons.ac_unit_rounded;
-      case AppPalette.midnight:
-        return Icons.nightlife_rounded;
+        return Icons.light_mode_rounded;
+      case AppPalette.dark:
+        return Icons.dark_mode_rounded;
     }
   }
 }
 
-/// Custom color tokens for the app
+/// Custom color tokens for the app - RefactorUi.md FutureStyleUI Design System
 class AppColors extends ThemeExtension<AppColors> {
   const AppColors({
     required this.primary,
@@ -52,6 +45,20 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.statusComplete,
     required this.statusProgress,
     required this.statusIncomplete,
+    // RefactorUi.md specific colors
+    required this.brandAccentPurple,
+    required this.brandAccentPurpleSoft,
+    required this.brandAccentPeach,
+    required this.brandAccentPeachSoft,
+    required this.brandMutedIcon,
+    required this.gradientPeachStart,
+    required this.gradientPeachEnd,
+    required this.gradientPurpleStart,
+    required this.gradientPurpleEnd,
+    required this.gradientPurpleLighterStart,
+    required this.gradientPurpleLighterEnd,
+    required this.gradientBlueAudioStart,
+    required this.gradientBlueAudioEnd,
   });
 
   final Color primary;
@@ -70,6 +77,20 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color statusComplete;
   final Color statusProgress;
   final Color statusIncomplete;
+  // RefactorUi.md specific
+  final Color brandAccentPurple;
+  final Color brandAccentPurpleSoft;
+  final Color brandAccentPeach;
+  final Color brandAccentPeachSoft;
+  final Color brandMutedIcon;
+  final Color gradientPeachStart;
+  final Color gradientPeachEnd;
+  final Color gradientPurpleStart;
+  final Color gradientPurpleEnd;
+  final Color gradientPurpleLighterStart;
+  final Color gradientPurpleLighterEnd;
+  final Color gradientBlueAudioStart;
+  final Color gradientBlueAudioEnd;
 
   @override
   AppColors copyWith({
@@ -89,6 +110,19 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? statusComplete,
     Color? statusProgress,
     Color? statusIncomplete,
+    Color? brandAccentPurple,
+    Color? brandAccentPurpleSoft,
+    Color? brandAccentPeach,
+    Color? brandAccentPeachSoft,
+    Color? brandMutedIcon,
+    Color? gradientPeachStart,
+    Color? gradientPeachEnd,
+    Color? gradientPurpleStart,
+    Color? gradientPurpleEnd,
+    Color? gradientPurpleLighterStart,
+    Color? gradientPurpleLighterEnd,
+    Color? gradientBlueAudioStart,
+    Color? gradientBlueAudioEnd,
   }) {
     return AppColors(
       primary: primary ?? this.primary,
@@ -107,6 +141,19 @@ class AppColors extends ThemeExtension<AppColors> {
       statusComplete: statusComplete ?? this.statusComplete,
       statusProgress: statusProgress ?? this.statusProgress,
       statusIncomplete: statusIncomplete ?? this.statusIncomplete,
+      brandAccentPurple: brandAccentPurple ?? this.brandAccentPurple,
+      brandAccentPurpleSoft: brandAccentPurpleSoft ?? this.brandAccentPurpleSoft,
+      brandAccentPeach: brandAccentPeach ?? this.brandAccentPeach,
+      brandAccentPeachSoft: brandAccentPeachSoft ?? this.brandAccentPeachSoft,
+      brandMutedIcon: brandMutedIcon ?? this.brandMutedIcon,
+      gradientPeachStart: gradientPeachStart ?? this.gradientPeachStart,
+      gradientPeachEnd: gradientPeachEnd ?? this.gradientPeachEnd,
+      gradientPurpleStart: gradientPurpleStart ?? this.gradientPurpleStart,
+      gradientPurpleEnd: gradientPurpleEnd ?? this.gradientPurpleEnd,
+      gradientPurpleLighterStart: gradientPurpleLighterStart ?? this.gradientPurpleLighterStart,
+      gradientPurpleLighterEnd: gradientPurpleLighterEnd ?? this.gradientPurpleLighterEnd,
+      gradientBlueAudioStart: gradientBlueAudioStart ?? this.gradientBlueAudioStart,
+      gradientBlueAudioEnd: gradientBlueAudioEnd ?? this.gradientBlueAudioEnd,
     );
   }
 
@@ -138,143 +185,254 @@ class AppColors extends ThemeExtension<AppColors> {
       statusComplete: lerpColor(statusComplete, other.statusComplete),
       statusProgress: lerpColor(statusProgress, other.statusProgress),
       statusIncomplete: lerpColor(statusIncomplete, other.statusIncomplete),
+      brandAccentPurple: lerpColor(brandAccentPurple, other.brandAccentPurple),
+      brandAccentPurpleSoft: lerpColor(brandAccentPurpleSoft, other.brandAccentPurpleSoft),
+      brandAccentPeach: lerpColor(brandAccentPeach, other.brandAccentPeach),
+      brandAccentPeachSoft: lerpColor(brandAccentPeachSoft, other.brandAccentPeachSoft),
+      brandMutedIcon: lerpColor(brandMutedIcon, other.brandMutedIcon),
+      gradientPeachStart: lerpColor(gradientPeachStart, other.gradientPeachStart),
+      gradientPeachEnd: lerpColor(gradientPeachEnd, other.gradientPeachEnd),
+      gradientPurpleStart: lerpColor(gradientPurpleStart, other.gradientPurpleStart),
+      gradientPurpleEnd: lerpColor(gradientPurpleEnd, other.gradientPurpleEnd),
+      gradientPurpleLighterStart: lerpColor(gradientPurpleLighterStart, other.gradientPurpleLighterStart),
+      gradientPurpleLighterEnd: lerpColor(gradientPurpleLighterEnd, other.gradientPurpleLighterEnd),
+      gradientBlueAudioStart: lerpColor(gradientBlueAudioStart, other.gradientBlueAudioStart),
+      gradientBlueAudioEnd: lerpColor(gradientBlueAudioEnd, other.gradientBlueAudioEnd),
     );
   }
 }
 
 const Map<AppPalette, AppColors> _paletteRegistry = {
   AppPalette.modern: AppColors(
-    primary: Color(0xFFFF385C),
-    primaryDark: Color(0xFFE31C5F),
-    primarySoft: Color(0xFFFFEEF1),
-    accentGreen: Color(0xFF0F8A5F),
-    accentBlue: Color(0xFF5477E5),
-    accentAmber: Color(0xFFF4A261),
-    background: Color(0xFFF9F7F3),
-    surface: Color(0xFFFFFFFF),
-    elevatedSurface: Color(0xFFFEFBF7),
-    outline: Color(0xFFE4DDD4),
-    textPrimary: Color(0xFF1F1B16),
-    textSecondary: Color(0xFF5C5954),
-    textTertiary: Color(0xFF8E8882),
-    statusComplete: Color(0xFF0F8A5F),
-    statusProgress: Color(0xFFF08A24),
-    statusIncomplete: Color(0xFFB42318),
+    // RefactorUi.md FutureStyleUI Design System - Main palette (Light)
+    primary: Color(0xFFA371F2), // brandAccentPurple
+    primaryDark: Color(0xFF8B5FD9),
+    primarySoft: Color(0xFFE5D4FF), // gradientPurpleLighterStart
+    accentGreen: Color(0xFF4BAE88), // success
+    accentBlue: Color(0xFF5F8BE5), // info
+    accentAmber: Color(0xFFF8C9A2), // brandAccentPeach
+    background: Color(0xFFE7DCD1), // brandBackground - soft beige
+    surface: Color(0xFFFFFFFF), // brandCardBackground
+    elevatedSurface: Color(0xFFFFFCF8), // brandSurfaceAlt
+    outline: Color(0xFFEFE4D9), // brandBorderSubtle
+    textPrimary: Color(0xFF292624), // brandTextPrimary
+    textSecondary: Color(0xFF6D6256), // brandTextSecondary
+    textTertiary: Color(0xFFB7A89A), // brandMutedIcon
+    statusComplete: Color(0xFF4BAE88), // success
+    statusProgress: Color(0xFFF8C9A2), // brandAccentPeach
+    statusIncomplete: Color(0xFFE15A5A), // danger
+    // RefactorUi.md specific gradients
+    brandAccentPurple: Color(0xFFA371F2),
+    brandAccentPurpleSoft: Color(0xFFC39BF8),
+    brandAccentPeach: Color(0xFFF8C9A2),
+    brandAccentPeachSoft: Color(0xFFFDE5C9),
+    brandMutedIcon: Color(0xFFB7A89A),
+    gradientPeachStart: Color(0xFFF8C9A2), // gradientPeachHorizontalStart
+    gradientPeachEnd: Color(0xFFFDE5C9), // gradientPeachHorizontalEnd
+    gradientPurpleStart: Color(0xFFA371F2), // gradientPurpleVerticalStart
+    gradientPurpleEnd: Color(0xFFD9B5FF), // gradientPurpleVerticalEnd
+    gradientPurpleLighterStart: Color(0xFFE5D4FF), // gradientPurpleLighterStart
+    gradientPurpleLighterEnd: Color(0xFFF8ECFF), // gradientPurpleLighterEnd
+    gradientBlueAudioStart: Color(0xFFCBDCFF), // gradientBlueAudioStart
+    gradientBlueAudioEnd: Color(0xFFF2F6FF), // gradientBlueAudioEnd
   ),
-  AppPalette.minimal: AppColors(
-    primary: Color(0xFF212121),
-    primaryDark: Color(0xFF000000),
-    primarySoft: Color(0xFFFAFAFA),
-    accentGreen: Color(0xFF4CAF50),
-    accentBlue: Color(0xFF607D8B),
-    accentAmber: Color(0xFF9E9E9E),
-    background: Color(0xFFFFFFFF),
-    surface: Color(0xFFFFFFFF),
-    elevatedSurface: Color(0xFFFFFFFF),
-    outline: Color(0xFFE0E0E0),
-    textPrimary: Color(0xFF111111),
-    textSecondary: Color(0xFF757575),
-    textTertiary: Color(0xFF9E9E9E),
-    statusComplete: Color(0xFF4CAF50),
-    statusProgress: Color(0xFFFF9800),
-    statusIncomplete: Color(0xFFF44336),
-  ),
-  AppPalette.nordic: AppColors(
-    primary: Color(0xFF2F6F6E),
-    primaryDark: Color(0xFF255958),
-    primarySoft: Color(0xFFEEF2F6),
-    accentGreen: Color(0xFF1B7F5E),
-    accentBlue: Color(0xFF2563EB),
-    accentAmber: Color(0xFF3F8E9C),
-    background: Color(0xFFF6F7F8),
-    surface: Color(0xFFFFFFFF),
-    elevatedSurface: Color(0xFFFFFFFF),
-    outline: Color(0xFFE5E7EB),
-    textPrimary: Color(0xFF1A1D1F),
-    textSecondary: Color(0xFF6B7280),
-    textTertiary: Color(0xFF9CA3AF),
-    statusComplete: Color(0xFF1B7F5E),
-    statusProgress: Color(0xFF946200),
-    statusIncomplete: Color(0xFFB83E4B),
-  ),
-  AppPalette.midnight: AppColors(
-    primary: Color(0xFFFF385C),
-    primaryDark: Color(0xFFE72E53),
-    primarySoft: Color(0xFF161A20),
+  AppPalette.dark: AppColors(
+    // Dark theme - Reserved for future use
+    primary: Color(0xFFA78BFA), // Lighter purple for dark mode
+    primaryDark: Color(0xFF8B5CF6),
+    primarySoft: Color(0xFF1E293B),
     accentGreen: Color(0xFF2DD4BF),
     accentBlue: Color(0xFF60A5FA),
-    accentAmber: Color(0xFF00A699),
-    background: Color(0xFF0B0D10),
-    surface: Color(0xFF111318),
-    elevatedSurface: Color(0xFF1E293B),
-    outline: Color(0xFF242933),
-    textPrimary: Color(0xFFF5F7FA),
-    textSecondary: Color(0xFF9AA3B2),
-    textTertiary: Color(0xFF6B7280),
+    accentAmber: Color(0xFFF59E0B),
+    background: Color(0xFF0B0D10), // Very dark background
+    surface: Color(0xFF111318), // Dark surface
+    elevatedSurface: Color(0xFF1E293B), // Elevated dark surface
+    outline: Color(0xFF242933), // Dark outline
+    textPrimary: Color(0xFFF5F7FA), // Light text
+    textSecondary: Color(0xFF9AA3B2), // Muted light text
+    textTertiary: Color(0xFF6B7280), // Very muted light text
     statusComplete: Color(0xFF2DD4BF),
     statusProgress: Color(0xFFF59E0B),
     statusIncomplete: Color(0xFFF05252),
+    // Dark theme gradients
+    brandAccentPurple: Color(0xFF8B5CF6),
+    brandAccentPurpleSoft: Color(0xFFA78BFA),
+    brandAccentPeach: Color(0xFFF97316),
+    brandAccentPeachSoft: Color(0xFFFB923C),
+    brandMutedIcon: Color(0xFF6B7280),
+    gradientPeachStart: Color(0xFF1E293B), // Dark peach gradient start
+    gradientPeachEnd: Color(0xFF0F172A), // Dark peach gradient end
+    gradientPurpleStart: Color(0xFF8B5CF6), // Dark purple gradient start
+    gradientPurpleEnd: Color(0xFFA78BFA), // Dark purple gradient end
+    gradientPurpleLighterStart: Color(0xFF1E293B), // Dark purple lighter start
+    gradientPurpleLighterEnd: Color(0xFF0F172A), // Dark purple lighter end
+    gradientBlueAudioStart: Color(0xFF1E293B), // Dark blue audio start
+    gradientBlueAudioEnd: Color(0xFF0F172A), // Dark blue audio end
   ),
 };
 
 AppColors colorsFor(AppPalette palette) =>
     _paletteRegistry[palette] ?? _paletteRegistry[AppPalette.modern]!;
 
+/// RefactorUi.md FutureStyleUI Typography System
 class AppTextStyles {
   AppTextStyles(this._colors);
 
   final AppColors _colors;
 
-  TextStyle get headline1 => GoogleFonts.inter(
-        fontSize: 32,
+  // Serif Display (Fraunces) - For headings
+  TextStyle get displayHero => GoogleFonts.fraunces(
+        fontSize: 34,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
+        letterSpacing: -0.6,
+        height: 1.1,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get displayLarge => GoogleFonts.fraunces(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
         height: 1.15,
         color: _colors.textPrimary,
       );
 
-  TextStyle get headline2 => GoogleFonts.inter(
-        fontSize: 24,
+  TextStyle get headline1 => GoogleFonts.fraunces(
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.6,
+        height: 1.1,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get headline2 => GoogleFonts.fraunces(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+        height: 1.15,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get headline3 => GoogleFonts.fraunces(
+        fontSize: 22,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         height: 1.2,
         color: _colors.textPrimary,
       );
 
-  TextStyle get headline3 => GoogleFonts.inter(
-        fontSize: 18,
+  TextStyle get titlePage => GoogleFonts.fraunces(
+        fontSize: 22,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.1,
+        letterSpacing: -0.2,
+        height: 1.2,
         color: _colors.textPrimary,
       );
 
+  TextStyle get titleSection => GoogleFonts.fraunces(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+        height: 1.2,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get titleCard => GoogleFonts.fraunces(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+        height: 1.25,
+        color: _colors.textPrimary,
+      );
+
+  // Sans Body (Inter) - For body text
   TextStyle get body => GoogleFonts.inter(
-        fontSize: 16,
-        height: 1.5,
+        fontSize: 15,
+        height: 1.4,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.0,
+        color: _colors.textSecondary,
+      );
+
+  TextStyle get bodyPrimary => GoogleFonts.inter(
+        fontSize: 15,
+        height: 1.4,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.0,
+        color: _colors.textSecondary,
+      );
+
+  TextStyle get bodySecondary => GoogleFonts.inter(
+        fontSize: 13,
+        height: 1.4,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.0,
         color: _colors.textSecondary,
       );
 
   TextStyle get bodyBold => GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w600,
+        height: 1.4,
+        letterSpacing: 0.0,
         color: _colors.textPrimary,
       );
 
   TextStyle get caption => GoogleFonts.inter(
-        fontSize: 14,
-        color: _colors.textTertiary,
+        fontSize: 11,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.1,
+        height: 1.2,
+        color: _colors.textSecondary,
+      );
+
+  TextStyle get captionUppercase => GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.25,
+        height: 1.2,
+        color: _colors.textSecondary,
+      );
+
+  // Sans UI (Inter with rounded feel) - For buttons
+  TextStyle get buttonLabel => GoogleFonts.inter(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+        height: 1.2,
+        color: _colors.textPrimary,
+      );
+
+  TextStyle get buttonLabelGhost => GoogleFonts.inter(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+        height: 1.2,
+        color: _colors.textSecondary,
       );
 
   TextStyle get button => GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
         color: Colors.white,
+      );
+
+  // Numeric Badge (Fraunces) - For large numbers
+  TextStyle get numericBadge => GoogleFonts.fraunces(
+        fontSize: 52,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -2.0,
+        height: 1.0,
+        color: _colors.elevatedSurface,
       );
 }
 
 ThemeData buildAppTheme(AppPalette palette) {
   final AppColors colors = colorsFor(palette);
-  final ThemeData base = ThemeData.light(useMaterial3: true);
+  final ThemeData base = palette == AppPalette.dark
+      ? ThemeData.dark(useMaterial3: true)
+      : ThemeData.light(useMaterial3: true);
 
   final TextTheme textTheme = GoogleFonts.interTextTheme(
     base.textTheme,
@@ -313,23 +471,4 @@ ThemeData buildAppTheme(AppPalette palette) {
     ),
     dividerColor: colors.outline,
   );
-}
-
-class ThemeController extends ChangeNotifier {
-  ThemeController({AppPalette initialPalette = AppPalette.modern})
-      : _palette = initialPalette;
-
-  AppPalette _palette;
-
-  AppPalette get palette => _palette;
-  AppColors get colors => colorsFor(_palette);
-  ThemeData get theme => buildAppTheme(_palette);
-
-  void setPalette(AppPalette palette) {
-    if (palette == _palette) {
-      return;
-    }
-    _palette = palette;
-    notifyListeners();
-  }
 }

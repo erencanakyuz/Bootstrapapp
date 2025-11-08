@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/app_settings_service.dart';
-import 'theme_provider.dart';
+
+final appSettingsServiceProvider = Provider<AppSettingsService>((ref) {
+  return AppSettingsService();
+});
 
 class ProfileSettings {
   final String name;
