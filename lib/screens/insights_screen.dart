@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../utils/responsive.dart';
 import '../widgets/stats_card.dart';
 import 'achievements_screen.dart';
 import 'analytics_dashboard_screen.dart';
@@ -50,6 +51,38 @@ class InsightsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    final horizontalPadding = context.horizontalGutter;
+    final statsColumns = context.responsiveGridColumns(compact: 2);
+    final statsCards = [
+      StatsCard(
+        title: 'Today',
+        value: '$_completedToday/$_totalHabits',
+        icon: Icons.today,
+        color: colors.accentBlue,
+        subtitle: 'Habits completed',
+      ),
+      StatsCard(
+        title: 'Current Streak',
+        value: '$_currentStreak',
+        icon: Icons.local_fire_department,
+        color: Colors.orange,
+        subtitle: 'Days in a row',
+      ),
+      StatsCard(
+        title: 'Total',
+        value: '$_totalCompletions',
+        icon: Icons.check_circle,
+        color: colors.accentGreen,
+        subtitle: 'All completions',
+      ),
+      StatsCard(
+        title: 'Success Rate',
+        value: '${_completionRate.toStringAsFixed(0)}%',
+        icon: Icons.trending_up,
+        color: colors.primary,
+        subtitle: 'This week',
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -70,69 +103,46 @@ class InsightsScreen extends StatelessWidget {
             ),
           ),
 
-          // Content
           SliverPadding(
-            padding: EdgeInsets.all(
-              MediaQuery.of(context).size.width > 600
-                  ? AppSizes.paddingXXL
-                  : AppSizes.paddingL,
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: AppSizes.paddingL,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Your Progress',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: statsColumns,
+                crossAxisSpacing: AppSizes.paddingL,
+                mainAxisSpacing: AppSizes.paddingL,
+                childAspectRatio: statsColumns >= 3 ? 1.35 : 1.05,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => statsCards[index],
+                childCount: statsCards.length,
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSizes.paddingXXL,
+              horizontalPadding,
+              AppSizes.paddingL,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Stats overview
-                Text(
-                  'Your Progress',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.paddingL),
-
-                // Stats grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: AppSizes.paddingL,
-                  crossAxisSpacing: AppSizes.paddingL,
-                  childAspectRatio: 1.1,
-                  children: [
-                    StatsCard(
-                      title: 'Today',
-                      value: '$_completedToday/$_totalHabits',
-                      icon: Icons.today,
-                      color: colors.accentBlue,
-                      subtitle: 'Habits completed',
-                    ),
-                    StatsCard(
-                      title: 'Current Streak',
-                      value: '$_currentStreak',
-                      icon: Icons.local_fire_department,
-                      color: Colors.orange,
-                      subtitle: 'Days in a row',
-                    ),
-                    StatsCard(
-                      title: 'Total',
-                      value: '$_totalCompletions',
-                      icon: Icons.check_circle,
-                      color: colors.accentGreen,
-                      subtitle: 'All completions',
-                    ),
-                    StatsCard(
-                      title: 'Success Rate',
-                      value: '${_completionRate.toStringAsFixed(0)}%',
-                      icon: Icons.trending_up,
-                      color: colors.primary,
-                      subtitle: 'This week',
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: AppSizes.paddingXXL),
-
-                // Action cards for Achievements and Analytics
                 _buildActionCard(
                   context,
                   colors,
@@ -172,27 +182,46 @@ class InsightsScreen extends StatelessWidget {
                     );
                   },
                 ),
-
-                const SizedBox(height: AppSizes.paddingXXL),
-
-                // Habit breakdown
-                Text(
-                  'Habit Performance',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.paddingL),
-
-                ...habits.map((habit) => _buildHabitPerformanceCard(habit, colors)),
-
-                const SizedBox(height: AppSizes.paddingXXXL),
-
-                // Motivational quote
-                _buildMotivationalCard(colors),
               ]),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSizes.paddingXXL,
+              horizontalPadding,
+              AppSizes.paddingL,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Habit Performance',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) =>
+                    _buildHabitPerformanceCard(habits[index], colors),
+                childCount: habits.length,
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSizes.paddingXXXL,
+              horizontalPadding,
+              AppSizes.paddingXXXL,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _buildMotivationalCard(colors),
             ),
           ),
         ],

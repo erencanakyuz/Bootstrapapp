@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
 import 'profile_screen.dart';
@@ -91,6 +92,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
+    final horizontalPadding = context.horizontalGutter;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -124,8 +126,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: Column(
         children: [
-          _buildMonthSelector(colors, textStyles),
-          _buildPartSelector(colors),
+          _buildMonthSelector(colors, textStyles, horizontalPadding),
+          _buildPartSelector(colors, horizontalPadding),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -147,8 +149,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(
-                        MediaQuery.of(context).size.width > 600 ? 20.0 : 12.0,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                        vertical: 12,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,9 +187,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildMonthSelector(AppColors colors, AppTextStyles textStyles) {
+  Widget _buildMonthSelector(
+    AppColors colors,
+    AppTextStyles textStyles,
+    double horizontalPadding,
+  ) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -256,11 +263,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildPartSelector(AppColors colors) {
+  Widget _buildPartSelector(AppColors colors, double horizontalPadding) {
     final daysInMonth = _getDaysInMonth(_selectedMonth);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: colors.surface,
@@ -341,49 +348,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildChallengeGrid(AppColors colors, DateTime month, int startDay, int endDay) {
+  Widget _buildChallengeGrid(
+    AppColors colors,
+    DateTime month,
+    int startDay,
+    int endDay,
+  ) {
     final numDays = endDay - startDay + 1;
-    // Calculate minimum width needed: habit name (80) + spacing (8) + days (numDays * 36)
     final minGridWidth = 80.0 + 8.0 + (numDays * 36.0);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: minGridWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row with day numbers
-              _buildDayNumbersHeader(colors, month, startDay, endDay),
-              const SizedBox(height: 16),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : minGridWidth;
+        final contentWidth = availableWidth < minGridWidth ? minGridWidth : availableWidth;
 
-              // Habit rows
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: widget.habits.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  return _buildHabitRow(colors, widget.habits[index], month, startDay, endDay);
-                },
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-        ),
-      ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: contentWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDayNumbersHeader(colors, month, startDay, endDay),
+                  const SizedBox(height: 16),
+                  for (var i = 0; i < widget.habits.length; i++) ...[
+                    _buildHabitRow(colors, widget.habits[i], month, startDay, endDay),
+                    if (i != widget.habits.length - 1)
+                      const SizedBox(height: 12),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

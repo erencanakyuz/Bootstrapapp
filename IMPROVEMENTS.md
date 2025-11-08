@@ -200,6 +200,23 @@ Service Layer (Storage)
     ↓ (throws specific exceptions)
 ```
 
+---
+
+## 9. Responsive Layout Modernization (January 2026)
+
+- **Shared responsive layer**: Added `lib/utils/responsive.dart` with Material 3 aligned breakpoints (600 px / 1024 px / 1440 px), adaptive gutters, grid helpers, and `BuildContext` extensions. Every major screen can now derive spacing/layout decisions from a single source of truth instead of scattered `MediaQuery` checks.
+- **Screen refactors**:
+  - `home_screen_new.dart`, `calendar_screen.dart`, `insights_screen.dart`, and `analytics_dashboard_screen.dart` switched to the shared helpers. This removes magic numbers, prevents `RenderBox was not laid out` exceptions caused by unbounded viewports, and enables tablet/desktop friendly paddings automatically.
+  - Calendar challenge grid now uses `LayoutBuilder` + bounded `SizedBox` rather than `ListView` inside a horizontally scrolling viewport (Flutter best-practice from docs.flutter.dev/ui/layout/responsive).
+  - Insights view replaced nested `GridView`+`SliverList` combinations with real `SliverGrid` / `SliverList` sections so scrolling physics stay predictable and hit-testing works on all pages.
+- **Package guidance** (for future scaling):
+  1. `responsive_framework` – app-wide breakpoint orchestration + auto text scaling.
+  2. `flutter_screenutil` – lightweight dimension/font scaling tied to a design reference size.
+  3. `responsive_ui_kit` – prebuilt adaptive patterns (split views, navigation rail breakpoints).
+  4. `flutter_staggered_grid_view` – masonry dashboards / Pinterest-like sections without manual math.
+  
+  These pair well with the new helper: use `responsive_framework` at the `MaterialApp.builder` level for coarse breakpoints, then lean on the in-house extensions for fine grained per-widget adjustments.
+
 ### Exception Hierarchy
 ```
 Exception

@@ -5,6 +5,7 @@ import 'package:confetti/confetti.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../utils/responsive.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/add_habit_modal.dart';
 import '../widgets/theme_switcher_button.dart';
@@ -94,6 +95,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
     final colors = Theme.of(context).extension<AppColors>()!;
     final today = DateTime.now();
     final completedToday = widget.habits.where((h) => h.isCompletedOn(today)).length;
+    final horizontalPadding = context.horizontalGutter;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -152,35 +154,27 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
           ),
 
           // Progress indicator
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                MediaQuery.of(context).size.width > 600
-                    ? AppSizes.paddingXXL
-                    : AppSizes.paddingL,
-                0,
-                MediaQuery.of(context).size.width > 600
-                    ? AppSizes.paddingXXL
-                    : AppSizes.paddingL,
-                AppSizes.paddingL,
-              ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              0,
+              horizontalPadding,
+              AppSizes.paddingL,
+            ),
+            sliver: SliverToBoxAdapter(
               child: _buildProgressCard(completedToday, colors),
             ),
           ),
 
           // Habits section header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                MediaQuery.of(context).size.width > 600
-                    ? AppSizes.paddingXXL
-                    : AppSizes.paddingL,
-                AppSizes.paddingXL,
-                MediaQuery.of(context).size.width > 600
-                    ? AppSizes.paddingXXL
-                    : AppSizes.paddingL,
-                AppSizes.paddingL,
-              ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSizes.paddingXL,
+              horizontalPadding,
+              AppSizes.paddingL,
+            ),
+            sliver: SliverToBoxAdapter(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -211,11 +205,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
             )
           else
             SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width > 600
-                    ? AppSizes.paddingXXL
-                    : AppSizes.paddingL,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
