@@ -12,6 +12,7 @@ import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../screens/notification_test_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/page_transitions.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -143,9 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: const Text('Test all notification scenarios'),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationTestScreen(),
-                      ),
+                      PageTransitions.fadeAndSlide(const NotificationTestScreen()),
                     );
                   },
                 ),

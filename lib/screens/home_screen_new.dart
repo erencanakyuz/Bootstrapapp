@@ -9,6 +9,7 @@ import '../utils/responsive.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/add_habit_modal.dart';
 import '../widgets/theme_switcher_button.dart';
+import '../utils/page_transitions.dart';
 import 'habit_detail_screen.dart';
 
 class HomeScreenNew extends StatefulWidget {
@@ -216,9 +217,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
                         habit: habit,
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => HabitDetailScreen(habitId: habit.id),
-                            ),
+                            PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
                           );
                         },
                         onCompletionToggle: () => _toggleHabitCompletion(habit),

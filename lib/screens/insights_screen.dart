@@ -3,6 +3,7 @@ import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../utils/responsive.dart';
+import '../utils/page_transitions.dart';
 import '../widgets/stats_card.dart';
 import 'achievements_screen.dart';
 import 'analytics_dashboard_screen.dart';
@@ -152,9 +153,7 @@ class InsightsScreen extends StatelessWidget {
                   iconColor: Colors.amber,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AchievementsScreen(),
-                      ),
+                      PageTransitions.fadeAndSlide(const AchievementsScreen()),
                     );
                   },
                 ),
@@ -168,9 +167,7 @@ class InsightsScreen extends StatelessWidget {
                   iconColor: colors.accentBlue,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AnalyticsDashboardScreen(),
-                      ),
+                      PageTransitions.fadeAndSlide(const AnalyticsDashboardScreen()),
                     );
                   },
                 ),
