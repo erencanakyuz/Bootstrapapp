@@ -7,7 +7,7 @@ import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
 import '../widgets/theme_preview_sheet.dart';
-import 'home_screen.dart';
+import 'calendar_screen.dart';
 import 'home_screen_new.dart';
 import 'insights_screen.dart';
 
@@ -56,7 +56,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         onDeleteHabit: _handleDeleteHabit,
         themeController: widget.themeController,
       ),
-      HomeScreen(
+      CalendarScreen(
         habits: habits,
         onUpdateHabit: _handleUpdateHabit,
         onRefresh: refresh,
