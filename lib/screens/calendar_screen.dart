@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/habit.dart';
@@ -9,6 +10,7 @@ import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
 import '../utils/page_transitions.dart';
 import 'profile_screen.dart';
+import 'habit_detail_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
@@ -45,29 +47,60 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _previousWeek() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final hapticsEnabled = settingsAsync.maybeWhen(
+      data: (settings) => settings.hapticsEnabled,
+      orElse: () => true,
+    );
+    if (hapticsEnabled) {
+      HapticFeedback.selectionClick();
+    }
     setState(() {
       _selectedWeekStart = _selectedWeekStart.subtract(const Duration(days: 7));
     });
   }
 
   void _nextWeek() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final hapticsEnabled = settingsAsync.maybeWhen(
+      data: (settings) => settings.hapticsEnabled,
+      orElse: () => true,
+    );
+    if (hapticsEnabled) {
+      HapticFeedback.selectionClick();
+    }
     setState(() {
       _selectedWeekStart = _selectedWeekStart.add(const Duration(days: 7));
     });
   }
 
   void _goToCurrentWeek() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final hapticsEnabled = settingsAsync.maybeWhen(
+      data: (settings) => settings.hapticsEnabled,
+      orElse: () => true,
+    );
+    if (hapticsEnabled) {
+      HapticFeedback.mediumImpact();
+    }
     setState(() {
       _selectedWeekStart = _getWeekStart(DateTime.now());
     });
   }
 
   Future<void> _toggleHabitCompletion(Habit habit, DateTime date) async {
+    // Haptic feedback
     final settingsAsync = ref.read(profileSettingsProvider);
-    final allowPastDates = settingsAsync.maybeWhen(
-      data: (settings) => settings.allowPastDatesBeforeCreation,
-      orElse: () => false,
+    final settings = settingsAsync.maybeWhen(
+      data: (s) => s,
+      orElse: () => null,
     );
+    
+    if (settings?.hapticsEnabled ?? true) {
+      HapticFeedback.lightImpact();
+    }
+
+    final allowPastDates = settings?.allowPastDatesBeforeCreation ?? false;
     final updatedHabit = habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates);
     await widget.onUpdateHabit(updatedHabit);
   }
@@ -128,10 +161,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ...widget.habits.map((habit) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildHabitCard(colors, habit),
-                    )),
+                    if (widget.habits.isEmpty)
+                      _buildEmptyState(colors, horizontalPadding)
+                    else
+                      ...widget.habits.map((habit) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildHabitCard(colors, habit),
+                      )),
                   ],
                 ),
               ),
@@ -171,84 +207,97 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _selectedWeekStart.month == now.month &&
         _selectedWeekStart.day == _getWeekStart(now).day;
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colors.primary.withValues(alpha: 0.05),
-            colors.primarySoft.withValues(alpha: 0.08),
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null) {
+          if (details.primaryVelocity! > 0) {
+            // Swipe right - previous week
+            _previousWeek();
+          } else if (details.primaryVelocity! < 0) {
+            // Swipe left - next week
+            _nextWeek();
+          }
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colors.primary.withValues(alpha: 0.05),
+              colors.primarySoft.withValues(alpha: 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colors.primary.withValues(alpha: 0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colors.primary.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.1),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ModernIconButton(
-            icon: Icons.chevron_left,
-            onPressed: _previousWeek,
-            backgroundColor: colors.surface,
-            iconColor: colors.primary,
-            size: 44,
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: _goToCurrentWeek,
-              child: Column(
-                children: [
-                  Text(
-                    '${DateFormat('MMM d').format(weekDays.first)} - ${DateFormat('MMM d, yyyy').format(weekEnd)}',
-                    style: textStyles.headline3.copyWith(
-                      color: colors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (isCurrentWeek)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ModernIconButton(
+              icon: Icons.chevron_left,
+              onPressed: _previousWeek,
+              backgroundColor: colors.surface,
+              iconColor: colors.primary,
+              size: 44,
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: _goToCurrentWeek,
+                child: Column(
+                  children: [
+                    Text(
+                      '${DateFormat('MMM d').format(weekDays.first)} - ${DateFormat('MMM d, yyyy').format(weekEnd)}',
+                      style: textStyles.headline3.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
                       ),
-                      child: Text(
-                        'This Week',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: colors.primary,
-                          fontWeight: FontWeight.w600,
+                      textAlign: TextAlign.center,
+                    ),
+                    if (isCurrentWeek)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'This Week',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          ModernIconButton(
-            icon: Icons.chevron_right,
-            onPressed: _nextWeek,
-            backgroundColor: colors.surface,
-            iconColor: colors.primary,
-            size: 44,
-          ),
-        ],
+            ModernIconButton(
+              icon: Icons.chevron_right,
+              onPressed: _nextWeek,
+              backgroundColor: colors.surface,
+              iconColor: colors.primary,
+              size: 44,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -256,169 +305,246 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildHabitCard(AppColors colors, Habit habit) {
     final weekDays = _getWeekDays();
     final now = DateTime.now();
+    final completedThisWeek = weekDays.where((date) => habit.isCompletedOn(date)).length;
+    final weekProgress = completedThisWeek / 7.0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.outline.withValues(alpha: 0.1),
-          width: 1,
+    return GestureDetector(
+      onLongPress: () {
+        final settingsAsync = ref.read(profileSettingsProvider);
+        final hapticsEnabled = settingsAsync.maybeWhen(
+          data: (settings) => settings.hapticsEnabled,
+          orElse: () => true,
+        );
+        if (hapticsEnabled) {
+          HapticFeedback.mediumImpact();
+        }
+        Navigator.of(context).push(
+          PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Habit header
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: habit.color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      habit.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${habit.completedDates.length} days completed',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textTertiary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Week days grid
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: weekDays.asMap().entries.map((entry) {
-              final index = entry.key;
-              final date = entry.value;
-              final isCompleted = habit.isCompletedOn(date);
-              final isToday = date.year == now.year &&
-                  date.month == now.month &&
-                  date.day == now.day;
-              final dayName = DateFormat('E').format(date).substring(0, 1); // First letter
-              final dayNumber = date.day;
-
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => _toggleHabitCompletion(habit, date),
-                  child: Container(
-                    margin: EdgeInsets.only(
-                      left: index > 0 ? 4 : 0,
-                      right: index < 6 ? 4 : 0,
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? habit.color.withValues(alpha: 0.15)
-                          : (isToday
-                              ? colors.primary.withValues(alpha: 0.08)
-                              : Colors.transparent),
-                      borderRadius: BorderRadius.circular(12),
-                      border: isToday
-                          ? Border.all(
-                              color: colors.primary,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          dayName,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isToday
-                                ? colors.primary
-                                : colors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: isCompleted ? habit.color : Colors.transparent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isCompleted
-                                  ? habit.color
-                                  : (isToday
-                                      ? colors.primary
-                                      : colors.outline.withValues(alpha: 0.3)),
-                              width: isToday ? 2.5 : 2,
-                            ),
-                            boxShadow: isCompleted
-                                ? [
-                                    BoxShadow(
-                                      color: habit.color.withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Center(
-                            child: isCompleted
-                                ? const Icon(
-                                    Icons.check,
-                                    size: 20,
-                                    color: Colors.white,
-                                  )
-                                : Text(
-                                    dayNumber.toString(),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: isToday
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                      color: isToday
-                                          ? colors.primary
-                                          : colors.textPrimary,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Habit header
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: habit.color,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              );
-            }).toList(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        habit.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            '$completedThisWeek/7 this week',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.textTertiary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: weekProgress,
+                                backgroundColor: colors.outline.withValues(alpha: 0.2),
+                                valueColor: AlwaysStoppedAnimation<Color>(habit.color),
+                                minHeight: 4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Week days grid
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: weekDays.asMap().entries.map((entry) {
+                final index = entry.key;
+                final date = entry.value;
+                final isCompleted = habit.isCompletedOn(date);
+                final isToday = date.year == now.year &&
+                    date.month == now.month &&
+                    date.day == now.day;
+                final dayName = DateFormat('E').format(date).substring(0, 1); // First letter
+                final dayNumber = date.day;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => _toggleHabitCompletion(habit, date),
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: index > 0 ? 4 : 0,
+                        right: index < 6 ? 4 : 0,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? habit.color.withValues(alpha: 0.15)
+                            : (isToday
+                                ? colors.primary.withValues(alpha: 0.08)
+                                : Colors.transparent),
+                        borderRadius: BorderRadius.circular(12),
+                        border: isToday
+                            ? Border.all(
+                                color: colors.primary,
+                                width: 2,
+                              )
+                            : null,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            dayName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isToday
+                                  ? colors.primary
+                                  : colors.textTertiary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isCompleted ? habit.color : Colors.transparent,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isCompleted
+                                    ? habit.color
+                                    : (isToday
+                                        ? colors.primary
+                                        : colors.outline.withValues(alpha: 0.3)),
+                                width: isToday ? 2.5 : 2,
+                              ),
+                              boxShadow: isCompleted
+                                  ? [
+                                      BoxShadow(
+                                        color: habit.color.withValues(alpha: 0.4),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Center(
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: isCompleted
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 20,
+                                        color: Colors.white,
+                                        key: ValueKey('check'),
+                                      )
+                                    : Text(
+                                        dayNumber.toString(),
+                                        key: ValueKey('day'),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isToday
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: isToday
+                                              ? colors.primary
+                                              : colors.textPrimary,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(AppColors colors, double horizontalPadding) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      margin: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.15),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 80,
+            color: colors.primary.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No habits yet',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Start building better habits by adding your first goal',
+            style: TextStyle(
+              fontSize: 16,
+              color: colors.textSecondary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
