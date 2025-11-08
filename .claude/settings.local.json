@@ -4,7 +4,11 @@
       "Bash(flutter pub get:*)",
       "Bash(where:*)",
       "Bash(powershell -Command:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(dart analyze:*)",
+      "Bash(dir:*)",
+      "Bash(Get-ChildItem -Path assets -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,37 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uuid/uuid.dart';
 import 'package:bootstrap_app/models/habit.dart';
 import 'package:bootstrap_app/services/habit_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Helper function to create test habits
+Habit createTestHabit({
+  String? id,
+  required String title,
+  String? description,
+  Color? color,
+  IconData? icon,
+  HabitCategory? category,
+  HabitTimeBlock? timeBlock,
+  HabitDifficulty? difficulty,
+  int? weeklyTarget,
+  int? monthlyTarget,
+}) {
+  const uuid = Uuid();
+  return Habit(
+    id: id ?? uuid.v4(),
+    title: title,
+    description: description,
+    color: color ?? const Color(0xFF3D8BFF),
+    icon: icon ?? Icons.star,
+    category: category ?? HabitCategory.health,
+    timeBlock: timeBlock ?? HabitTimeBlock.anytime,
+    difficulty: difficulty ?? HabitDifficulty.medium,
+    weeklyTarget: weeklyTarget ?? 5,
+    monthlyTarget: monthlyTarget ?? 20,
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,13 +47,13 @@ void main() {
     group('Save and Load', () {
       test('saveHabits and loadHabits work correctly', () async {
         final habits = [
-          Habit.template(
+          createTestHabit(
             title: 'Test Habit 1',
             category: HabitCategory.health,
           ),
-          Habit.template(
+          createTestHabit(
             title: 'Test Habit 2',
-            category: HabitCategory.personal,
+            category: HabitCategory.learning,
           ),
         ];
 
@@ -44,13 +74,13 @@ void main() {
       test('saveHabits handles empty list', () async {
         await storage.saveHabits([]);
         final loaded = await storage.loadHabits();
-        // Empty storage should return defaults
-        expect(loaded, isNotEmpty);
+        // Empty list was saved, so it should load as empty (not defaults)
+        expect(loaded, isEmpty);
       });
 
       test('saveHabits preserves habit properties', () async {
         final now = DateTime.now();
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Complex Habit',
           category: HabitCategory.health,
           description: 'Test description',
@@ -73,7 +103,7 @@ void main() {
     group('Clear Data', () {
       test('clearAllData removes all habits', () async {
         final habits = [
-          Habit.template(
+          createTestHabit(
             title: 'Test',
             category: HabitCategory.health,
           ),
@@ -93,7 +123,7 @@ void main() {
       test('saveHabits with large dataset', () async {
         final habits = List.generate(
           100,
-          (i) => Habit.template(
+          (i) => createTestHabit(
             title: 'Habit $i',
             category: HabitCategory.values[i % HabitCategory.values.length],
           ),

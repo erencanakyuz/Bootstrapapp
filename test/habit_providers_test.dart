@@ -40,7 +40,6 @@ void main() {
     });
 
     test('initial state is default', () {
-      final controller = container.read(habitFilterProvider.notifier);
       final state = container.read(habitFilterProvider);
 
       expect(state.query, '');
