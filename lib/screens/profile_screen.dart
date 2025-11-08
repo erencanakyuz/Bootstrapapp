@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -125,28 +126,30 @@ class ProfileScreen extends ConsumerWidget {
                 title: const Text('Clear all data'),
                 onTap: () => _confirmClear(context, ref),
               ),
-              const Divider(height: 40),
-              Text(
-                'Developer',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+              if (kDebugMode) ...[
+                const Divider(height: 40),
+                Text(
+                  'Developer',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              ListTile(
-                leading: const Icon(Icons.notifications_active),
-                title: const Text('Notification Test Screen'),
-                subtitle: const Text('Test all notification scenarios'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationTestScreen(),
-                    ),
-                  );
-                },
-              ),
+                const SizedBox(height: AppSizes.paddingL),
+                ListTile(
+                  leading: const Icon(Icons.notifications_active),
+                  title: const Text('Notification Test Screen'),
+                  subtitle: const Text('Test all notification scenarios'),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationTestScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
               if (archived.isNotEmpty) ...[
                 const Divider(height: 40),
                 Text(

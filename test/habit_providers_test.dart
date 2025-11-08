@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bootstrap_app/models/habit.dart';
+import 'package:bootstrap_app/exceptions/habit_validation_exception.dart';
 import 'package:bootstrap_app/providers/habit_providers.dart';
 
 void main() {
