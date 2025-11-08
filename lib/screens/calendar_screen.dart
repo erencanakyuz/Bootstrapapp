@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
+import '../utils/page_transitions.dart';
 import 'profile_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -28,12 +29,87 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedMonth = DateTime.now();
   final PageController _pageController = PageController(initialPage: 1000);
+  final ScrollController _horizontalScrollController = ScrollController();
   int _selectedPart = 0; // 0 = Part 1 (1-10), 1 = Part 2 (11-20), 2 = Part 3 (21-31)
+  bool _hasScrolledToToday = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-select the part containing today
+    final now = DateTime.now();
+    final today = now.day;
+    if (today > 20) {
+      _selectedPart = 2;
+    } else if (today > 10) {
+      _selectedPart = 1;
+    } else {
+      _selectedPart = 0;
+    }
+    // Auto-scroll to today's date after first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToToday();
+    });
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToToday() {
+    if (_hasScrolledToToday) return;
+    
+    final now = DateTime.now();
+    final isCurrentMonth = _selectedMonth.year == now.year && _selectedMonth.month == now.month;
+    
+    if (!isCurrentMonth) return;
+    
+    if (!_horizontalScrollController.hasClients) {
+      // Retry after a short delay if controller is not ready
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _scrollToToday();
+      });
+      return;
+    }
+    
+    // Calculate which part contains today
+    final today = now.day;
+    final daysInMonth = _getDaysInMonth(_selectedMonth);
+    int targetPart = 0;
+    if (today > 20) {
+      targetPart = 2;
+    } else if (today > 10) {
+      targetPart = 1;
+    }
+    
+    // Only scroll if today is in the currently selected part
+    if (_selectedPart != targetPart) {
+      return;
+    }
+    
+    // Calculate scroll position: each day box is 36px + 4px margin = 40px
+    // Offset: 80px (habit label) + 8px spacing + (day - startDay) * 40px
+    final (startDay, _) = _getDayRange(daysInMonth);
+    
+    // Only scroll if today is within the current part range
+    if (today < startDay || today > (startDay + 9)) {
+      return;
+    }
+    
+    final dayOffset = (today - startDay) * 40.0;
+    final scrollPosition = 80.0 + 8.0 + dayOffset - 100.0; // 100px offset to center better
+    
+    if (scrollPosition > 0 && _horizontalScrollController.hasClients) {
+      _horizontalScrollController.animateTo(
+        scrollPosition.clamp(0.0, _horizontalScrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+      _hasScrolledToToday = true;
+    }
   }
 
   Future<void> _toggleHabitCompletion(Habit habit, DateTime date) async {
@@ -68,6 +144,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         DateTime.now().month + monthDiff,
       );
       _selectedPart = 0; // Reset to Part 1 when changing months
+      _hasScrolledToToday = false; // Allow scrolling to today in new month
+    });
+    // Scroll to today if it's the current month
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToToday();
     });
   }
 
@@ -92,6 +173,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _selectPart(int part) {
     setState(() {
       _selectedPart = part;
+      _hasScrolledToToday = false; // Allow scrolling when part changes
+    });
+    // Scroll to today if it's in the selected part
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToToday();
     });
   }
 
@@ -119,9 +205,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             icon: Icons.settings_outlined,
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                PageTransitions.fadeAndSlide(const ProfileScreen()),
               );
             },
             backgroundColor: colors.surface,
@@ -385,7 +469,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ],
           ),
           child: SingleChildScrollView(
+            controller: _horizontalScrollController,
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             child: SizedBox(
               width: contentWidth,
               child: Column(

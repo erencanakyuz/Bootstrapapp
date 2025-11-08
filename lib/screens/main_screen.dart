@@ -28,7 +28,7 @@ class MainScreen extends ConsumerStatefulWidget {
 class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
   bool _showingThemeSheet = false;
-  late final PageController _pageController = PageController();
+  late final PageController _pageController = PageController(keepPage: true);
 
   @override
   void dispose() {
