@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../services/habit_storage.dart';
 
@@ -15,12 +17,31 @@ class HabitRepository {
   bool _initialized = false;
 
   /// Ensure data is loaded before usage
+  /// Returns default habits if loading fails due to corrupted data
   Future<List<Habit>> ensureInitialized() async {
     if (_initialized) {
       return _cache;
     }
 
-    _cache = await _storage.loadHabits();
+    try {
+      _cache = await _storage.loadHabits();
+    } on StorageException catch (e) {
+      debugPrint('Failed to load habits: $e');
+      // If corrupted, clear and use defaults
+      if (e.message.contains('Corrupted data')) {
+        try {
+          await _storage.clearAllData();
+        } catch (_) {
+          // Ignore clear errors
+        }
+        // Load defaults
+        final defaults = await _storage.loadHabits();
+        _cache = defaults;
+      } else {
+        rethrow; // Rethrow other storage errors
+      }
+    }
+
     _initialized = true;
     _controller.add(List.unmodifiable(_cache));
     return _cache;
@@ -185,26 +206,64 @@ class HabitRepository {
     });
   }
 
+  /// Import habits from JSON string
+  /// Throws [FormatException] if JSON is invalid
+  /// Throws [StorageException] if validation fails
   Future<void> importHabits(String jsonString, {bool merge = true}) async {
-    final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
-    final habitsJson = decoded['habits'] as List<dynamic>? ?? [];
-    final importedHabits = habitsJson
-        .map((json) => Habit.fromJson(Map<String, dynamic>.from(json)))
-        .toList();
+    try {
+      // Parse JSON
+      final decoded = jsonDecode(jsonString);
 
-    if (merge) {
-      final Map<String, Habit> merged = {
-        for (final habit in _cache) habit.id: habit,
-      };
-      for (final habit in importedHabits) {
-        merged[habit.id] = habit;
+      // Validate structure
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid import format: expected object');
       }
-      _cache = merged.values.toList();
-    } else {
-      _cache = importedHabits;
-    }
 
-    await _persist();
+      // Check for habits array
+      if (!decoded.containsKey('habits')) {
+        throw const FormatException('Invalid import format: missing habits array');
+      }
+
+      final habitsJson = decoded['habits'];
+      if (habitsJson is! List) {
+        throw const FormatException('Invalid import format: habits must be an array');
+      }
+
+      // Validate and parse habits
+      final List<Habit> importedHabits = [];
+      for (int i = 0; i < habitsJson.length; i++) {
+        try {
+          final habitJson = habitsJson[i];
+          if (habitJson is! Map<String, dynamic>) {
+            throw FormatException('Invalid habit format at index $i');
+          }
+          final habit = Habit.fromJson(Map<String, dynamic>.from(habitJson));
+          importedHabits.add(habit);
+        } catch (e) {
+          debugPrint('Error parsing habit at index $i: $e');
+          throw FormatException('Invalid habit data at index $i: ${e.toString()}');
+        }
+      }
+
+      // Merge or replace
+      if (merge) {
+        final Map<String, Habit> merged = {
+          for (final habit in _cache) habit.id: habit,
+        };
+        for (final habit in importedHabits) {
+          merged[habit.id] = habit;
+        }
+        _cache = merged.values.toList();
+      } else {
+        _cache = importedHabits;
+      }
+
+      await _persist();
+    } on FormatException {
+      rethrow;
+    } catch (e) {
+      throw StorageException('Failed to import habits: ${e.toString()}');
+    }
   }
 
   Future<void> applyFreezeDay(String habitId) async {
@@ -279,9 +338,35 @@ class HabitRepository {
     };
   }
 
+  /// Persist habits to storage with retry logic
+  /// Throws [StorageException] if all retry attempts fail
   Future<void> _persist() async {
-    await _storage.saveHabits(_cache);
-    _controller.add(List.unmodifiable(_cache));
+    int attempts = 0;
+    Exception? lastError;
+
+    while (attempts < AppConfig.maxSaveRetries) {
+      try {
+        await _storage.saveHabits(_cache);
+        _controller.add(List.unmodifiable(_cache));
+        return; // Success
+      } on StorageException catch (e) {
+        lastError = e;
+        attempts++;
+        debugPrint('Save attempt $attempts failed: $e');
+
+        if (attempts < AppConfig.maxSaveRetries) {
+          // Exponential backoff: 100ms, 200ms, 400ms
+          await Future.delayed(
+            Duration(milliseconds: AppConfig.baseRetryDelayMs * (1 << attempts)),
+          );
+        }
+      }
+    }
+
+    // All retries failed
+    if (lastError != null) {
+      throw lastError;
+    }
   }
 
   void dispose() {

@@ -46,6 +46,7 @@ class AppAnimations {
 
   // Durations
   static const Duration instant = Duration(milliseconds: 50);
+  static const Duration errorDisplay = Duration(milliseconds: 100);
   static const Duration fast = Duration(milliseconds: 120);
   static const Duration normal = Duration(milliseconds: 220);
   static const Duration moderate = Duration(milliseconds: 320);
@@ -58,6 +59,22 @@ class AppAnimations {
   static const Curve decelerate = Curves.easeOut;
   static const Curve accelerate = Curves.easeIn;
   static const Curve spring = Curves.easeOutBack;
+}
+
+/// App behavior constants
+class AppConfig {
+  const AppConfig._();
+
+  // Calendar
+  static const int calendarCenterPage = 1000;
+  static const int daysInMonth = 31;
+
+  // Persistence
+  static const int maxSaveRetries = 3;
+  static const int baseRetryDelayMs = 100;
+
+  // Weekly goals
+  static const int defaultWeeklyTarget = 5;
 }
 
 /// Shadows
