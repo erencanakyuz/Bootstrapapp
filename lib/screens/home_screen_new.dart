@@ -154,10 +154,14 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
           // Progress indicator
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.paddingXXL,
+              padding: EdgeInsets.fromLTRB(
+                MediaQuery.of(context).size.width > 600
+                    ? AppSizes.paddingXXL
+                    : AppSizes.paddingL,
                 0,
-                AppSizes.paddingXXL,
+                MediaQuery.of(context).size.width > 600
+                    ? AppSizes.paddingXXL
+                    : AppSizes.paddingL,
                 AppSizes.paddingL,
               ),
               child: _buildProgressCard(completedToday, colors),
@@ -167,10 +171,14 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
           // Habits section header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.paddingXXL,
+              padding: EdgeInsets.fromLTRB(
+                MediaQuery.of(context).size.width > 600
+                    ? AppSizes.paddingXXL
+                    : AppSizes.paddingL,
                 AppSizes.paddingXL,
-                AppSizes.paddingXXL,
+                MediaQuery.of(context).size.width > 600
+                    ? AppSizes.paddingXXL
+                    : AppSizes.paddingL,
                 AppSizes.paddingL,
               ),
               child: Row(
@@ -203,7 +211,11 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 600
+                    ? AppSizes.paddingXXL
+                    : AppSizes.paddingL,
+              ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {

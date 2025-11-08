@@ -198,7 +198,9 @@ class HabitCard extends StatelessWidget {
   }
 
   Widget _buildMetadataRow(Habit habit, AppColors colors) {
-    return Row(
+    return Wrap(
+      spacing: AppSizes.paddingS,
+      runSpacing: AppSizes.paddingXS,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(
@@ -210,41 +212,48 @@ class HabitCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSizes.radiusM),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               SvgPicture.asset(
                 habit.category.iconAsset,
-                width: 18,
-                height: 18,
+                width: 16,
+                height: 16,
                 colorFilter: ColorFilter.mode(habit.color, BlendMode.srcIn),
               ),
               const SizedBox(width: 4),
               Text(
                 habit.category.label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: colors.textSecondary,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: AppSizes.paddingS),
         Chip(
-          label: Text(habit.timeBlock.label),
+          label: Text(
+            habit.timeBlock.label,
+            style: const TextStyle(fontSize: 11),
+          ),
           avatar: Icon(
             habit.timeBlock.icon,
-            size: 16,
+            size: 14,
             color: colors.textPrimary,
           ),
+          visualDensity: VisualDensity.compact,
         ),
-        const SizedBox(width: AppSizes.paddingS),
         Chip(
-          label: Text(habit.difficulty.label),
+          label: Text(
+            habit.difficulty.label,
+            style: const TextStyle(fontSize: 11),
+          ),
           backgroundColor: habit.difficulty.badgeColor.withValues(alpha: 0.15),
           labelStyle: TextStyle(
             color: habit.difficulty.badgeColor,
             fontWeight: FontWeight.w600,
           ),
+          visualDensity: VisualDensity.compact,
         ),
       ],
     );

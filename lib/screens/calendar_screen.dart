@@ -147,7 +147,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(
+                        MediaQuery.of(context).size.width > 600 ? 20.0 : 12.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -340,8 +342,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildChallengeGrid(AppColors colors, DateTime month, int startDay, int endDay) {
+    final numDays = endDay - startDay + 1;
+    // Calculate minimum width needed: habit name (80) + spacing (8) + days (numDays * 36)
+    final minGridWidth = 80.0 + 8.0 + (numDays * 36.0);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -353,92 +359,90 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Header row with day numbers
-          _buildDayNumbersHeader(colors, month, startDay, endDay),
-          const SizedBox(height: 16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: minGridWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row with day numbers
+              _buildDayNumbersHeader(colors, month, startDay, endDay),
+              const SizedBox(height: 16),
 
-          // Habit rows
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.habits.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildHabitRow(colors, widget.habits[index], month, startDay, endDay);
-            },
+              // Habit rows
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: widget.habits.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return _buildHabitRow(colors, widget.habits[index], month, startDay, endDay);
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildDayNumbersHeader(AppColors colors, DateTime month, int startDay, int endDay) {
     final numDays = endDay - startDay + 1;
+    const boxSize = 36.0; // Fixed size for consistency
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Habit label
+        // Habit label - fixed width
         SizedBox(
-          width: 100,
+          width: 80,
           child: Text(
             'Habit',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
             ),
           ),
         ),
         const SizedBox(width: 8),
-        // Day numbers
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth;
-              final boxSize = (availableWidth / numDays).clamp(28.0, 48.0);
+        // Day numbers - fixed size boxes
+        ...List.generate(
+          numDays,
+          (index) {
+            final day = startDay + index;
+            final isToday = month.year == DateTime.now().year &&
+                month.month == DateTime.now().month &&
+                day == DateTime.now().day;
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  numDays,
-                  (index) {
-                    final day = startDay + index;
-                    final isToday = month.year == DateTime.now().year &&
-                        month.month == DateTime.now().month &&
-                        day == DateTime.now().day;
-
-                    return Container(
-                      width: boxSize,
-                      alignment: Alignment.center,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                        decoration: isToday
-                            ? BoxDecoration(
-                                color: colors.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: colors.primary,
-                                  width: 1.5,
-                                ),
-                              )
-                            : null,
-                        child: Text(
-                          day.toString(),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                            color: isToday ? colors.primary : colors.textTertiary,
-                          ),
+            return Container(
+              width: boxSize,
+              alignment: Alignment.center,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                decoration: isToday
+                    ? BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: colors.primary,
+                          width: 1.5,
                         ),
-                      ),
-                    );
-                  },
+                      )
+                    : null,
+                child: Text(
+                  day.toString(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                    color: isToday ? colors.primary : colors.textTertiary,
+                  ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -446,28 +450,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildHabitRow(AppColors colors, Habit habit, DateTime month, int startDay, int endDay) {
     final numDays = endDay - startDay + 1;
+    const boxSize = 36.0; // Match header size
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Habit title with color indicator
         SizedBox(
-          width: 100,
+          width: 80,
           child: Row(
             children: [
               Container(
-                width: 4,
-                height: 40,
+                width: 3,
+                height: 36,
                 decoration: BoxDecoration(
                   color: habit.color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   habit.title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
                   ),
@@ -479,69 +485,58 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        // Day checkboxes
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth;
-              final boxSize = (availableWidth / numDays).clamp(28.0, 48.0);
+        // Day checkboxes - fixed size matching header
+        ...List.generate(
+          numDays,
+          (index) {
+            final day = startDay + index;
+            final date = DateTime(month.year, month.month, day);
+            final isCompleted = habit.isCompletedOn(date);
+            final isToday = month.year == DateTime.now().year &&
+                month.month == DateTime.now().month &&
+                day == DateTime.now().day;
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  numDays,
-                  (index) {
-                    final day = startDay + index;
-                    final date = DateTime(month.year, month.month, day);
-                    final isCompleted = habit.isCompletedOn(date);
-                    final isToday = month.year == DateTime.now().year &&
-                        month.month == DateTime.now().month &&
-                        day == DateTime.now().day;
-
-                    return GestureDetector(
-                      onTap: () => _toggleHabitCompletion(habit, date),
-                      child: Container(
-                        width: boxSize,
-                        height: 48,
-                        alignment: Alignment.center,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: boxSize * 0.75,
-                          height: boxSize * 0.75,
-                          decoration: BoxDecoration(
-                            color: isCompleted ? habit.color : colors.surface,
-                            border: Border.all(
-                              color: isCompleted
-                                  ? habit.color
-                                  : (isToday ? colors.primary.withValues(alpha: 0.6) : colors.outline),
-                              width: isToday ? 2.5 : 2,
+            return GestureDetector(
+              onTap: () => _toggleHabitCompletion(habit, date),
+              child: Container(
+                width: boxSize,
+                height: 40,
+                alignment: Alignment.center,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: isCompleted ? habit.color : colors.surface,
+                    border: Border.all(
+                      color: isCompleted
+                          ? habit.color
+                          : (isToday ? colors.primary.withValues(alpha: 0.6) : colors.outline),
+                      width: isToday ? 2.5 : 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: isCompleted
+                        ? [
+                            BoxShadow(
+                              color: habit.color.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: isCompleted
-                                ? [
-                                    BoxShadow(
-                                      color: habit.color.withValues(alpha: 0.4),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: isCompleted
-                              ? Icon(
-                                  Icons.check,
-                                  size: boxSize * 0.5,
-                                  color: Colors.white,
-                                )
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
+                          ]
+                        : null,
+                  ),
+                  child: isCompleted
+                      ? const Icon(
+                          Icons.check,
+                          size: 16,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
