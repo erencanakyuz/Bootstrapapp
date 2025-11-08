@@ -11,6 +11,7 @@ import '../widgets/add_habit_modal.dart';
 import '../utils/page_transitions.dart';
 import 'profile_screen.dart';
 import 'habit_detail_screen.dart';
+import 'full_calendar_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
@@ -130,6 +131,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         centerTitle: true,
         actions: [
           ModernIconButton(
+            icon: Icons.calendar_view_month,
+            onPressed: () {
+              final settingsAsync = ref.read(profileSettingsProvider);
+              final hapticsEnabled = settingsAsync.maybeWhen(
+                data: (settings) => settings.hapticsEnabled,
+                orElse: () => true,
+              );
+              if (hapticsEnabled) {
+                HapticFeedback.lightImpact();
+              }
+              Navigator.of(context).push(
+                PageTransitions.fadeAndSlide(
+                  FullCalendarScreen(habits: widget.habits),
+                ),
+              );
+            },
+            backgroundColor: colors.surface,
+            iconColor: colors.primary,
+            size: 40,
+          ),
+          const SizedBox(width: 8),
+          ModernIconButton(
             icon: Icons.settings_outlined,
             onPressed: () {
               Navigator.of(context).push(
@@ -176,6 +199,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'calendar_add_habit',
         onPressed: () async {
           final newHabit = await showModalBottomSheet<Habit>(
             context: context,
