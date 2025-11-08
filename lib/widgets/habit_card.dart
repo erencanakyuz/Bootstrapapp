@@ -32,7 +32,14 @@ class HabitCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(color: colors.outline),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -48,13 +55,40 @@ class HabitCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 56,
+                      height: 56,
+                      padding: const EdgeInsets.all(AppSizes.paddingM),
                       decoration: BoxDecoration(
-                        color: habit.color.withValues(alpha: 0.15),
+                        color: colors.primarySoft,
                         borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       ),
-                      child: Icon(habit.icon, color: habit.color),
+                      child: Stack(
+                        children: [
+                          Align(
+                            child: SvgPicture.asset(
+                              habit.category.iconAsset,
+                              width: 24,
+                              height: 24,
+                              colorFilter: ColorFilter.mode(
+                                colors.textPrimary,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: habit.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(width: AppSizes.paddingL),
                     Expanded(
@@ -101,8 +135,8 @@ class HabitCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: completionRate,
                     minHeight: 6,
-                    backgroundColor: colors.outline.withValues(alpha: 0.2),
-                    valueColor: AlwaysStoppedAnimation(habit.color),
+                    backgroundColor: colors.primarySoft,
+                    valueColor: AlwaysStoppedAnimation(colors.primary),
                   ),
                 ),
                 const SizedBox(height: AppSizes.paddingM),
@@ -147,7 +181,9 @@ class HabitCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isCompleted ? habitColor : Colors.transparent,
         border: Border.all(
-          color: isCompleted ? habitColor : habitColor.withValues(alpha: 0.3),
+          color: isCompleted
+              ? habitColor
+              : habitColor.withValues(alpha: 0.35),
           width: 2,
         ),
         shape: BoxShape.circle,
@@ -208,7 +244,7 @@ class HabitCard extends StatelessWidget {
             vertical: AppSizes.paddingXS,
           ),
           decoration: BoxDecoration(
-            color: colors.primarySoft,
+            color: colors.elevatedSurface,
             borderRadius: BorderRadius.circular(AppSizes.radiusM),
           ),
           child: Row(
@@ -242,15 +278,16 @@ class HabitCard extends StatelessWidget {
             color: colors.textPrimary,
           ),
           visualDensity: VisualDensity.compact,
+          backgroundColor: colors.primarySoft,
         ),
         Chip(
           label: Text(
             habit.difficulty.label,
             style: const TextStyle(fontSize: 11),
           ),
-          backgroundColor: habit.difficulty.badgeColor.withValues(alpha: 0.15),
+          backgroundColor: colors.elevatedSurface,
           labelStyle: TextStyle(
-            color: habit.difficulty.badgeColor,
+            color: colors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
           visualDensity: VisualDensity.compact,

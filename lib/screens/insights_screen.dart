@@ -149,10 +149,6 @@ class InsightsScreen extends StatelessWidget {
                   icon: Icons.emoji_events,
                   title: 'Achievements',
                   subtitle: 'View your earned badges and milestones',
-                  gradient: [
-                    Colors.amber.withValues(alpha: 0.15),
-                    Colors.orange.withValues(alpha: 0.15),
-                  ],
                   iconColor: Colors.amber,
                   onTap: () {
                     Navigator.of(context).push(
@@ -169,10 +165,6 @@ class InsightsScreen extends StatelessWidget {
                   icon: Icons.analytics,
                   title: 'Analytics Dashboard',
                   subtitle: 'Deep dive into your habit statistics',
-                  gradient: [
-                    colors.accentBlue.withValues(alpha: 0.15),
-                    colors.primary.withValues(alpha: 0.15),
-                  ],
                   iconColor: colors.accentBlue,
                   onTap: () {
                     Navigator.of(context).push(
@@ -235,7 +227,6 @@ class InsightsScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required List<Color> gradient,
     required Color iconColor,
     required VoidCallback onTap,
   }) {
@@ -245,17 +236,16 @@ class InsightsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.paddingXL),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: gradient,
-          ),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-          border: Border.all(
-            color: iconColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: AppShadows.small(Colors.black),
+          border: Border.all(color: colors.outline),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -263,7 +253,7 @@ class InsightsScreen extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.2),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppSizes.radiusL),
               ),
               child: Icon(icon, color: iconColor, size: 28),

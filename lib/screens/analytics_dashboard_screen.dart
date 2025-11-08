@@ -116,9 +116,9 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                         color: _colorForCategory(category),
                         value: value,
                         title: '${(value * 100).toStringAsFixed(0)}%',
-                        titleStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        titleStyle: TextStyle(
+                          color: colors.surface,
+                          fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
                       );
@@ -142,19 +142,27 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                     gridData: const FlGridData(show: false),
                     titlesData: const FlTitlesData(show: false),
                     borderData: FlBorderData(show: false),
-                    barGroups: habits
-                        .map(
-                          (habit) => BarChartGroupData(
-                            x: habit.id.hashCode,
-                            barRods: [
-                              BarChartRodData(
-                                toY: habit.bestStreak.toDouble(),
-                                color: habit.color,
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
+                    barGroups: habits.asMap().entries.map(
+                      (entry) {
+                        final index = entry.key;
+                        final habit = entry.value;
+                        final shade = colors.primary.withValues(
+                          alpha: 0.35 + (index % 3) * 0.1,
+                        );
+                        return BarChartGroupData(
+                          x: habit.id.hashCode,
+                          barRods: [
+                            BarChartRodData(
+                              toY: habit.bestStreak.toDouble(),
+                              color: shade,
+                              borderRadius:
+                                  BorderRadius.circular(AppSizes.radiusS),
+                              width: 16,
+                            ),
+                          ],
+                        );
+                      },
+                    ).toList(),
                   ),
                 ),
               ),
@@ -172,11 +180,19 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 (habit) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: habit.color.withValues(alpha: 0.2),
-                    child: Icon(habit.icon, color: habit.color),
+                    backgroundColor: colors.primarySoft,
+                    child: Icon(habit.icon, color: colors.textPrimary),
                   ),
                   title: Text(habit.title),
                   subtitle: Text('${habit.totalCompletions} completions'),
+                  trailing: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: habit.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -290,17 +306,17 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   Color _colorForCategory(HabitCategory category) {
     switch (category) {
       case HabitCategory.health:
-        return const Color(0xFF22C55E);
+        return const Color(0xFF6F8F72);
       case HabitCategory.productivity:
-        return const Color(0xFF3D8BFF);
+        return const Color(0xFF8AA1C1);
       case HabitCategory.learning:
-        return const Color(0xFFF0B429);
+        return const Color(0xFFD6A15D);
       case HabitCategory.mindfulness:
-        return const Color(0xFF9C27B0);
+        return const Color(0xFFB18AB4);
       case HabitCategory.wellness:
-        return const Color(0xFF0EA5E9);
+        return const Color(0xFF7CB7C8);
       case HabitCategory.creativity:
-        return const Color(0xFFF472B6);
+        return const Color(0xFFE999A9);
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../constants/app_constants.dart';
@@ -69,10 +70,18 @@ class HabitDetailScreen extends ConsumerWidget {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: habit.color.withValues(alpha: 0.15),
+                          color: colors.primarySoft,
                           borderRadius: BorderRadius.circular(AppSizes.radiusL),
                         ),
-                        child: Icon(habit.icon, color: habit.color, size: 32),
+                        child: SvgPicture.asset(
+                          habit.category.iconAsset,
+                          width: 28,
+                          height: 28,
+                          colorFilter: ColorFilter.mode(
+                            colors.textPrimary,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: AppSizes.paddingXL),
                       Expanded(

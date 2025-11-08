@@ -144,22 +144,22 @@ class AppColors extends ThemeExtension<AppColors> {
 
 const Map<AppPalette, AppColors> _paletteRegistry = {
   AppPalette.modern: AppColors(
-    primary: Color(0xFF1F2933),
-    primaryDark: Color(0xFF111827),
-    primarySoft: Color(0xFFE2E8F0),
-    accentGreen: Color(0xFF22C55E),
-    accentBlue: Color(0xFF3D8BFF),
-    accentAmber: Color(0xFFF0B429),
-    background: Color(0xFFF7F8FA),
+    primary: Color(0xFFFF385C),
+    primaryDark: Color(0xFFE31C5F),
+    primarySoft: Color(0xFFFFEEF1),
+    accentGreen: Color(0xFF0F8A5F),
+    accentBlue: Color(0xFF5477E5),
+    accentAmber: Color(0xFFF4A261),
+    background: Color(0xFFF9F7F3),
     surface: Color(0xFFFFFFFF),
-    elevatedSurface: Color(0xFFFFFFFF),
-    outline: Color(0xFFE1E4E8),
-    textPrimary: Color(0xFF111827),
-    textSecondary: Color(0xFF4B5563),
-    textTertiary: Color(0xFF6B7280),
-    statusComplete: Color(0xFF22C55E),
-    statusProgress: Color(0xFFFBBF24),
-    statusIncomplete: Color(0xFFEF4444),
+    elevatedSurface: Color(0xFFFEFBF7),
+    outline: Color(0xFFE4DDD4),
+    textPrimary: Color(0xFF1F1B16),
+    textSecondary: Color(0xFF5C5954),
+    textTertiary: Color(0xFF8E8882),
+    statusComplete: Color(0xFF0F8A5F),
+    statusProgress: Color(0xFFF08A24),
+    statusIncomplete: Color(0xFFB42318),
   ),
   AppPalette.minimal: AppColors(
     primary: Color(0xFF212121),
@@ -227,19 +227,24 @@ class AppTextStyles {
 
   TextStyle get headline1 => GoogleFonts.inter(
         fontSize: 32,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+        height: 1.15,
         color: _colors.textPrimary,
       );
 
   TextStyle get headline2 => GoogleFonts.inter(
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+        height: 1.2,
         color: _colors.textPrimary,
       );
 
   TextStyle get headline3 => GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
         color: _colors.textPrimary,
       );
 

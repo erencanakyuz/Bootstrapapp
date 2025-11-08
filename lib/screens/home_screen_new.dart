@@ -287,18 +287,16 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXXL),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.primary.withValues(alpha: 0.15),
-            colors.accentBlue.withValues(alpha: 0.10),
-          ],
-        ),
+        color: colors.elevatedSurface,
         borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: colors.outline),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 32,
+            offset: const Offset(0, 18),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,11 +327,12 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
                 ],
               ),
               Container(
-                width: 64,
-                height: 64,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.15),
+                  color: colors.primarySoft,
                   shape: BoxShape.circle,
+                  border: Border.all(color: colors.outline),
                 ),
                 child: Center(
                   child: Text(
@@ -354,7 +353,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
-              backgroundColor: colors.outline.withValues(alpha: 0.3),
+              backgroundColor: colors.primarySoft,
               valueColor: AlwaysStoppedAnimation(colors.primary),
             ),
           ),
