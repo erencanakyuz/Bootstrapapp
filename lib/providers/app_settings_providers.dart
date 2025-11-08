@@ -8,12 +8,14 @@ class ProfileSettings {
   final bool notificationsEnabled;
   final bool hapticsEnabled;
   final int avatarSeed;
+  final bool allowPastDatesBeforeCreation;
 
   const ProfileSettings({
     required this.name,
     required this.notificationsEnabled,
     required this.hapticsEnabled,
     required this.avatarSeed,
+    required this.allowPastDatesBeforeCreation,
   });
 
   ProfileSettings copyWith({
@@ -21,12 +23,14 @@ class ProfileSettings {
     bool? notificationsEnabled,
     bool? hapticsEnabled,
     int? avatarSeed,
+    bool? allowPastDatesBeforeCreation,
   }) {
     return ProfileSettings(
       name: name ?? this.name,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       avatarSeed: avatarSeed ?? this.avatarSeed,
+      allowPastDatesBeforeCreation: allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
     );
   }
 }
@@ -39,11 +43,13 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final notifications = await service.notificationsEnabled();
     final haptics = await service.hapticsEnabled();
     final avatar = await service.avatarSeed();
+    final allowPastDates = await service.allowPastDatesBeforeCreation();
     return ProfileSettings(
       name: name,
       notificationsEnabled: notifications,
       hapticsEnabled: haptics,
       avatarSeed: avatar,
+      allowPastDatesBeforeCreation: allowPastDates,
     );
   }
 
@@ -74,6 +80,14 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final randomSeed = DateTime.now().millisecondsSinceEpoch % 1000;
     await service.setAvatarSeed(randomSeed);
     state = state.whenData((settings) => settings.copyWith(avatarSeed: randomSeed));
+  }
+
+  Future<void> toggleAllowPastDatesBeforeCreation(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setAllowPastDatesBeforeCreation(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(allowPastDatesBeforeCreation: enabled),
+    );
   }
 }
 

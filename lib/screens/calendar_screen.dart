@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/habit.dart';
+import '../providers/app_settings_providers.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
 import 'profile_screen.dart';
 
-class CalendarScreen extends StatefulWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onUpdateHabit;
   final Future<void> Function()? onRefresh;
@@ -20,10 +22,10 @@ class CalendarScreen extends StatefulWidget {
   });
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedMonth = DateTime.now();
   final PageController _pageController = PageController(initialPage: 1000);
   int _selectedPart = 0; // 0 = Part 1 (1-10), 1 = Part 2 (11-20), 2 = Part 3 (21-31)
@@ -34,9 +36,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.dispose();
   }
 
-  void _toggleHabitCompletion(Habit habit, DateTime date) {
-    final updatedHabit = habit.toggleCompletion(date);
-    widget.onUpdateHabit(updatedHabit);
+  Future<void> _toggleHabitCompletion(Habit habit, DateTime date) async {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final allowPastDates = settingsAsync.maybeWhen(
+      data: (settings) => settings.allowPastDatesBeforeCreation,
+      orElse: () => false,
+    );
+    final updatedHabit = habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates);
+    await widget.onUpdateHabit(updatedHabit);
   }
 
   void _previousMonth() {
@@ -149,9 +156,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                        vertical: 12,
+                      padding: EdgeInsets.only(
+                        left: horizontalPadding,
+                        right: horizontalPadding,
+                        top: 12,
+                        bottom: 12 + MediaQuery.of(context).padding.bottom,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

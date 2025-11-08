@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
+import '../providers/habit_providers.dart';
 import '../services/habit_storage.dart';
 
 class HabitRepository {
@@ -65,7 +66,12 @@ class HabitRepository {
     }
   }
 
-  Future<void> upsertHabit(Habit habit) async {
+  Future<void> upsertHabit(Habit habit, {bool allowPastDatesBeforeCreation = false}) async {
+    // Validate basic fields first
+    _validateHabitFields(habit, allowPastDatesBeforeCreation: allowPastDatesBeforeCreation);
+    // Validate dependencies before upserting
+    _validateDependencies(habit);
+    
     final index = _cache.indexWhere((h) => h.id == habit.id);
     if (index == -1) {
       _cache = [..._cache, habit];
@@ -78,13 +84,47 @@ class HabitRepository {
   }
 
   Future<void> addHabits(List<Habit> habits) async {
+    // Check for duplicate IDs within the new habits list
+    final Set<String> newIds = {};
+    for (final habit in habits) {
+      if (newIds.contains(habit.id)) {
+        throw HabitValidationException('Duplicate habit ID found: ${habit.id}. Each habit must have a unique ID.');
+      }
+      newIds.add(habit.id);
+    }
+
+    // Check for duplicate IDs with existing habits
+    final Set<String> existingIds = _cache.map((h) => h.id).toSet();
+    for (final habit in habits) {
+      if (existingIds.contains(habit.id)) {
+        throw HabitValidationException('Habit with ID ${habit.id} already exists. Use updateHabit instead.');
+      }
+    }
+
+    // Validate all new habits before adding
+    for (final habit in habits) {
+      _validateHabitFields(habit);
+      _validateDependencies(habit);
+    }
+
     _cache = [..._cache, ...habits];
     await _persist();
   }
 
   Future<void> deleteHabit(String habitId, {bool hardDelete = false}) async {
     if (hardDelete) {
-      _cache = _cache.where((habit) => habit.id != habitId).toList();
+      // Remove broken dependencies from all habits when hard deleting
+      _cache = _cache
+          .where((habit) => habit.id != habitId)
+          .map((habit) {
+            // Remove deleted habit ID from dependencyIds
+            if (habit.dependencyIds.contains(habitId)) {
+              final cleanedDeps = habit.dependencyIds.where((id) => id != habitId).toList();
+              return habit.copyWith(dependencyIds: cleanedDeps);
+            }
+            return habit;
+          })
+          .toList();
     } else {
       _cache = _cache
           .map((habit) => habit.id == habitId ? habit.archive() : habit)
@@ -152,6 +192,112 @@ class HabitRepository {
       }
     }
     return true;
+  }
+
+  /// Check if adding/updating a habit would create a circular dependency
+  /// Returns true if circular dependency detected, false otherwise
+  bool _hasCircularDependency(Habit habit, Set<String> visited) {
+    // Self-reference check
+    if (habit.dependencyIds.contains(habit.id)) {
+      return true;
+    }
+
+    // Check if we've already visited this habit (circular path detected)
+    if (visited.contains(habit.id)) {
+      return true;
+    }
+
+    // Add current habit to visited set
+    visited.add(habit.id);
+
+    // Recursively check all dependencies
+    for (final dependencyId in habit.dependencyIds) {
+      // Skip if dependency is the habit itself (already checked above)
+      if (dependencyId == habit.id) {
+        continue;
+      }
+      
+      final dependency = byId(dependencyId);
+      if (dependency != null) {
+        if (_hasCircularDependency(dependency, visited)) {
+          return true;
+        }
+      }
+    }
+
+    // Remove from visited when backtracking (for other paths)
+    visited.remove(habit.id);
+    return false;
+  }
+
+  /// Validate habit dependencies before upsert
+  /// Throws [HabitValidationException] if validation fails
+  void _validateDependencies(Habit habit) {
+    // Check for self-reference
+    if (habit.dependencyIds.contains(habit.id)) {
+      throw HabitValidationException('A habit cannot depend on itself.');
+    }
+
+    // Check for circular dependencies
+    if (_hasCircularDependency(habit, <String>{})) {
+      throw HabitValidationException('Circular dependency detected. This would create an infinite loop.');
+    }
+
+    // Check that all dependency IDs exist
+    for (final dependencyId in habit.dependencyIds) {
+      if (byId(dependencyId) == null) {
+        throw HabitValidationException('Dependency habit not found: $dependencyId');
+      }
+    }
+  }
+
+  /// Validate habit basic fields
+  /// Throws [HabitValidationException] if validation fails
+  /// [allowPastDatesBeforeCreation] if true, skips validation for dates before createdAt
+  void _validateHabitFields(Habit habit, {bool allowPastDatesBeforeCreation = false}) {
+    // Title cannot be empty or whitespace
+    if (habit.title.trim().isEmpty) {
+      throw HabitValidationException('Habit title cannot be empty.');
+    }
+
+    // Title length validation (prevent extremely long titles)
+    if (habit.title.length > 200) {
+      throw HabitValidationException('Habit title cannot exceed 200 characters.');
+    }
+
+    // Validate targets are non-negative
+    if (habit.weeklyTarget < 0) {
+      throw HabitValidationException('Weekly target cannot be negative.');
+    }
+    if (habit.monthlyTarget < 0) {
+      throw HabitValidationException('Monthly target cannot be negative.');
+    }
+
+    // Validate freezeUsesThisWeek is non-negative
+    if (habit.freezeUsesThisWeek < 0) {
+      throw HabitValidationException('Freeze uses cannot be negative.');
+    }
+
+    // Validate completedDates don't contain dates before createdAt (unless allowed by setting)
+    if (!allowPastDatesBeforeCreation) {
+      final normalizedCreatedAt = DateTime(
+        habit.createdAt.year,
+        habit.createdAt.month,
+        habit.createdAt.day,
+      );
+      for (final completedDate in habit.completedDates) {
+        final normalized = DateTime(
+          completedDate.year,
+          completedDate.month,
+          completedDate.day,
+        );
+        if (normalized.isBefore(normalizedCreatedAt)) {
+          throw HabitValidationException(
+            'Completed date cannot be before habit creation date.'
+          );
+        }
+      }
+    }
   }
 
   List<Habit> get archivedHabits =>
@@ -232,6 +378,8 @@ class HabitRepository {
 
       // Validate and parse habits
       final List<Habit> importedHabits = [];
+      final Set<String> importedIds = {}; // Track IDs to detect duplicates
+      
       for (int i = 0; i < habitsJson.length; i++) {
         try {
           final habitJson = habitsJson[i];
@@ -239,10 +387,68 @@ class HabitRepository {
             throw FormatException('Invalid habit format at index $i');
           }
           final habit = Habit.fromJson(Map<String, dynamic>.from(habitJson));
+          
+          // Validate basic fields
+          _validateHabitFields(habit);
+          
+          // Check for duplicate IDs within imported habits
+          if (importedIds.contains(habit.id)) {
+            throw FormatException('Duplicate habit ID found at index $i: ${habit.id}');
+          }
+          importedIds.add(habit.id);
+          
           importedHabits.add(habit);
         } catch (e) {
           debugPrint('Error parsing habit at index $i: $e');
+          if (e is HabitValidationException) {
+            throw FormatException('Invalid habit data at index $i: ${e.toString()}');
+          }
           throw FormatException('Invalid habit data at index $i: ${e.toString()}');
+        }
+      }
+
+      // Validate dependencies for imported habits
+      // First, collect all IDs that will exist after import
+      final Set<String> allIdsAfterImport = {
+        ..._cache.map((h) => h.id),
+        ...importedIds,
+      };
+      
+      // Create temporary map for dependency checking
+      final Map<String, Habit> tempHabitsMap = {
+        for (final habit in _cache) habit.id: habit,
+        for (final habit in importedHabits) habit.id: habit,
+      };
+      
+      // Helper function to check circular dependency in temp map
+      bool hasCircularDependencyInTemp(Habit habit, Set<String> visited) {
+        if (habit.dependencyIds.contains(habit.id)) return true;
+        if (visited.contains(habit.id)) return true;
+        visited.add(habit.id);
+        for (final dependencyId in habit.dependencyIds) {
+          final dependency = tempHabitsMap[dependencyId];
+          if (dependency != null && hasCircularDependencyInTemp(dependency, visited)) {
+            return true;
+          }
+        }
+        visited.remove(habit.id);
+        return false;
+      }
+      
+      // Check dependencies for each imported habit
+      for (final habit in importedHabits) {
+        for (final dependencyId in habit.dependencyIds) {
+          if (!allIdsAfterImport.contains(dependencyId)) {
+            throw HabitValidationException(
+              'Habit "${habit.title}" depends on habit ID "$dependencyId" which does not exist in the import.'
+            );
+          }
+        }
+        // Validate circular dependencies for imported habits
+        if (hasCircularDependencyInTemp(habit, <String>{})) {
+          throw HabitValidationException(
+            'Circular dependency detected in imported habit "${habit.title}".'
+          );
         }
       }
 
@@ -352,7 +558,7 @@ class HabitRepository {
     
     // Update queue to include error handling
     // Allow subsequent operations even if this one fails
-    _persistQueue = operation.catchError((_, __) {});
+    _persistQueue = operation.catchError((_, _) {});
     
     return operation;
   }

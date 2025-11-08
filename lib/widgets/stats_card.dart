@@ -23,14 +23,17 @@ class StatsCard extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColors>()!;
 
     return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingXL),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.paddingM,
+        vertical: AppSizes.paddingS,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(color: colors.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -38,46 +41,46 @@ class StatsCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSizes.paddingM),
-                decoration: BoxDecoration(
-                  color: colors.primarySoft,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                ),
-                child: Icon(icon, color: color, size: AppSizes.iconL),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(AppSizes.paddingXS),
+            decoration: BoxDecoration(
+              color: colors.primarySoft,
+              borderRadius: BorderRadius.circular(AppSizes.radiusM),
+            ),
+            child: Icon(icon, color: color, size: AppSizes.iconS),
           ),
-          const Spacer(),
+          const SizedBox(height: AppSizes.paddingXS),
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: colors.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 1),
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 11,
               color: colors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 1),
             Text(
               subtitle!,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 9,
                 color: colors.textTertiary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ],

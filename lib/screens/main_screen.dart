@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
+import '../services/habit_storage.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
 import '../widgets/theme_preview_sheet.dart';
@@ -142,6 +143,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildErrorState(AppColors colors, Object error) {
+    // Sanitize error message to prevent exposing stack traces or internal details
+    String errorMessage = 'Something went wrong';
+    if (error is HabitValidationException || error is StorageException) {
+      errorMessage = error.toString();
+    } else {
+      // For other errors, show generic message to avoid exposing internal details
+      errorMessage = 'An unexpected error occurred. Please try again.';
+    }
+    
     return Scaffold(
       backgroundColor: colors.background,
       body: Center(
@@ -162,7 +172,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                '$error',
+                errorMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: colors.textSecondary),
               ),

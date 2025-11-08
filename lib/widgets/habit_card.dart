@@ -35,7 +35,7 @@ class HabitCard extends StatelessWidget {
         border: Border.all(color: colors.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -51,6 +51,7 @@ class HabitCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.paddingXL),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
@@ -90,6 +91,7 @@ class HabitCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             habit.title,
@@ -206,6 +208,7 @@ class HabitCard extends StatelessWidget {
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,

@@ -126,7 +126,7 @@ class InsightsScreen extends StatelessWidget {
                 crossAxisCount: statsColumns,
                 crossAxisSpacing: AppSizes.paddingL,
                 mainAxisSpacing: AppSizes.paddingL,
-                childAspectRatio: statsColumns >= 3 ? 1.35 : 1.05,
+                childAspectRatio: statsColumns >= 3 ? 1.5 : 1.15,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) => statsCards[index],
@@ -139,7 +139,7 @@ class InsightsScreen extends StatelessWidget {
               horizontalPadding,
               AppSizes.paddingXXL,
               horizontalPadding,
-              AppSizes.paddingL,
+              AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
@@ -210,7 +210,7 @@ class InsightsScreen extends StatelessWidget {
               horizontalPadding,
               AppSizes.paddingXXXL,
               horizontalPadding,
-              AppSizes.paddingXXXL,
+              AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
             ),
             sliver: SliverToBoxAdapter(
               child: _buildMotivationalCard(colors),
@@ -241,7 +241,7 @@ class InsightsScreen extends StatelessWidget {
           border: Border.all(color: colors.outline),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 24,
               offset: const Offset(0, 12),
             ),

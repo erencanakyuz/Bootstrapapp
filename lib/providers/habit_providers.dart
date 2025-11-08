@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../repositories/habit_repository.dart';
 import '../services/habit_storage.dart';
+import 'app_settings_providers.dart';
 import 'notification_provider.dart';
 
 /// Exception thrown when habit validation fails
@@ -49,6 +50,13 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
       final repository = ref.read(habitRepositoryProvider);
       await repository.upsertHabit(habit);
       await _rescheduleReminders(habit);
+    } on HabitValidationException catch (e) {
+      // Validation errors are shown in UI but don't change state
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     } on StorageException catch (e) {
       // Set error state for UI to display
       state = AsyncError(e, StackTrace.current);
@@ -63,8 +71,23 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   Future<void> updateHabit(Habit habit) async {
     try {
       final repository = ref.read(habitRepositoryProvider);
-      await repository.upsertHabit(habit);
+      
+      // Get setting for allowing past dates before creation
+      final settingsAsync = ref.read(profileSettingsProvider);
+      final allowPastDates = settingsAsync.maybeWhen(
+        data: (settings) => settings.allowPastDatesBeforeCreation,
+        orElse: () => false,
+      );
+      
+      await repository.upsertHabit(habit, allowPastDatesBeforeCreation: allowPastDates);
       await _rescheduleReminders(habit);
+    } on HabitValidationException catch (e) {
+      // Validation errors are shown in UI but don't change state
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     } on StorageException catch (e) {
       state = AsyncError(e, StackTrace.current);
       await Future.delayed(AppAnimations.errorDisplay);
@@ -75,29 +98,62 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> deleteHabit(String habitId) async {
-    final repository = ref.read(habitRepositoryProvider);
-    final habit = repository.byId(habitId);
-    await repository.deleteHabit(habitId);
-    if (habit != null) {
-      await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      // Use hardDelete: true to actually delete, not archive
+      await repository.deleteHabit(habitId, hardDelete: true);
+      if (habit != null) {
+        await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+      }
+      // Update state after deletion
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      // Set error state for UI to display
+      state = AsyncError(e, StackTrace.current);
+      // Restore previous state after delay
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     }
   }
 
   Future<void> archiveHabit(String habitId) async {
-    final repository = ref.read(habitRepositoryProvider);
-    final habit = repository.byId(habitId);
-    await repository.deleteHabit(habitId, hardDelete: false);
-    if (habit != null) {
-      await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      await repository.deleteHabit(habitId, hardDelete: false);
+      if (habit != null) {
+        await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+      }
+      // Update state after archiving
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     }
   }
 
   Future<void> restoreHabit(String habitId) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.restoreHabit(habitId);
-    final habit = repository.byId(habitId);
-    if (habit != null) {
-      await _rescheduleReminders(habit);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.restoreHabit(habitId);
+      final habit = repository.byId(habitId);
+      if (habit != null) {
+        await _rescheduleReminders(habit);
+      }
+      // Update state after restoration
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     }
   }
 
@@ -112,7 +168,14 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         throw HabitValidationException('Complete prerequisite habits first.');
       }
 
-      await repository.upsertHabit(habit.toggleCompletion(date));
+      // Get setting for allowing past dates before creation
+      final settingsAsync = ref.read(profileSettingsProvider);
+      final allowPastDates = settingsAsync.maybeWhen(
+        data: (settings) => settings.allowPastDatesBeforeCreation,
+        orElse: () => false,
+      );
+
+      await repository.upsertHabit(habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates));
     } on HabitValidationException catch (e) {
       // Validation errors are shown in UI but don't change state
       state = AsyncError(e, StackTrace.current);
@@ -130,8 +193,24 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> importHabits(String jsonString, {bool merge = true}) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.importHabits(jsonString, merge: merge);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.importHabits(jsonString, merge: merge);
+      // Update state after import
+      state = AsyncData(repository.current);
+    } on FormatException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<String> exportHabits({bool includeArchived = true}) async {
@@ -140,21 +219,55 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> applyFreezeDay(String habitId) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.applyFreezeDay(habitId);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.applyFreezeDay(habitId);
+      // Update state after freeze day application
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<void> upsertNote({
     required String habitId,
     required HabitNote note,
   }) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.upsertNote(habitId: habitId, note: note);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.upsertNote(habitId: habitId, note: note);
+      // Update state after note upsert
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<void> clearAll() async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.clearAll();
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      // Cancel all notifications before clearing data
+      // This prevents orphaned notifications after data is cleared
+      final notifier = ref.read(notificationServiceProvider);
+      await notifier.cancelAll();
+      await repository.clearAll();
+      // Update state after clearing
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<void> _rescheduleReminders(Habit habit) async {

@@ -231,9 +231,11 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
               ),
             ),
 
-          // Bottom spacing
-          const SliverToBoxAdapter(
-            child: SizedBox(height: AppSizes.paddingXXXL * 3),
+          // Bottom spacing with safe area padding
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: AppSizes.paddingXXXL * 3 + MediaQuery.of(context).padding.bottom,
+            ),
           ),
         ],
       ),
@@ -292,7 +294,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
         border: Border.all(color: colors.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 32,
             offset: const Offset(0, 18),
           ),
