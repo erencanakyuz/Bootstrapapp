@@ -3,6 +3,8 @@ import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../widgets/stats_card.dart';
+import 'achievements_screen.dart';
+import 'analytics_dashboard_screen.dart';
 
 class InsightsScreen extends StatelessWidget {
   final List<Habit> habits;
@@ -126,6 +128,49 @@ class InsightsScreen extends StatelessWidget {
 
                 const SizedBox(height: AppSizes.paddingXXL),
 
+                // Action cards for Achievements and Analytics
+                _buildActionCard(
+                  context,
+                  colors,
+                  icon: Icons.emoji_events,
+                  title: 'Achievements',
+                  subtitle: 'View your earned badges and milestones',
+                  gradient: [
+                    Colors.amber.withValues(alpha: 0.15),
+                    Colors.orange.withValues(alpha: 0.15),
+                  ],
+                  iconColor: Colors.amber,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AchievementsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSizes.paddingL),
+                _buildActionCard(
+                  context,
+                  colors,
+                  icon: Icons.analytics,
+                  title: 'Analytics Dashboard',
+                  subtitle: 'Deep dive into your habit statistics',
+                  gradient: [
+                    colors.accentBlue.withValues(alpha: 0.15),
+                    colors.primary.withValues(alpha: 0.15),
+                  ],
+                  iconColor: colors.accentBlue,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AnalyticsDashboardScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: AppSizes.paddingXXL),
+
                 // Habit breakdown
                 Text(
                   'Habit Performance',
@@ -147,6 +192,80 @@ class InsightsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context,
+    AppColors colors, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Color> gradient,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.paddingXL),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
+          ),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+          border: Border.all(
+            color: iconColor.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: AppShadows.small(Colors.black),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppSizes.radiusL),
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
+            ),
+            const SizedBox(width: AppSizes.paddingL),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: colors.textTertiary,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
