@@ -8,18 +8,12 @@ import '../providers/habit_providers.dart';
 import '../services/habit_storage.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
-import '../widgets/theme_preview_sheet.dart';
 import 'calendar_screen.dart';
 import 'home_screen_new.dart';
 import 'insights_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
-  final ThemeController themeController;
-
-  const MainScreen({
-    super.key,
-    required this.themeController,
-  });
+  const MainScreen({super.key});
 
   @override
   ConsumerState<MainScreen> createState() => _MainScreenState();
@@ -27,7 +21,6 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
-  bool _showingThemeSheet = false;
 
   @override
   void dispose() {
@@ -54,7 +47,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           onAddHabit: _handleAddHabit,
           onUpdateHabit: _handleUpdateHabit,
           onDeleteHabit: _handleDeleteHabit,
-          themeController: widget.themeController,
         ),
       ),
       _KeepAliveWrapper(
@@ -69,23 +61,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ];
 
     return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
-          if (_showingThemeSheet) ...[
-            GestureDetector(
-              onTap: () => setState(() => _showingThemeSheet = false),
-              child: Container(color: Colors.black.withValues(alpha: 0.25)),
-            ),
-            ThemePreviewSheet(
-              controller: widget.themeController,
-              onClose: () => setState(() => _showingThemeSheet = false),
-            ),
-          ],
-        ],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: screens,
       ),
       bottomNavigationBar: _buildBottomNavigation(colors),
     );

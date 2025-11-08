@@ -1,10 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../theme/app_theme.dart';
-
 class AppSettingsService {
   static const _onboardingKey = 'onboarding_complete';
-  static const _themeKey = 'theme_palette';
   static const _notificationsKey = 'notifications_enabled';
   static const _hapticsKey = 'haptics_enabled';
   static const _userNameKey = 'user_name';
@@ -21,21 +18,6 @@ class AppSettingsService {
   Future<void> setOnboardingComplete(bool value) async {
     final prefs = await _prefs;
     await prefs.setBool(_onboardingKey, value);
-  }
-
-  Future<AppPalette> loadPalette({AppPalette fallback = AppPalette.modern}) async {
-    final prefs = await _prefs;
-    final paletteName = prefs.getString(_themeKey);
-    if (paletteName == null) return fallback;
-    return AppPalette.values.firstWhere(
-      (palette) => palette.name == paletteName,
-      orElse: () => fallback,
-    );
-  }
-
-  Future<void> persistPalette(AppPalette palette) async {
-    final prefs = await _prefs;
-    await prefs.setString(_themeKey, palette.name);
   }
 
   Future<bool> notificationsEnabled() async {

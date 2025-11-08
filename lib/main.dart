@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers/app_settings_providers.dart';
-import 'providers/theme_provider.dart';
 import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,44 +26,42 @@ class BootstrapApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeController = ref.watch(themeControllerProvider);
     final onboardingState = ref.watch(onboardingCompletedProvider);
+    
+    // Always use modern (light) theme - dark theme reserved for future use
+    final theme = buildAppTheme(AppPalette.modern);
+    final colors = colorsFor(AppPalette.modern);
 
-    return AnimatedBuilder(
-      animation: themeController,
-      builder: (context, child) {
-        return onboardingState.when(
-          loading: () => MaterialApp(
-            title: 'Bootstrap Your Life',
-            debugShowCheckedModeBanner: false,
-            theme: themeController.theme,
-            home: Scaffold(
-              backgroundColor: themeController.colors.background,
-              body: Center(
-                child: CircularProgressIndicator(
-                  color: themeController.colors.primary,
-                ),
-              ),
+    return onboardingState.when(
+      loading: () => MaterialApp(
+        title: 'Bootstrap Your Life',
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        home: Scaffold(
+          backgroundColor: colors.background,
+          body: Center(
+            child: CircularProgressIndicator(
+              color: colors.primary,
             ),
           ),
-          error: (error, _) => MaterialApp(
-            title: 'Bootstrap Your Life',
-            debugShowCheckedModeBanner: false,
-            theme: themeController.theme,
-            home: Scaffold(
-              body: Center(child: Text('Error: $error')),
-            ),
-          ),
-          data: (completed) => MaterialApp(
-            title: 'Bootstrap Your Life',
-            debugShowCheckedModeBanner: false,
-            theme: themeController.theme,
-            home: completed
-                ? MainScreen(themeController: themeController)
-                : const OnboardingScreen(),
-          ),
-        );
-      },
+        ),
+      ),
+      error: (error, _) => MaterialApp(
+        title: 'Bootstrap Your Life',
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        home: Scaffold(
+          body: Center(child: Text('Error: $error')),
+        ),
+      ),
+      data: (completed) => MaterialApp(
+        title: 'Bootstrap Your Life',
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        home: completed
+            ? const MainScreen()
+            : const OnboardingScreen(),
+      ),
     );
   }
 }
