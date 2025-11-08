@@ -355,7 +355,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     int endDay,
   ) {
     final numDays = endDay - startDay + 1;
-    final minGridWidth = 80.0 + 8.0 + (numDays * 36.0);
+    final minGridWidth = 80.0 + 8.0 + (numDays * (36.0 + 4.0));
 
     return LayoutBuilder(
       builder: (context, constraints) {
