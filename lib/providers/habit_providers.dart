@@ -3,21 +3,12 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
+import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
 import '../repositories/habit_repository.dart';
 import '../services/habit_storage.dart';
 import 'app_settings_providers.dart';
 import 'notification_provider.dart';
-
-/// Exception thrown when habit validation fails
-class HabitValidationException implements Exception {
-  final String message;
-
-  HabitValidationException(this.message);
-
-  @override
-  String toString() => message;
-}
 
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {
   final repository = HabitRepository(HabitStorage());
@@ -175,7 +166,12 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         orElse: () => false,
       );
 
-      await repository.upsertHabit(habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates));
+      final updatedHabit =
+          habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates);
+      await repository.upsertHabit(
+        updatedHabit,
+        allowPastDatesBeforeCreation: allowPastDates,
+      );
     } on HabitValidationException catch (e) {
       // Validation errors are shown in UI but don't change state
       state = AsyncError(e, StackTrace.current);
@@ -199,6 +195,12 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
       // Update state after import
       state = AsyncData(repository.current);
     } on FormatException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    } on HabitValidationException catch (e) {
       state = AsyncError(e, StackTrace.current);
       await Future.delayed(AppAnimations.errorDisplay);
       final repository = ref.read(habitRepositoryProvider);

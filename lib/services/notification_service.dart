@@ -18,6 +18,8 @@ class NotificationService {
   bool _initialized = false;
   // Store scheduled dates for pending notifications (notificationId -> scheduledDate)
   final Map<int, DateTime> _scheduledDates = {};
+  // Track if we've already logged exact alarms warning (prevent log spam)
+  bool _exactAlarmsWarningLogged = false;
 
   bool get _isPlatformSupported {
     if (kIsWeb) return false;
@@ -152,7 +154,11 @@ class NotificationService {
           if (canScheduleExactAlarms == false) {
             // Fallback to inexact alarms if exact alarms not permitted
             scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
-            debugPrint('Exact alarms not permitted, using inexact alarms');
+            // Only log once to prevent spam
+            if (!_exactAlarmsWarningLogged) {
+              debugPrint('Exact alarms not permitted, using inexact alarms');
+              _exactAlarmsWarningLogged = true;
+            }
           }
         }
       }

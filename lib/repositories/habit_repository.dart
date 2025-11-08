@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
+import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
-import '../providers/habit_providers.dart';
 import '../services/habit_storage.dart';
 
 class HabitRepository {
@@ -466,6 +466,8 @@ class HabitRepository {
       }
 
       await _persist();
+    } on HabitValidationException catch (e) {
+      throw FormatException(e.toString());
     } on FormatException {
       rethrow;
     } catch (e) {

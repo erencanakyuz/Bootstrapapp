@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
+import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../services/habit_storage.dart';

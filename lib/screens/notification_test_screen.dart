@@ -21,29 +21,57 @@ class NotificationTestScreen extends ConsumerStatefulWidget {
   ConsumerState<NotificationTestScreen> createState() => _NotificationTestScreenState();
 }
 
-class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen> {
+class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen> with WidgetsBindingObserver {
   final NotificationService _notificationService = NotificationService();
   List<PendingNotificationRequest> _pendingNotifications = [];
   String? _lastResult;
   bool _isLoading = false;
   Timer? _refreshTimer;
+  DateTime _lastUpdateTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadPendingNotifications();
-    // Auto-refresh every second to update countdown
-    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() {}); // Trigger rebuild for countdown
+    // Auto-refresh every 2 seconds to update countdown (reduced frequency for performance)
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted && _pendingNotifications.isNotEmpty) {
+        // Only update if there are pending notifications and screen is visible
+        final now = DateTime.now();
+        if (now.difference(_lastUpdateTime).inSeconds >= 2) {
+          setState(() {
+            _lastUpdateTime = now;
+          });
+        }
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Pause timer when app is in background to save resources
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _refreshTimer?.cancel();
+    } else if (state == AppLifecycleState.resumed && _refreshTimer == null) {
+      _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+        if (mounted && _pendingNotifications.isNotEmpty) {
+          final now = DateTime.now();
+          if (now.difference(_lastUpdateTime).inSeconds >= 2) {
+            setState(() {
+              _lastUpdateTime = now;
+            });
+          }
+        }
+      });
+    }
   }
 
   Future<void> _loadPendingNotifications() async {

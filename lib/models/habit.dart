@@ -542,10 +542,7 @@ class Habit {
       'id': id,
       'title': title,
       'description': description,
-      'color': ((color.a * 255.0).round() << 24) |
-          ((color.r * 255.0).round() << 16) |
-          ((color.g * 255.0).round() << 8) |
-          (color.b * 255.0).round(),
+      'color': color.value,
       'icon': icon.codePoint,
       'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
       'createdAt': createdAt.toIso8601String(),
