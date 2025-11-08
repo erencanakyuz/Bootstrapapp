@@ -25,19 +25,16 @@ class StatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXL),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: 0.15),
-            color.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+        border: Border.all(color: colors.outline),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +45,7 @@ class StatsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSizes.paddingM),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
+                  color: colors.primarySoft,
                   borderRadius: BorderRadius.circular(AppSizes.radiusM),
                 ),
                 child: Icon(icon, color: color, size: AppSizes.iconL),

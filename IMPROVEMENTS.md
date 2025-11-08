@@ -217,6 +217,13 @@ Service Layer (Storage)
   
   These pair well with the new helper: use `responsive_framework` at the `MaterialApp.builder` level for coarse breakpoints, then lean on the in-house extensions for fine grained per-widget adjustments.
 
+### Visual refresh (January 2026)
+
+- **Palette upgrade**: `AppPalette.modern` now mirrors the Airbnb-inspired suite (warm neutrals, FF385C accent) and refined typography (tighter tracking for headlines). See `lib/theme/app_theme.dart`.
+- **Card polish**: Habit cards, stats tiles, progress cards, and Insights action cards traded saturated gradients for neutral surfaces, subtle borders, and soft elevation. Key files: `lib/widgets/habit_card.dart`, `lib/widgets/stats_card.dart`, `lib/screens/home_screen_new.dart`, `lib/screens/insights_screen.dart`.
+- **Analytics coherence**: Dashboard charts now use a muted category palette and consistent bar styling so graphs no longer inherit random habit colors (`lib/screens/analytics_dashboard_screen.dart`).
+- These updates only touch the default palette; alternate themes remain optional but inherit the improved tokens automatically.
+
 ### Exception Hierarchy
 ```
 Exception
