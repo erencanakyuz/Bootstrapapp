@@ -501,9 +501,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           borderRadius: BorderRadius.circular(8),
           splashColor: colors.primary.withValues(alpha: 0.1),
           highlightColor: colors.primary.withValues(alpha: 0.05),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
+          child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
               color: isSelected
@@ -524,26 +522,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 150),
-                  curve: Curves.easeOut,
+                Text(
+                  'Part ${part + 1}',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isSelected ? Colors.white : colors.textTertiary,
                   ),
-                  child: Text('Part ${part + 1}'),
                 ),
                 const SizedBox(height: 2),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 150),
-                  curve: Curves.easeOut,
+                Text(
+                  label,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: isSelected ? Colors.white : colors.textPrimary,
                   ),
-                  child: Text(label),
                 ),
               ],
             ),
