@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../constants/habit_icons.dart';
+
 const _uuid = Uuid();
 
 /// Distinct categories that power analytics, filters, and custom icons
@@ -500,7 +502,7 @@ class Habit {
       title: json['title'],
       description: json['description'],
       color: Color((json['color'] as int?) ?? 0xFF3D8BFF),
-      icon: IconData(json['icon'] ?? Icons.emoji_events.codePoint, fontFamily: 'MaterialIcons'),
+      icon: HabitIconLibrary.resolve(json['icon'] as int?),
       completedDates: (json['completedDates'] as List<dynamic>? ?? [])
           .map((d) => DateTime.parse(d))
           .toList(),

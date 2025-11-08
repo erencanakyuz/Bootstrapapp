@@ -65,14 +65,10 @@ class HabitCard extends StatelessWidget {
                       child: Stack(
                         children: [
                           Align(
-                            child: SvgPicture.asset(
-                              habit.category.iconAsset,
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                colors.textPrimary,
-                                BlendMode.srcIn,
-                              ),
+                            child: Icon(
+                              habit.icon,
+                              color: colors.textPrimary,
+                              size: 26,
                             ),
                           ),
                           Positioned(
