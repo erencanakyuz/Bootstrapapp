@@ -1,7 +1,35 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uuid/uuid.dart';
 import 'package:bootstrap_app/models/habit.dart';
 import 'package:bootstrap_app/repositories/habit_repository.dart';
 import 'package:bootstrap_app/services/habit_storage.dart';
+
+// Helper function to create test habits
+Habit createTestHabit({
+  String? id,
+  required String title,
+  String? description,
+  Color? color,
+  IconData? icon,
+  HabitCategory? category,
+  HabitTimeBlock? timeBlock,
+  HabitDifficulty? difficulty,
+  List<String>? dependencyIds,
+}) {
+  const uuid = Uuid();
+  return Habit(
+    id: id ?? uuid.v4(),
+    title: title,
+    description: description,
+    color: color ?? const Color(0xFF3D8BFF),
+    icon: icon ?? Icons.star,
+    category: category ?? HabitCategory.health,
+    timeBlock: timeBlock ?? HabitTimeBlock.anytime,
+    difficulty: difficulty ?? HabitDifficulty.medium,
+    dependencyIds: dependencyIds,
+  );
+}
 
 class MockHabitStorage implements HabitStorage {
   List<Habit> _storage = [];
@@ -60,7 +88,7 @@ void main() {
         final habits1 = repository.current;
         await repository.ensureInitialized();
         final habits2 = repository.current;
-        expect(habits1, same(habits2));
+        expect(habits1, equals(habits2));
       });
 
       test('emits habits on stream after initialization', () async {
@@ -88,7 +116,7 @@ void main() {
       });
 
       test('upsertHabit adds new habit', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -100,7 +128,7 @@ void main() {
       });
 
       test('upsertHabit updates existing habit', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -115,7 +143,7 @@ void main() {
       });
 
       test('deleteHabit soft deletes by default', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -129,7 +157,7 @@ void main() {
       });
 
       test('deleteHabit hard deletes when requested', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -142,7 +170,7 @@ void main() {
       });
 
       test('restoreHabit restores archived habit', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -156,7 +184,7 @@ void main() {
       });
 
       test('byId returns habit by id', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -179,17 +207,17 @@ void main() {
         await repository.ensureInitialized();
         await repository.clearAll();
 
-        await repository.upsertHabit(Habit.template(
+        await repository.upsertHabit(createTestHabit(
           title: 'Morning Exercise',
           category: HabitCategory.health,
         ));
-        await repository.upsertHabit(Habit.template(
+        await repository.upsertHabit(createTestHabit(
           title: 'Reading Books',
-          category: HabitCategory.personal,
+          category: HabitCategory.learning,
         ));
-        await repository.upsertHabit(Habit.template(
+        await repository.upsertHabit(createTestHabit(
           title: 'Team Meeting',
-          category: HabitCategory.work,
+          category: HabitCategory.productivity,
         ).archive());
       });
 
@@ -236,7 +264,7 @@ void main() {
       });
 
       test('exportHabits creates valid JSON', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -249,7 +277,7 @@ void main() {
       });
 
       test('importHabits loads valid JSON', () async {
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test Habit',
           category: HabitCategory.health,
         );
@@ -265,15 +293,15 @@ void main() {
       });
 
       test('importHabits merges when requested', () async {
-        final habit1 = Habit.template(
+        final habit1 = createTestHabit(
           title: 'Habit 1',
           category: HabitCategory.health,
         );
         await repository.upsertHabit(habit1);
 
-        final habit2 = Habit.template(
+        final habit2 = createTestHabit(
           title: 'Habit 2',
-          category: HabitCategory.personal,
+          category: HabitCategory.learning,
         );
         final tempRepo = HabitRepository(MockHabitStorage());
         await tempRepo.ensureInitialized();
@@ -318,13 +346,13 @@ void main() {
         await repository.ensureInitialized();
         await repository.clearAll();
 
-        prerequisite = Habit.template(
+        prerequisite = createTestHabit(
           title: 'Prerequisite',
           category: HabitCategory.health,
         );
         await repository.upsertHabit(prerequisite);
 
-        dependent = Habit.template(
+        dependent = createTestHabit(
           title: 'Dependent',
           category: HabitCategory.health,
           dependencyIds: [prerequisite.id],
@@ -359,13 +387,12 @@ void main() {
         await repository.ensureInitialized();
         await repository.clearAll();
 
-        final habit = Habit.template(
+        final habit = createTestHabit(
           title: 'Test',
           category: HabitCategory.health,
         );
 
         // First save will fail, but retry should succeed
-        int attemptCount = 0;
         mockStorage.shouldThrowOnSave = true;
 
         try {
@@ -382,12 +409,12 @@ void main() {
         await repository.ensureInitialized();
         await repository.clearAll();
 
-        final habit1 = Habit.template(
+        final habit1 = createTestHabit(
           title: 'Habit 1',
           category: HabitCategory.health,
         ).toggleCompletion(DateTime.now());
 
-        final habit2 = Habit.template(
+        final habit2 = createTestHabit(
           title: 'Habit 2',
           category: HabitCategory.health,
         );

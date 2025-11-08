@@ -24,7 +24,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _selectedMonth = DateTime.now();
   final PageController _pageController = PageController(initialPage: 1000);
-  int _currentPage = 1000;
   int _selectedPart = 0; // 0 = Part 1 (1-10), 1 = Part 2 (11-20), 2 = Part 3 (21-31)
 
   @override
@@ -54,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onPageChanged(int page) {
     setState(() {
-      _currentPage = page;
       final monthDiff = page - 1000;
       _selectedMonth = DateTime(
         DateTime.now().year,
