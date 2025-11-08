@@ -28,11 +28,9 @@ class MainScreen extends ConsumerStatefulWidget {
 class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
   bool _showingThemeSheet = false;
-  late final PageController _pageController = PageController(keepPage: true);
 
   @override
   void dispose() {
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -50,26 +48,31 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Widget _buildContent(AppColors colors, List<Habit> habits) {
     final screens = [
-      HomeScreenNew(
-        habits: habits,
-        onAddHabit: _handleAddHabit,
-        onUpdateHabit: _handleUpdateHabit,
-        onDeleteHabit: _handleDeleteHabit,
-        themeController: widget.themeController,
+      _KeepAliveWrapper(
+        child: HomeScreenNew(
+          habits: habits,
+          onAddHabit: _handleAddHabit,
+          onUpdateHabit: _handleUpdateHabit,
+          onDeleteHabit: _handleDeleteHabit,
+          themeController: widget.themeController,
+        ),
       ),
-      CalendarScreen(
-        habits: habits,
-        onUpdateHabit: _handleUpdateHabit,
+      _KeepAliveWrapper(
+        child: CalendarScreen(
+          habits: habits,
+          onUpdateHabit: _handleUpdateHabit,
+        ),
       ),
-      InsightsScreen(habits: habits),
+      _KeepAliveWrapper(
+        child: InsightsScreen(habits: habits),
+      ),
     ];
 
     return Scaffold(
       body: Stack(
         children: [
-          PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
+          IndexedStack(
+            index: _currentIndex,
             children: screens,
           ),
           if (_showingThemeSheet) ...[
@@ -249,11 +252,30 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
-    setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: AppAnimations.moderate,
-      curve: AppAnimations.emphasized,
-    );
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+}
+
+// KeepAlive wrapper to preserve state when switching tabs
+class _KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveWrapper({required this.child});
+
+  @override
+  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
