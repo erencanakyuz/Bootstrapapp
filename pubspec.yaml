@@ -20,7 +20,6 @@ dependencies:
   shimmer: ^3.0.0
   confetti: ^0.8.0
   fl_chart: ^1.1.1
-  # Temporarily disabled for Windows build - works on mobile
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   path_provider: ^2.1.4

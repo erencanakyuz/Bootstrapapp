@@ -15,6 +15,7 @@ class HabitRepository {
 
   List<Habit> _cache = const [];
   bool _initialized = false;
+  Future<void> _persistQueue = Future.value();
 
   /// Ensure data is loaded before usage
   /// Returns default habits if loading fails due to corrupted data
@@ -339,15 +340,33 @@ class HabitRepository {
   }
 
   /// Persist habits to storage with retry logic
+  /// Uses queue pattern to prevent concurrent saves (prevents data loss)
+  /// Each save operation waits for the previous one to complete
+  Future<void> _persist() {
+    // Capture current cache snapshot to ensure consistency
+    // This prevents race conditions where _cache changes during save
+    final cacheSnapshot = List<Habit>.unmodifiable(_cache);
+    
+    // Chain this operation after the previous one completes
+    final operation = _persistQueue.then((_) => _persistInternal(cacheSnapshot));
+    
+    // Update queue to include error handling
+    // Allow subsequent operations even if this one fails
+    _persistQueue = operation.catchError((_, __) {});
+    
+    return operation;
+  }
+
+  /// Internal persist implementation with retry logic
   /// Throws [StorageException] if all retry attempts fail
-  Future<void> _persist() async {
+  Future<void> _persistInternal(List<Habit> cacheSnapshot) async {
     int attempts = 0;
     Exception? lastError;
 
     while (attempts < AppConfig.maxSaveRetries) {
       try {
-        await _storage.saveHabits(_cache);
-        _controller.add(List.unmodifiable(_cache));
+        await _storage.saveHabits(cacheSnapshot);
+        _controller.add(cacheSnapshot);
         return; // Success
       } on StorageException catch (e) {
         lastError = e;

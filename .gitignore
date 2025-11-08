@@ -29,3 +29,35 @@
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Windows batch scripts (local development tools)
+*.bat
+!android/gradlew.bat
+
+# Local development scripts
+wifi_connect.bat
+wifi_disconnect.bat
+wifi_check.bat
+run_android.bat
+quick_run.bat
+
+# Build outputs
+android/build/
+ios/build/
+windows/build/
+linux/build/
+macos/build/
+
+# IDE
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
