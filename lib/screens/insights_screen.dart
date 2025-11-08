@@ -72,7 +72,11 @@ class InsightsScreen extends StatelessWidget {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.all(AppSizes.paddingL),
+            padding: EdgeInsets.all(
+              MediaQuery.of(context).size.width > 600
+                  ? AppSizes.paddingXXL
+                  : AppSizes.paddingL,
+            ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Stats overview
