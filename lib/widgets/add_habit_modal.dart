@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/app_constants.dart';
+import '../constants/habit_icons.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import 'modern_button.dart';
@@ -42,21 +43,6 @@ class _AddHabitModalState extends State<AddHabitModal> {
     Color(0xFF607D8B),
   ];
 
-  final List<IconData> _icons = const [
-    Icons.fitness_center,
-    Icons.self_improvement,
-    Icons.book,
-    Icons.edit_note,
-    Icons.restaurant,
-    Icons.bedtime,
-    Icons.water_drop,
-    Icons.directions_run,
-    Icons.spa,
-    Icons.music_note,
-    Icons.code,
-    Icons.language,
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -74,7 +60,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
       _reminders = List<HabitReminder>.from(habit.reminders);
     } else {
       _selectedColor = _colors.first;
-      _selectedIcon = _icons.first;
+      _selectedIcon = HabitIconLibrary.icons.first;
       _selectedCategory = HabitCategory.productivity;
       _selectedTimeBlock = HabitTimeBlock.morning;
       _selectedDifficulty = HabitDifficulty.medium;
@@ -340,7 +326,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
     return Wrap(
       spacing: AppSizes.paddingM,
       runSpacing: AppSizes.paddingM,
-      children: _icons.map((icon) {
+      children: HabitIconLibrary.icons.map((icon) {
         final isSelected = icon == _selectedIcon;
         return GestureDetector(
           onTap: () => setState(() => _selectedIcon = icon),
