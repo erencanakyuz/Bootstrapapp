@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 class AnalyticsDashboardScreen extends ConsumerWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -14,6 +15,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final habitsAsync = ref.watch(habitsProvider);
+    final horizontalPadding = context.horizontalGutter;
+    final isWide = context.layoutSize != LayoutSize.compact;
 
     return habitsAsync.when(
       loading: () => Scaffold(
@@ -35,7 +38,12 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
           backgroundColor: colors.background,
           appBar: AppBar(title: const Text('Insights Dashboard')),
           body: ListView(
-            padding: const EdgeInsets.all(AppSizes.paddingXXL),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSizes.paddingXXL,
+              horizontalPadding,
+              AppSizes.paddingXXL,
+            ),
             children: [
               _buildMetricCard(
                 colors,
@@ -45,29 +53,47 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 subtitle: 'Days with at least one completion',
               ),
               const SizedBox(height: AppSizes.paddingXL),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildReportCard(
-                      colors,
-                      title: 'Weekly wins',
-                      value: '${weeklyReport['completions']}',
-                      subtitle:
-                          '${(weeklyReport['start'] as DateTime).month}/${(weeklyReport['start'] as DateTime).day} - ${(weeklyReport['end'] as DateTime).month}/${(weeklyReport['end'] as DateTime).day}',
+              if (isWide)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildReportCard(
+                        colors,
+                        title: 'Weekly wins',
+                        value: '${weeklyReport['completions']}',
+                        subtitle:
+                            '${(weeklyReport['start'] as DateTime).month}/${(weeklyReport['start'] as DateTime).day} - ${(weeklyReport['end'] as DateTime).month}/${(weeklyReport['end'] as DateTime).day}',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSizes.paddingL),
-                  Expanded(
-                    child: _buildReportCard(
-                      colors,
-                      title: 'Monthly best streak',
-                      value: '${monthlyReport['bestStreak']}d',
-                      subtitle:
-                          '${(monthlyReport['start'] as DateTime).month}/${(monthlyReport['start'] as DateTime).day}',
+                    const SizedBox(width: AppSizes.paddingL),
+                    Expanded(
+                      child: _buildReportCard(
+                        colors,
+                        title: 'Monthly best streak',
+                        value: '${monthlyReport['bestStreak']}d',
+                        subtitle:
+                            '${(monthlyReport['start'] as DateTime).month}/${(monthlyReport['start'] as DateTime).day}',
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                )
+              else ...[
+                _buildReportCard(
+                  colors,
+                  title: 'Weekly wins',
+                  value: '${weeklyReport['completions']}',
+                  subtitle:
+                      '${(weeklyReport['start'] as DateTime).month}/${(weeklyReport['start'] as DateTime).day} - ${(weeklyReport['end'] as DateTime).month}/${(weeklyReport['end'] as DateTime).day}',
+                ),
+                const SizedBox(height: AppSizes.paddingL),
+                _buildReportCard(
+                  colors,
+                  title: 'Monthly best streak',
+                  value: '${monthlyReport['bestStreak']}d',
+                  subtitle:
+                      '${(monthlyReport['start'] as DateTime).month}/${(monthlyReport['start'] as DateTime).day}',
+                ),
+              ],
               const SizedBox(height: AppSizes.paddingXXL),
               Text(
                 'Category breakdown',
