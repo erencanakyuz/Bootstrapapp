@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:confetti/confetti.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/add_habit_modal.dart';
 import '../widgets/theme_switcher_button.dart';
+import 'habit_detail_screen.dart';
 
 class HomeScreenNew extends StatefulWidget {
   final List<Habit> habits;
@@ -29,6 +32,7 @@ class HomeScreenNew extends StatefulWidget {
 
 class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProviderStateMixin {
   late AnimationController _fabAnimationController;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
@@ -37,17 +41,25 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
       vsync: this,
       duration: AppAnimations.normal,
     );
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
   }
 
   @override
   void dispose() {
     _fabAnimationController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
   void _toggleHabitCompletion(Habit habit) {
+    final wasCompleted = habit.isCompletedOn(DateTime.now());
     final updatedHabit = habit.toggleCompletion(DateTime.now());
     widget.onUpdateHabit(updatedHabit);
+
+    // Show confetti when completing a habit (not when uncompleting)
+    if (!wasCompleted && updatedHabit.isCompletedOn(DateTime.now())) {
+      _confettiController.play();
+    }
   }
 
   Future<void> _showAddHabitModal({Habit? habitToEdit}) async {
@@ -85,7 +97,9 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
           // Modern App Bar
           SliverAppBar(
@@ -194,10 +208,20 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final habit = widget.habits[index];
-                    return HabitCard(
-                      habit: habit,
-                      onTap: () => _toggleHabitCompletion(habit),
-                      onLongPress: () => _showHabitOptions(habit),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSizes.paddingL),
+                      child: HabitCard(
+                        habit: habit,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => HabitDetailScreen(habitId: habit.id),
+                            ),
+                          );
+                        },
+                        onCompletionToggle: () => _toggleHabitCompletion(habit),
+                        onLongPress: () => _showHabitOptions(habit),
+                      ),
                     );
                   },
                   childCount: widget.habits.length,
@@ -210,6 +234,29 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
             child: SizedBox(height: AppSizes.paddingXXXL * 3),
           ),
         ],
+      ),
+      // Confetti overlay
+      Align(
+        alignment: Alignment.topCenter,
+        child: ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirectionality: BlastDirectionality.explosive,
+          particleDrag: 0.05,
+          emissionFrequency: 0.05,
+          numberOfParticles: 30,
+          gravity: 0.3,
+          shouldLoop: false,
+          colors: const [
+            Colors.green,
+            Colors.blue,
+            Colors.pink,
+            Colors.orange,
+            Colors.purple,
+            Colors.amber,
+          ],
+        ),
+      ),
+    ],
       ),
       floatingActionButton: ScaleTransition(
         scale: Tween<double>(begin: 0.8, end: 1.0).animate(
@@ -321,12 +368,16 @@ class _HomeScreenNewState extends State<HomeScreenNew> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.self_improvement,
-              size: 80,
-              color: colors.textTertiary.withValues(alpha: 0.5),
+            SvgPicture.asset(
+              'assets/illustrations/empty_state.svg',
+              width: 200,
+              height: 200,
+              colorFilter: ColorFilter.mode(
+                colors.primary.withValues(alpha: 0.6),
+                BlendMode.srcIn,
+              ),
             ),
-            const SizedBox(height: AppSizes.paddingXL),
+            const SizedBox(height: AppSizes.paddingXXL),
             Text(
               'No habits yet',
               style: TextStyle(

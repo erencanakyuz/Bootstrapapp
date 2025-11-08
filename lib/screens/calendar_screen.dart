@@ -4,13 +4,14 @@ import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../widgets/modern_button.dart';
 import '../widgets/add_habit_modal.dart';
+import 'profile_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class CalendarScreen extends StatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onUpdateHabit;
   final Future<void> Function()? onRefresh;
 
-  const HomeScreen({
+  const CalendarScreen({
     super.key,
     required this.habits,
     required this.onUpdateHabit,
@@ -18,10 +19,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedMonth = DateTime.now();
   final PageController _pageController = PageController(initialPage: 1000);
   int _selectedPart = 0; // 0 = Part 1 (1-10), 1 = Part 2 (11-20), 2 = Part 3 (21-31)
@@ -107,7 +108,13 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           ModernIconButton(
             icon: Icons.settings_outlined,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
             backgroundColor: colors.surface,
             iconColor: colors.textPrimary,
             size: 40,
