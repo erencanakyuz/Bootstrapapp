@@ -3,10 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../repositories/habit_repository.dart';
 import '../services/habit_storage.dart';
 import 'notification_provider.dart';
+
+/// Exception thrown when habit validation fails
+class HabitValidationException implements Exception {
+  final String message;
+
+  HabitValidationException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {
   final repository = HabitRepository(HabitStorage());
@@ -35,15 +46,33 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> addHabit(Habit habit) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.upsertHabit(habit);
-    await _rescheduleReminders(habit);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.upsertHabit(habit);
+      await _rescheduleReminders(habit);
+    } on StorageException catch (e) {
+      // Set error state for UI to display
+      state = AsyncError(e, StackTrace.current);
+      // Restore previous state after delay
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<void> updateHabit(Habit habit) async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.upsertHabit(habit);
-    await _rescheduleReminders(habit);
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.upsertHabit(habit);
+      await _rescheduleReminders(habit);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
   }
 
   Future<void> deleteHabit(String habitId) async {
@@ -74,21 +103,31 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> toggleCompletion(String habitId, DateTime date) async {
-    final repository = ref.read(habitRepositoryProvider);
-    final habit = repository.byId(habitId);
-    if (habit == null) return;
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      if (habit == null) return;
 
-    if (!repository.dependenciesSatisfied(habit, date)) {
-      state = AsyncError(
-        FlutterError('Complete prerequisite habits first.'),
-        StackTrace.current,
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 150));
+      // Validate dependencies before toggling
+      if (!repository.dependenciesSatisfied(habit, date)) {
+        throw HabitValidationException('Complete prerequisite habits first.');
+      }
+
+      await repository.upsertHabit(habit.toggleCompletion(date));
+    } on HabitValidationException catch (e) {
+      // Validation errors are shown in UI but don't change state
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
       state = AsyncData(repository.current);
-      return;
+      rethrow;
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
     }
-
-    await repository.upsertHabit(habit.toggleCompletion(date));
   }
 
   Future<void> importHabits(String jsonString, {bool merge = true}) async {
