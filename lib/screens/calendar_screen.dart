@@ -13,13 +13,11 @@ import 'profile_screen.dart';
 class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onUpdateHabit;
-  final Future<void> Function()? onRefresh;
 
   const CalendarScreen({
     super.key,
     required this.habits,
     required this.onUpdateHabit,
-    this.onRefresh,
   });
 
   @override
@@ -29,9 +27,11 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedMonth = DateTime.now();
   final PageController _pageController = PageController(initialPage: 1000);
-  final ScrollController _horizontalScrollController = ScrollController();
+  final ScrollController _headerScrollController = ScrollController();
+  final List<ScrollController> _habitScrollControllers = [];
   int _selectedPart = 0; // 0 = Part 1 (1-10), 1 = Part 2 (11-20), 2 = Part 3 (21-31)
   bool _hasScrolledToToday = false;
+  bool _isScrolling = false;
 
   @override
   void initState() {
@@ -46,16 +46,80 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     } else {
       _selectedPart = 0;
     }
+    // Initialize scroll controllers
+    _initScrollControllers();
     // Auto-scroll to today's date after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToToday();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _scrollToToday();
+      });
     });
+  }
+
+  void _initScrollControllers() {
+    // Sync header scroll with habit scrolls
+    _headerScrollController.addListener(() {
+      if (!_isScrolling && _headerScrollController.hasClients) {
+        final offset = _headerScrollController.offset;
+        for (var controller in _habitScrollControllers) {
+          if (controller.hasClients && (controller.offset - offset).abs() > 2) {
+            _isScrolling = true;
+            controller.jumpTo(offset);
+            _isScrolling = false;
+          }
+        }
+      }
+    });
+
+    // Create controllers for each habit
+    for (var i = 0; i < widget.habits.length; i++) {
+      final controller = ScrollController();
+      controller.addListener(() {
+        if (!_isScrolling && controller.hasClients) {
+          final offset = controller.offset;
+          // Sync header
+          if (_headerScrollController.hasClients && 
+              (_headerScrollController.offset - offset).abs() > 2) {
+            _isScrolling = true;
+            _headerScrollController.jumpTo(offset);
+            _isScrolling = false;
+          }
+          // Sync other habits
+          for (var otherController in _habitScrollControllers) {
+            if (otherController != controller && otherController.hasClients) {
+              if ((otherController.offset - offset).abs() > 2) {
+                _isScrolling = true;
+                otherController.jumpTo(offset);
+                _isScrolling = false;
+              }
+            }
+          }
+        }
+      });
+      _habitScrollControllers.add(controller);
+    }
+  }
+
+  @override
+  void didUpdateWidget(CalendarScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.habits.length != widget.habits.length) {
+      // Dispose old controllers
+      for (var controller in _habitScrollControllers) {
+        controller.dispose();
+      }
+      _habitScrollControllers.clear();
+      _initScrollControllers();
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _horizontalScrollController.dispose();
+    _headerScrollController.dispose();
+    for (var controller in _habitScrollControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -65,12 +129,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
     final isCurrentMonth = _selectedMonth.year == now.year && _selectedMonth.month == now.month;
     
-    if (!isCurrentMonth) return;
+    if (!isCurrentMonth) {
+      _hasScrolledToToday = true;
+      return;
+    }
     
-    if (!_horizontalScrollController.hasClients) {
-      // Retry after a short delay if controller is not ready
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) _scrollToToday();
+    // Wait for controllers to be ready
+    if (!_headerScrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_hasScrolledToToday) _scrollToToday();
       });
       return;
     }
@@ -87,28 +154,52 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     
     // Only scroll if today is in the currently selected part
     if (_selectedPart != targetPart) {
+      _hasScrolledToToday = true;
       return;
     }
     
     // Calculate scroll position: each day box is 36px + 4px margin = 40px
-    // Offset: 80px (habit label) + 8px spacing + (day - startDay) * 40px
     final (startDay, _) = _getDayRange(daysInMonth);
     
     // Only scroll if today is within the current part range
     if (today < startDay || today > (startDay + 9)) {
+      _hasScrolledToToday = true;
       return;
     }
     
     final dayOffset = (today - startDay) * 40.0;
-    final scrollPosition = 80.0 + 8.0 + dayOffset - 100.0; // 100px offset to center better
+    final scrollPosition = (dayOffset - 100.0).clamp(0.0, double.infinity);
     
-    if (scrollPosition > 0 && _horizontalScrollController.hasClients) {
-      _horizontalScrollController.animateTo(
-        scrollPosition.clamp(0.0, _horizontalScrollController.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 500),
+    if (_headerScrollController.hasClients && 
+        _headerScrollController.position.maxScrollExtent > 0) {
+      _isScrolling = true;
+      _headerScrollController.animateTo(
+        scrollPosition.clamp(0.0, _headerScrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
       );
+      
+      // Sync all habit controllers
+      for (var controller in _habitScrollControllers) {
+        if (controller.hasClients && controller.position.maxScrollExtent > 0) {
+          controller.animateTo(
+            scrollPosition.clamp(0.0, controller.position.maxScrollExtent),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+      
+      Future.delayed(const Duration(milliseconds: 650), () {
+        _isScrolling = false;
+      });
+      
       _hasScrolledToToday = true;
+    } else {
+      // Retry if not ready
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_hasScrolledToToday) _scrollToToday();
+      });
     }
   }
 
@@ -143,12 +234,30 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         DateTime.now().year,
         DateTime.now().month + monthDiff,
       );
-      _selectedPart = 0; // Reset to Part 1 when changing months
+      
+      // Auto-select the part containing today if it's current month
+      final now = DateTime.now();
+      final isCurrentMonth = _selectedMonth.year == now.year && _selectedMonth.month == now.month;
+      if (isCurrentMonth) {
+        final today = now.day;
+        if (today > 20) {
+          _selectedPart = 2;
+        } else if (today > 10) {
+          _selectedPart = 1;
+        } else {
+          _selectedPart = 0;
+        }
+      } else {
+        _selectedPart = 0; // Reset to Part 1 when changing months
+      }
+      
       _hasScrolledToToday = false; // Allow scrolling to today in new month
     });
     // Scroll to today if it's the current month
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToToday();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _scrollToToday();
+      });
     });
   }
 
@@ -177,7 +286,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     });
     // Scroll to today if it's in the selected part
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToToday();
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) _scrollToToday();
+      });
     });
   }
 
@@ -222,6 +333,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
                 final monthDiff = index - 1000;
@@ -232,26 +344,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 final daysInMonth = _getDaysInMonth(month);
                 final (startDay, endDay) = _getDayRange(daysInMonth);
 
-                return RefreshIndicator.adaptive(
-                  color: colors.primary,
-                  onRefresh: widget.onRefresh ?? () async {},
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: horizontalPadding,
+                      right: horizontalPadding,
+                      top: 12,
+                      bottom: 12 + MediaQuery.of(context).padding.bottom,
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: horizontalPadding,
-                        right: horizontalPadding,
-                        top: 12,
-                        bottom: 12 + MediaQuery.of(context).padding.bottom,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildChallengeGrid(colors, month, startDay, endDay),
-                        ],
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildChallengeGrid(colors, month, startDay, endDay),
+                      ],
                     ),
                   ),
                 );
@@ -448,61 +556,70 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     int endDay,
   ) {
     final numDays = endDay - startDay + 1;
-    final minGridWidth = 80.0 + 8.0 + (numDays * (36.0 + 4.0));
+    const dayBoxSize = 36.0;
+    const dayBoxMargin = 4.0;
+    final scrollableWidth = numDays * (dayBoxSize + dayBoxMargin * 2);
+    
+    // Fixed habit label width for 12 characters max
+    // 12 chars * ~8px per char + color indicator (3px) + spacing (8px) + padding (16px) = ~123px
+    const habitLabelWidth = 120.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : minGridWidth;
-        final contentWidth = availableWidth < minGridWidth ? minGridWidth : availableWidth;
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: SingleChildScrollView(
-            controller: _horizontalScrollController,
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: SizedBox(
-              width: contentWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDayNumbersHeader(colors, month, startDay, endDay),
-                  const SizedBox(height: 16),
-                  for (var i = 0; i < widget.habits.length; i++) ...[
-                    _buildHabitRow(colors, widget.habits[i], month, startDay, endDay),
-                    if (i != widget.habits.length - 1)
-                      const SizedBox(height: 12),
-                  ],
-                ],
-              ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row with fixed habit label and scrollable day numbers
+          _buildDayNumbersHeader(colors, month, startDay, endDay, habitLabelWidth, scrollableWidth),
+          const SizedBox(height: 16),
+          // Habit rows with fixed habit name and scrollable day checkboxes
+          for (var i = 0; i < widget.habits.length; i++) ...[
+            _buildHabitRow(
+              colors,
+              widget.habits[i],
+              month,
+              startDay,
+              endDay,
+              habitLabelWidth,
+              scrollableWidth,
+              i < _habitScrollControllers.length ? _habitScrollControllers[i] : null,
             ),
-          ),
-        );
-      },
+            if (i != widget.habits.length - 1)
+              const SizedBox(height: 12),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildDayNumbersHeader(AppColors colors, DateTime month, int startDay, int endDay) {
+  Widget _buildDayNumbersHeader(
+    AppColors colors,
+    DateTime month,
+    int startDay,
+    int endDay,
+    double habitLabelWidth,
+    double scrollableWidth,
+  ) {
     final numDays = endDay - startDay + 1;
-    const boxSize = 36.0; // Fixed size for consistency
+    const boxSize = 36.0;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Habit label - fixed width
+        // Fixed habit label column
         SizedBox(
-          width: 80,
+          width: habitLabelWidth,
           child: Text(
             'Habit',
             style: TextStyle(
@@ -512,137 +629,174 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        // Day numbers - fixed size boxes
-        ...List.generate(
-          numDays,
-          (index) {
-            final day = startDay + index;
-            final isToday = month.year == DateTime.now().year &&
-                month.month == DateTime.now().month &&
-                day == DateTime.now().day;
+        const SizedBox(width: 12),
+        // Scrollable day numbers
+        Expanded(
+          child: SingleChildScrollView(
+            controller: _headerScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: SizedBox(
+              width: scrollableWidth,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  numDays,
+                  (index) {
+                    final day = startDay + index;
+                    final isToday = month.year == DateTime.now().year &&
+                        month.month == DateTime.now().month &&
+                        day == DateTime.now().day;
 
-            return Container(
-              width: boxSize,
-              alignment: Alignment.center,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                decoration: isToday
-                    ? BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: colors.primary,
-                          width: 1.5,
+                    return Container(
+                      width: boxSize,
+                      alignment: Alignment.center,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                        decoration: isToday
+                            ? BoxDecoration(
+                                color: colors.primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: colors.primary,
+                                  width: 1.5,
+                                ),
+                              )
+                            : null,
+                        child: Text(
+                          day.toString(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                            color: isToday ? colors.primary : colors.textTertiary,
+                          ),
                         ),
-                      )
-                    : null,
-                child: Text(
-                  day.toString(),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                    color: isToday ? colors.primary : colors.textTertiary,
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildHabitRow(AppColors colors, Habit habit, DateTime month, int startDay, int endDay) {
+  Widget _buildHabitRow(
+    AppColors colors,
+    Habit habit,
+    DateTime month,
+    int startDay,
+    int endDay,
+    double habitLabelWidth,
+    double scrollableWidth,
+    ScrollController? scrollController,
+  ) {
     final numDays = endDay - startDay + 1;
-    const boxSize = 36.0; // Match header size
+    const boxSize = 36.0;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Habit title with color indicator
+        // Fixed habit title with color indicator
         SizedBox(
-          width: 80,
+          width: habitLabelWidth,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 3,
-                height: 36,
+                constraints: const BoxConstraints(minHeight: 36),
                 decoration: BoxDecoration(
                   color: habit.color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   habit.title,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
                   ),
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        // Day checkboxes - fixed size matching header
-        ...List.generate(
-          numDays,
-          (index) {
-            final day = startDay + index;
-            final date = DateTime(month.year, month.month, day);
-            final isCompleted = habit.isCompletedOn(date);
-            final isToday = month.year == DateTime.now().year &&
-                month.month == DateTime.now().month &&
-                day == DateTime.now().day;
+        const SizedBox(width: 12),
+        // Scrollable day checkboxes
+        Expanded(
+          child: SingleChildScrollView(
+            controller: scrollController ?? _headerScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: SizedBox(
+              width: scrollableWidth,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  numDays,
+                  (index) {
+                    final day = startDay + index;
+                    final date = DateTime(month.year, month.month, day);
+                    final isCompleted = habit.isCompletedOn(date);
+                    final isToday = month.year == DateTime.now().year &&
+                        month.month == DateTime.now().month &&
+                        day == DateTime.now().day;
 
-            return GestureDetector(
-              onTap: () => _toggleHabitCompletion(habit, date),
-              child: Container(
-                width: boxSize,
-                height: 40,
-                alignment: Alignment.center,
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: isCompleted ? habit.color : colors.surface,
-                    border: Border.all(
-                      color: isCompleted
-                          ? habit.color
-                          : (isToday ? colors.primary.withValues(alpha: 0.6) : colors.outline),
-                      width: isToday ? 2.5 : 2,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: isCompleted
-                        ? [
-                            BoxShadow(
-                              color: habit.color.withValues(alpha: 0.4),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                    return GestureDetector(
+                      onTap: () => _toggleHabitCompletion(habit, date),
+                      child: Container(
+                        width: boxSize,
+                        height: 40,
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: isCompleted ? habit.color : colors.surface,
+                            border: Border.all(
+                              color: isCompleted
+                                  ? habit.color
+                                  : (isToday ? colors.primary.withValues(alpha: 0.6) : colors.outline),
+                              width: isToday ? 2.5 : 2,
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: isCompleted
-                      ? const Icon(
-                          Icons.check,
-                          size: 16,
-                          color: Colors.white,
-                        )
-                      : null,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: isCompleted
+                                ? [
+                                    BoxShadow(
+                                      color: habit.color.withValues(alpha: 0.4),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: isCompleted
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ],
     );

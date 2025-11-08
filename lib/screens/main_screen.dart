@@ -49,7 +49,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildContent(AppColors colors, List<Habit> habits) {
-    final refresh = _refreshHabits;
     final screens = [
       HomeScreenNew(
         habits: habits,
@@ -61,7 +60,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       CalendarScreen(
         habits: habits,
         onUpdateHabit: _handleUpdateHabit,
-        onRefresh: refresh,
       ),
       InsightsScreen(habits: habits),
     ];
@@ -257,9 +255,5 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       duration: AppAnimations.moderate,
       curve: AppAnimations.emphasized,
     );
-  }
-
-  Future<void> _refreshHabits() {
-    return ref.read(habitsProvider.notifier).refresh();
   }
 }
