@@ -93,6 +93,7 @@ class PageTransitions {
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionDuration: AppAnimations.moderate,
       reverseTransitionDuration: AppAnimations.normal,
+      settings: const RouteSettings(name: '/fade-slide'),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(0.1, 0.0);
         const end = Offset.zero;
