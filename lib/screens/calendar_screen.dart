@@ -226,6 +226,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'calendar_add_habit',
         onPressed: () async {
+          if (!context.mounted) return;
           final newHabit = await showModalBottomSheet<Habit>(
             context: context,
             isScrollControlled: true,
@@ -233,6 +234,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             builder: (context) => const AddHabitModal(),
           );
 
+          if (!context.mounted) return;
           if (newHabit != null) {
             widget.onUpdateHabit(newHabit);
           }

@@ -264,10 +264,12 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _exportHabits(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
     final json = await ref.read(habitsProvider.notifier).exportHabits();
     final tempDir = await getTemporaryDirectory();
     final file = File('${tempDir.path}/bootstrap_habits.json');
     await file.writeAsString(json);
+    if (!context.mounted) return;
     await SharePlus.instance.share(
       ShareParams(files: [XFile(file.path)], text: 'Habit backup ready.'),
     );
@@ -283,6 +285,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -301,6 +304,7 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
 
+    if (!context.mounted) return;
     if (confirmed ?? false) {
       await ref.read(habitsProvider.notifier).clearAll();
     }
