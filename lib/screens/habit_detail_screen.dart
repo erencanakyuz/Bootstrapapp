@@ -116,7 +116,7 @@ class HabitDetailScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFCF9), // Same as habit card
+                      color: colors.elevatedSurface, // Same as habit card - use theme elevatedSurface
                       borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       border: Border.all(
                         color: colors.outline.withValues(alpha: 0.5),
@@ -226,7 +226,7 @@ class HabitDetailScreen extends ConsumerWidget {
                                 radius: 3,
                                 color: habit.color,
                                 strokeWidth: 2,
-                                strokeColor: Colors.white,
+                                strokeColor: colors.surface, // Use theme surface
                               );
                             },
                           ),

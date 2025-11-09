@@ -111,7 +111,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     await _notificationService.showTestNotification(
       title: '🧪 Test Notification',
       body: 'This notification appeared immediately! If you see this, notifications work correctly.',
-      color: Colors.green,
+      color: const Color(0xFF6B7D5A), // Muted military/olive green
     );
   }
 
@@ -122,7 +122,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Test Habit - Normal',
       description: 'Testing normal notification scheduling',
       category: HabitCategory.health,
-      color: Colors.blue,
+      color: const Color(0xFF6B8FA3), // Muted blue-gray
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -148,7 +148,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Test Habit - Empty Weekdays',
       description: 'Testing empty weekdays fallback',
       category: HabitCategory.health,
-      color: Colors.orange,
+      color: const Color(0xFFC9A882), // Muted warm beige-orange
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -182,7 +182,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Test Habit - No Valid Weekday',
       description: 'Testing no valid weekday fallback',
       category: HabitCategory.health,
-      color: Colors.purple,
+      color: const Color(0xFF9B8FA8), // Muted dusty lavender
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -208,7 +208,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Test Habit - Multiple Reminders',
       description: 'Testing multiple reminders',
       category: HabitCategory.health,
-      color: Colors.green,
+      color: const Color(0xFF6B7D5A), // Muted military/olive green
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -243,7 +243,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Test Habit - Cancel',
       description: 'Testing single reminder cancellation',
       category: HabitCategory.health,
-      color: Colors.red,
+      color: const Color(0xFFB87D7D), // Muted dusty rose
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -283,7 +283,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Habit 1',
       description: 'Testing ID uniqueness',
       category: HabitCategory.health,
-      color: Colors.blue,
+      color: const Color(0xFF6B8FA3), // Muted blue-gray
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
@@ -304,7 +304,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       title: 'Habit 2',
       description: 'Testing ID uniqueness',
       category: HabitCategory.health,
-      color: Colors.green,
+      color: const Color(0xFF6B7D5A), // Muted military/olive green
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,

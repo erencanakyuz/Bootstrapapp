@@ -67,6 +67,11 @@ class _HomeScreenState extends State<HomeScreen>
         AnimationController(vsync: this, duration: AppAnimations.normal);
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
+    // Lock to portrait orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
   @override
@@ -74,6 +79,11 @@ class _HomeScreenState extends State<HomeScreen>
     _fabAnimationController.dispose();
     _confettiController.dispose();
     _scrollController.dispose();
+    // Ensure portrait when leaving home screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     super.dispose();
   }
 
@@ -130,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface, // Use theme surface
                 borderRadius: BorderRadius.circular(AppSizes.radiusPill),
                 border: Border.all(
                   color: colors.outline.withValues(alpha: 0.4),
@@ -234,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: Colors.white.withValues(alpha: 0.4),
+              backgroundColor: colors.surface.withValues(alpha: 0.4), // Use theme surface
               valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
             ),
           ),
@@ -396,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen>
       margin: const EdgeInsets.only(right: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusPill),
         border: Border.all(color: colors.outline.withValues(alpha: 0.4)),
       ),
@@ -450,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
           border: Border.all(
             color: colors.outline.withValues(alpha: 0.3),
@@ -486,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen>
                       child: LinearProgressIndicator(
                         value: 0.35,
                         minHeight: 6,
-                        backgroundColor: Colors.white.withValues(alpha: 0.3),
+                        backgroundColor: colors.surface.withValues(alpha: 0.3), // Use theme surface
                         valueColor:
                             AlwaysStoppedAnimation<Color>(colors.textPrimary),
                       ),
@@ -556,10 +566,8 @@ class _HomeScreenState extends State<HomeScreen>
           shape: BoxShape.circle,
           boxShadow: AppShadows.cardStrong(null),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.play_arrow_rounded,
-          color: Colors.white,
-          size: 28,
         ),
       ),
     );
@@ -606,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
         boxShadow: AppShadows.cardSoft(null),
       ),
@@ -616,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen>
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF9),
+              color: colors.elevatedSurface, // Use theme elevatedSurface
               shape: BoxShape.circle,
               border: Border.all(
                 color: colors.outline.withValues(alpha: 0.2),
@@ -651,7 +659,7 @@ class _HomeScreenState extends State<HomeScreen>
         final colors = Theme.of(context).extension<AppColors>()!;
         return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFCF9),
+            color: colors.elevatedSurface, // Use theme elevatedSurface
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(32),
             ),
@@ -881,7 +889,10 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: RefreshIndicator(
+      body: SafeArea(
+        top: true,
+        bottom: false, // Bottom navigation handled by MainScreen
+        child: RefreshIndicator(
         color: colors.textPrimary,
         onRefresh: () async {
           HapticFeedback.lightImpact();
@@ -915,6 +926,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
+        ),
       ),
       floatingActionButton: ScaleTransition(
         scale: Tween<double>(begin: 0.88, end: 1.0).animate(
@@ -937,10 +949,10 @@ class _HomeScreenState extends State<HomeScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
             ),
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
+            icon: Icon(Icons.add_rounded, color: colors.surface), // Use theme surface
             label: Text(
               'New Habit',
-              style: textStyles.buttonLabel.copyWith(color: Colors.white),
+              style: textStyles.buttonLabel.copyWith(color: colors.surface), // Use theme surface
             ),
           ),
         ),

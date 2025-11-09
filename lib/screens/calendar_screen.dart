@@ -37,6 +37,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.initState();
     // Set to current week start
     _selectedWeekStart = _getWeekStart(DateTime.now());
+    // Full screen mode for better calendar experience
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+      overlays: [SystemUiOverlay.top],
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ensure portrait when Calendar screen becomes visible
+    // This is called when the screen is displayed in IndexedStack
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
   static DateTime _getWeekStart(DateTime date) {
@@ -46,6 +62,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   void dispose() {
+    // Reset to portrait when leaving calendar
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    // Reset system UI mode
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+    );
     super.dispose();
   }
 
@@ -112,6 +137,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return List.generate(7, (index) => _selectedWeekStart.add(Duration(days: index)));
   }
 
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -145,13 +171,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 if (hapticsEnabled) {
                   HapticFeedback.lightImpact();
                 }
-                Navigator.of(context).push(
-                  PageTransitions.fadeAndSlide(
-                    FullCalendarScreen(habits: widget.habits),
-                  ),
-                );
+                // Set landscape BEFORE navigating to prevent race conditions
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.landscapeLeft,
+                  DeviceOrientation.landscapeRight,
+                ]);
+                // Small delay to ensure orientation is set before navigation
+                Future.delayed(const Duration(milliseconds: 50), () {
+                  Navigator.of(context).push(
+                    PageTransitions.fadeAndSlide(
+                      FullCalendarScreen(habits: widget.habits),
+                    ),
+                  ).then((_) {
+                    // When returning from FullCalendarScreen, restore portrait
+                    // FullCalendarScreen's dispose already resets to portrait
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.portraitUp,
+                      DeviceOrientation.portraitDown,
+                    ]);
+                  });
+                });
               },
-              backgroundColor: const Color(0xFFFFFCF9),
+              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 40,
             ),
@@ -161,46 +202,58 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               onPressed: () {
                 Navigator.of(context).push(
                   PageTransitions.fadeAndSlide(const ProfileScreen()),
-                );
+                ).then((_) {
+                  // When returning from Profile, ensure portrait is maintained
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.portraitUp,
+                      DeviceOrientation.portraitDown,
+                    ]);
+                  });
+                });
               },
-              backgroundColor: const Color(0xFFFFFCF9),
+              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 40,
             ),
           const SizedBox(width: 12),
         ],
       ),
-      body: Column(
-        children: [
-          _buildWeekSelector(colors, textStyles, horizontalPadding),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: horizontalPadding,
-                  right: horizontalPadding,
-                  top: 12,
-                  bottom: 12 + MediaQuery.of(context).padding.bottom,
+      body: SafeArea(
+        top: true,
+        bottom: false, // Bottom navigation handled by MainScreen
+        child: Column(
+          children: [
+            _buildWeekSelector(colors, textStyles, horizontalPadding),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (widget.habits.isEmpty)
-                      _buildEmptyState(colors, horizontalPadding)
-                    else
-                      ...widget.habits.map((habit) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: _buildHabitCard(colors, habit),
-                      )),
-                  ],
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: horizontalPadding,
+                    right: horizontalPadding,
+                    top: 12,
+                    bottom: 12 + MediaQuery.of(context).padding.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.habits.isEmpty)
+                        _buildEmptyState(colors, horizontalPadding)
+                      else
+                        ...widget.habits.map((habit) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildHabitCard(colors, habit),
+                        )),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'calendar_add_habit',
@@ -251,7 +304,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         margin: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: colors.outline.withValues(alpha: 0.3),
@@ -265,7 +318,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ModernIconButton(
               icon: Icons.chevron_left,
               onPressed: _previousWeek,
-              backgroundColor: const Color(0xFFFFFCF9),
+              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 44,
             ),
@@ -307,7 +360,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ModernIconButton(
               icon: Icons.chevron_right,
               onPressed: _nextWeek,
-              backgroundColor: const Color(0xFFFFFCF9),
+              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 44,
             ),
@@ -333,14 +386,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
+        // Reset to portrait before navigating to habit detail
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
         Navigator.of(context).push(
           PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
-        );
+        ).then((_) {
+          // When returning from HabitDetail, ensure portrait is maintained
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            SystemChrome.setPreferredOrientations([
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ]);
+          });
+        });
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: colors.outline.withValues(alpha: 0.5),
@@ -488,11 +554,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 200),
                                 child: isCompleted
-                                    ? const Icon(
+                                    ? Icon(
                                         Icons.check,
                                         size: 20,
-                                        color: Colors.white,
-                                        key: ValueKey('check'),
+                                        color: colors.surface, // Use theme surface
+                                        key: const ValueKey('check'),
                                       )
                                     : Text(
                                         dayNumber.toString(),

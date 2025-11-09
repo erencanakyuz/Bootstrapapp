@@ -25,8 +25,39 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 1; // Default to Home (note icon) like reference image
 
   @override
+  void initState() {
+    super.initState();
+    // Lock to portrait by default - prevent automatic rotation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
+  @override
   void dispose() {
+    // Reset orientation on dispose
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     super.dispose();
+  }
+  
+  void _onTabSelected(int index) {
+    if (_currentIndex == index) return;
+    
+    // Haptic feedback immediately for better UX
+    HapticFeedback.selectionClick();
+    
+    // Update state immediately for instant visual feedback
+    setState(() {
+      _currentIndex = index;
+    });
+    
+    // Let each screen manage its own orientation
+    // Calendar screen will set portrait in its initState/didChangeDependencies
+    // FullCalendarScreen manages landscape independently
   }
 
   @override
@@ -80,13 +111,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Pure white background
+        color: colors.surface, // Use theme surface color
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20), // Rounded top corners
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: colors.textPrimary.withValues(alpha: 0.05), // Use theme textPrimary
             blurRadius: 10,
             offset: const Offset(0, -2), // Shadow on top edge
           ),
@@ -145,26 +176,29 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }) {
     final isActive = _currentIndex == index;
 
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _onTabSelected(index);
-      },
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: isActive
-            ? BoxDecoration(
-                color: Colors.black, // Black circle for active state
-                shape: BoxShape.circle,
-              )
-            : null,
-        child: Icon(
-          icon,
-          size: isActive ? 20 : 24,
-          color: isActive 
-              ? Colors.white // White icon on black circle
-              : Color(0xFF6D6256), // Dark grey outline for inactive
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onTabSelected(index),
+        borderRadius: BorderRadius.circular(22), // Half of 44 for perfect circle
+        splashColor: colors.textPrimary.withValues(alpha: 0.1),
+        highlightColor: colors.textPrimary.withValues(alpha: 0.05),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: isActive
+              ? BoxDecoration(
+                  color: colors.textPrimary, // Use theme textPrimary instead of black
+                  shape: BoxShape.circle,
+                )
+              : null,
+          child: Icon(
+            icon,
+            size: isActive ? 20 : 24,
+            color: isActive 
+                ? colors.surface // White icon on dark circle
+                : colors.textSecondary, // Use theme textSecondary
+          ),
         ),
       ),
     );
@@ -231,13 +265,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Future<void> _handleDeleteHabit(String habitId) async {
     await ref.read(habitsProvider.notifier).deleteHabit(habitId);
-  }
-
-  void _onTabSelected(int index) {
-    if (_currentIndex == index) return;
-    setState(() {
-      _currentIndex = index;
-    });
   }
 }
 

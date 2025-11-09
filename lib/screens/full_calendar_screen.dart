@@ -31,7 +31,30 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
   @override
   void initState() {
     super.initState();
-    // Force landscape orientation
+    // Force landscape orientation immediately when entering full calendar
+    // Use WidgetsBinding to ensure it happens after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    });
+    // Also set it immediately to prevent any race conditions
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    // Full screen mode for better calendar experience
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+      overlays: [SystemUiOverlay.top],
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ensure landscape is maintained when dependencies change
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -40,13 +63,15 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
 
   @override
   void dispose() {
-    // Reset orientation when leaving
+    // Reset to portrait when leaving full calendar
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
     ]);
+    // Reset system UI mode
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+    );
     super.dispose();
   }
 
@@ -196,7 +221,17 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         toolbarHeight: _viewMode == CalendarViewMode.monthly ? 36 : 40,
         leading: IconButton(
           icon: const Icon(Icons.close, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Reset to portrait immediately before popping
+            SystemChrome.setPreferredOrientations([
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ]);
+            // Small delay to ensure orientation is set before navigation
+            Future.delayed(const Duration(milliseconds: 50), () {
+              Navigator.of(context).pop();
+            });
+          },
           color: colors.textPrimary,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
@@ -569,7 +604,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFFFFCF9),
+        backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -701,7 +736,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(12),
         border: isCurrentMonth
             ? Border.all(color: colors.textPrimary, width: 2)

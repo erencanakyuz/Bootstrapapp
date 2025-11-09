@@ -28,7 +28,7 @@ class StatsCard extends StatelessWidget {
         vertical: AppSizes.paddingS,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
