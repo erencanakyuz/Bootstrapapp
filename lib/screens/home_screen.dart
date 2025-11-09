@@ -183,6 +183,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => AddHabitModal(habitToEdit: habitToEdit),
     );
 
@@ -763,6 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      useSafeArea: true,
       isDismissible: true,
       enableDrag: true,
       builder: (context) {
@@ -772,6 +776,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           minChildSize: 0.2,
           maxChildSize: 0.5,
           builder: (context, scrollController) {
+            final viewPadding = MediaQuery.viewPaddingOf(context);
             return Container(
               decoration: BoxDecoration(
                 color: colors.elevatedSurface,
@@ -819,7 +824,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             _deleteHabit(habit);
                           },
                         ),
-                        SizedBox(height: MediaQuery.of(context).padding.bottom),
+                        SizedBox(height: viewPadding.bottom),
                       ],
                     ),
                   ),
