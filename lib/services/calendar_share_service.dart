@@ -33,12 +33,11 @@ class CalendarShareService {
         return null;
       }
 
-      // Store context values BEFORE async operations to avoid BuildContext usage warnings
+      // Calculate devicePixelRatio BEFORE async gap to avoid BuildContext usage warnings
       final contextBeforeAsync = repaintBoundaryKey.currentContext;
-      // Calculate devicePixelRatio BEFORE async gap
       final devicePixelRatio = contextBeforeAsync != null
           ? (MediaQuery.maybeOf(contextBeforeAsync)?.devicePixelRatio ??
-              View.of(contextBeforeAsync).devicePixelRatio)
+              ui.PlatformDispatcher.instance.views.first.devicePixelRatio)
           : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
       final pixelRatio = devicePixelRatio.clamp(1.0, 3.0);
       

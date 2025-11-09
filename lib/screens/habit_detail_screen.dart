@@ -285,6 +285,17 @@ class HabitDetailScreen extends ConsumerWidget {
                 const SizedBox(height: AppSizes.paddingM),
                 _buildNoteCard(context, ref, habit, colors),
                 const SizedBox(height: AppSizes.paddingXXL),
+                Text(
+                  'To-Do Tasks',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.paddingM),
+                _buildTasksCard(context, ref, habit, colors),
+                const SizedBox(height: AppSizes.paddingXXL),
               ],
             ),
           ),
@@ -470,6 +481,194 @@ class HabitDetailScreen extends ConsumerWidget {
       await ref
           .read(habitsProvider.notifier)
           .upsertNote(habitId: habit.id, note: note);
+    }
+  }
+
+  Widget _buildTasksCard(
+    BuildContext context,
+    WidgetRef ref,
+    Habit habit,
+    AppColors colors,
+  ) {
+    final incompleteTasks = habit.tasks.where((t) => !t.completed).toList();
+    final completedTasks = habit.tasks.where((t) => t.completed).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFCF9),
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (incompleteTasks.isEmpty && completedTasks.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No tasks yet.\nAdd tasks to break down your habit into steps.',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            )
+          else ...[
+            ...incompleteTasks.map((task) => _buildTaskItem(
+                  context,
+                  ref,
+                  habit,
+                  task,
+                  colors,
+                  false,
+                )),
+            if (completedTasks.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Completed',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...completedTasks.map((task) => _buildTaskItem(
+                    context,
+                    ref,
+                    habit,
+                    task,
+                    colors,
+                    true,
+                  )),
+            ],
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => _addTask(context, ref, habit),
+            icon: Icon(Icons.add, size: 16, color: colors.textPrimary),
+            label: const Text('Add task'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskItem(
+    BuildContext context,
+    WidgetRef ref,
+    Habit habit,
+    HabitTask task,
+    AppColors colors,
+    bool isCompleted,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Checkbox(
+            value: task.completed,
+            onChanged: (value) {
+              ref.read(habitsProvider.notifier).toggleTask(
+                    habitId: habit.id,
+                    taskId: task.id,
+                  );
+            },
+            activeColor: habit.color,
+          ),
+          Expanded(
+            child: Text(
+              task.title,
+              style: TextStyle(
+                fontSize: 14,
+                color: isCompleted
+                    ? colors.textSecondary
+                    : colors.textPrimary,
+                decoration: isCompleted
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: colors.statusIncomplete,
+            ),
+            onPressed: () {
+              ref.read(habitsProvider.notifier).removeTask(
+                    habitId: habit.id,
+                    taskId: task.id,
+                  );
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addTask(
+    BuildContext context,
+    WidgetRef ref,
+    Habit habit,
+  ) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final viewInsets = MediaQuery.viewInsetsOf(context);
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: AlertDialog(
+            title: const Text('Add Task'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'Enter task title',
+              ),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, controller.text.trim()),
+                child: const Text('Add'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (result != null && result.isNotEmpty) {
+      final task = HabitTask(title: result);
+      await ref.read(habitsProvider.notifier).addTask(
+            habitId: habit.id,
+            task: task,
+          );
     }
   }
 
