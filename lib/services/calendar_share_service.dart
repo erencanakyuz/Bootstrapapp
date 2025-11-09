@@ -33,18 +33,18 @@ class CalendarShareService {
         return null;
       }
 
-      // Ensure boundary is painted before capturing
       if (boundary.debugNeedsPaint) {
-        debugPrint('RepaintBoundary needs paint, waiting...');
-        // Wait a bit more for paint
-        await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 16));
       }
 
-      // Use optimized pixel ratio for 16:9 share (1920x1080 base)
-      // 2.0 pixel ratio = 3840x2160 (4K quality)
-      const double optimizedPixelRatio = 2.0;
-      
-      final image = await boundary.toImage(pixelRatio: optimizedPixelRatio);
+      final context = repaintBoundaryKey.currentContext;
+      final devicePixelRatio = context != null
+          ? (MediaQuery.maybeOf(context)?.devicePixelRatio ??
+              View.of(context).devicePixelRatio)
+          : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
+      final pixelRatio = devicePixelRatio.clamp(1.0, 3.0);
+
+      final image = await boundary.toImage(pixelRatio: pixelRatio);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       return byteData?.buffer.asUint8List();

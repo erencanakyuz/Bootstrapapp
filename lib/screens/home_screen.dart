@@ -191,6 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final result = await showModalBottomSheet<Habit>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       useSafeArea: true,
       isDismissible: true,

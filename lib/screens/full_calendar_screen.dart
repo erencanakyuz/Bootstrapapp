@@ -391,6 +391,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: colors.background,
@@ -1705,6 +1706,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => _ShareCalendarDialog(colors: colors),
+      useRootNavigator: true,
     );
 
     if (result == null) return;

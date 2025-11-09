@@ -82,20 +82,26 @@ class _AddHabitModalState extends State<AddHabitModal> {
   
   void _validateTitle() {
     final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      setState(() => _errorMessage = null); // Clear error while typing
-    } else if (title.length > 200) {
-      setState(() => _errorMessage = 'Title cannot exceed 200 characters');
-    } else {
+    const errorText = 'Title cannot exceed 200 characters';
+
+    if (title.length > 200) {
+      if (_errorMessage != errorText) {
+        setState(() => _errorMessage = errorText);
+      }
+    } else if (_errorMessage == errorText) {
       setState(() => _errorMessage = null);
     }
   }
   
   void _validateDescription() {
     final description = _descriptionController.text.trim();
+    const errorText = 'Description cannot exceed 500 characters';
+
     if (description.isNotEmpty && description.length > 500) {
-      setState(() => _errorMessage = 'Description cannot exceed 500 characters');
-    } else if (_errorMessage?.contains('Description') == true) {
+      if (_errorMessage != errorText) {
+        setState(() => _errorMessage = errorText);
+      }
+    } else if (_errorMessage == errorText) {
       setState(() => _errorMessage = null);
     }
   }
