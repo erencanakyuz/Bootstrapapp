@@ -21,7 +21,8 @@ class FullCalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<FullCalendarScreen> createState() => _FullCalendarScreenState();
 }
 
-class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
+class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
+    with WidgetsBindingObserver {
   DateTime _selectedMonth = DateTime.now();
   CalendarViewMode _viewMode = CalendarViewMode.monthly;
   bool _isFullScreen = false;
@@ -44,37 +45,51 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
   @override
   void initState() {
     super.initState();
-    // Force landscape orientation immediately when entering full calendar
-    // Use WidgetsBinding to ensure it happens after the widget is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    });
-    // Also set it immediately to prevent any race conditions
+    WidgetsBinding.instance.addObserver(this);
+    _lockLandscape();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isFullScreen && _viewMode == CalendarViewMode.monthly) {
+      _alignFullScreenTable();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _monthlyTableController.dispose();
+    _yearlyTableController.dispose();
+    _restorePortrait();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isFullScreen) {
+      _alignFullScreenTable();
+    }
+  }
+
+  void _lockLandscape() {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    // Full screen mode for better calendar experience
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.edgeToEdge,
       overlays: [SystemUiOverlay.top],
     );
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Ensure landscape is maintained when dependencies change
+  void _restorePortrait() {
     SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
     ]);
-    if (_isFullScreen && _viewMode == CalendarViewMode.monthly) {
-      _alignFullScreenTable();
-    }
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   void _alignFullScreenTable() {
@@ -113,20 +128,6 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _monthlyTableController.dispose();
-    _yearlyTableController.dispose();
-    // Reset to portrait when leaving full calendar
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    // Reset system UI mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
-  }
-
   void _toggleFullScreen() {
     final settingsAsync = ref.read(profileSettingsProvider);
     final hapticsEnabled = settingsAsync.maybeWhen(
@@ -139,10 +140,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     setState(() {
       _isFullScreen = !_isFullScreen;
       if (_isFullScreen) {
-        // Enter immersive mode to hide system navbar
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       } else {
-        // Exit immersive mode
         SystemChrome.setEnabledSystemUIMode(
           SystemUiMode.edgeToEdge,
           overlays: [SystemUiOverlay.top],
@@ -400,11 +399,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         leading: IconButton(
           icon: const Icon(Icons.close, size: 18),
           onPressed: () {
-            // Reset to portrait immediately before popping
-            SystemChrome.setPreferredOrientations([
-              DeviceOrientation.portraitUp,
-              DeviceOrientation.portraitDown,
-            ]);
+            _restorePortrait();
             final navigator = Navigator.of(context);
             // Small delay to ensure orientation is set before navigation
             Future.delayed(const Duration(milliseconds: 50), () {
