@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/app_settings_service.dart';
+import '../services/sound_service.dart';
 
 final appSettingsServiceProvider = Provider<AppSettingsService>((ref) {
   return AppSettingsService();
@@ -10,6 +11,9 @@ class ProfileSettings {
   final String name;
   final bool notificationsEnabled;
   final bool hapticsEnabled;
+  final bool soundsEnabled;
+  final bool confettiEnabled;
+  final bool animationsEnabled;
   final int avatarSeed;
   final bool allowPastDatesBeforeCreation;
 
@@ -17,6 +21,9 @@ class ProfileSettings {
     required this.name,
     required this.notificationsEnabled,
     required this.hapticsEnabled,
+    required this.soundsEnabled,
+    required this.confettiEnabled,
+    required this.animationsEnabled,
     required this.avatarSeed,
     required this.allowPastDatesBeforeCreation,
   });
@@ -25,6 +32,9 @@ class ProfileSettings {
     String? name,
     bool? notificationsEnabled,
     bool? hapticsEnabled,
+    bool? soundsEnabled,
+    bool? confettiEnabled,
+    bool? animationsEnabled,
     int? avatarSeed,
     bool? allowPastDatesBeforeCreation,
   }) {
@@ -32,6 +42,9 @@ class ProfileSettings {
       name: name ?? this.name,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      soundsEnabled: soundsEnabled ?? this.soundsEnabled,
+      confettiEnabled: confettiEnabled ?? this.confettiEnabled,
+      animationsEnabled: animationsEnabled ?? this.animationsEnabled,
       avatarSeed: avatarSeed ?? this.avatarSeed,
       allowPastDatesBeforeCreation:
           allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
@@ -46,12 +59,23 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final name = await service.userName();
     final notifications = await service.notificationsEnabled();
     final haptics = await service.hapticsEnabled();
+    final sounds = await service.soundsEnabled();
+    final confetti = await service.confettiEnabled();
+    final animations = await service.animationsEnabled();
     final avatar = await service.avatarSeed();
     final allowPastDates = await service.allowPastDatesBeforeCreation();
+    
+    // Initialize sound service with current settings
+    final soundService = ref.read(soundServiceProvider);
+    soundService.setEnabled(sounds);
+    
     return ProfileSettings(
       name: name,
       notificationsEnabled: notifications,
       hapticsEnabled: haptics,
+      soundsEnabled: sounds,
+      confettiEnabled: confetti,
+      animationsEnabled: animations,
       avatarSeed: avatar,
       allowPastDatesBeforeCreation: allowPastDates,
     );
@@ -76,6 +100,32 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     await service.setHapticsEnabled(enabled);
     state = state.whenData(
       (settings) => settings.copyWith(hapticsEnabled: enabled),
+    );
+  }
+
+  Future<void> toggleSounds(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setSoundsEnabled(enabled);
+    final soundService = ref.read(soundServiceProvider);
+    soundService.setEnabled(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(soundsEnabled: enabled),
+    );
+  }
+
+  Future<void> toggleConfetti(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setConfettiEnabled(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(confettiEnabled: enabled),
+    );
+  }
+
+  Future<void> toggleAnimations(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setAnimationsEnabled(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(animationsEnabled: enabled),
     );
   }
 

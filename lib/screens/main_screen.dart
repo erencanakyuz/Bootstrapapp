@@ -7,6 +7,7 @@ import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../services/habit_storage.dart';
+import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
 import 'calendar_screen.dart';
@@ -34,11 +35,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     super.dispose();
   }
 
-  void _onTabSelected(int index) {
+  void _onTabSelected(int index, WidgetRef ref) {
     if (_currentIndex == index) return;
 
     // Haptic feedback immediately for better UX
     HapticFeedback.selectionClick();
+
+    // Play navigation sound
+    ref.read(soundServiceProvider).playNavigation();
 
     // Update state immediately for instant visual feedback
     setState(() {
@@ -122,6 +126,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 index: 0,
                 colors: colors,
                 textStyles: textStyles,
+                ref: ref,
               ),
               _buildNavItem(
                 icon: Icons.calendar_month_outlined,
@@ -129,6 +134,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 index: 1,
                 colors: colors,
                 textStyles: textStyles,
+                ref: ref,
               ),
               _buildNavItem(
                 icon: Icons.insights_outlined,
@@ -136,6 +142,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 index: 2,
                 colors: colors,
                 textStyles: textStyles,
+                ref: ref,
               ),
               _buildNavItem(
                 icon: Icons.person_outline,
@@ -143,6 +150,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 index: 3,
                 colors: colors,
                 textStyles: textStyles,
+                ref: ref,
               ),
             ],
           ),
@@ -158,13 +166,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     required int index,
     required AppColors colors,
     required AppTextStyles textStyles,
+    required WidgetRef ref,
   }) {
     final isActive = _currentIndex == index;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _onTabSelected(index),
+        onTap: () => _onTabSelected(index, ref),
         borderRadius: BorderRadius.circular(
           22,
         ), // Half of 44 for perfect circle

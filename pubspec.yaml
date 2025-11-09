@@ -27,6 +27,7 @@ dependencies:
   share_plus: ^12.0.1
   file_picker: ^10.3.3
   uuid: ^4.5.1
+  audioplayers: ^6.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -49,6 +50,7 @@ flutter:
     - assets/illustrations/
     - assets/icons/categories/
     - assets/lottie/
+    - assets/sounds/
   fonts:
     # Fraunces - Serif Display Font (Headings)
     - family: Fraunces

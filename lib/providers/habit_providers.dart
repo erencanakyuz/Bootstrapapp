@@ -356,6 +356,10 @@ final filteredHabitsProvider = Provider<List<Habit>>((ref) {
       final today = DateTime.now();
       return habits.where((habit) {
         if (!filter.showArchived && habit.archived) return false;
+        
+        // Filter by active weekdays - only show habits active today
+        if (!habit.isActiveOnDate(today)) return false;
+        
         if (filter.category != null && habit.category != filter.category) {
           return false;
         }

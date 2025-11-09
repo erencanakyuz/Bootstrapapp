@@ -30,6 +30,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
   late HabitDifficulty _selectedDifficulty;
   late int _weeklyTarget;
   late int _monthlyTarget;
+  late List<int> _activeWeekdays; // 1 = Monday ... 7 = Sunday
   List<HabitReminder> _reminders = [];
 
   final List<Color> _colors = const [
@@ -57,6 +58,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
       _selectedDifficulty = habit.difficulty;
       _weeklyTarget = habit.weeklyTarget;
       _monthlyTarget = habit.monthlyTarget;
+      _activeWeekdays = List<int>.from(habit.activeWeekdays);
       _reminders = List<HabitReminder>.from(habit.reminders);
     } else {
       _selectedColor = _colors.first;
@@ -66,6 +68,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
       _selectedDifficulty = HabitDifficulty.medium;
       _weeklyTarget = 5;
       _monthlyTarget = 20;
+      _activeWeekdays = const [1, 2, 3, 4, 5, 6, 7]; // Default: all days
       _reminders = [];
     }
   }
@@ -230,6 +233,29 @@ class _AddHabitModalState extends State<AddHabitModal> {
                   setState(() => _monthlyTarget = value.toInt()),
             ),
             const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Weekly & Monthly Targets', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            _buildSlider(
+              label: 'Weekly target: $_weeklyTarget days',
+              value: _weeklyTarget.toDouble(),
+              min: 1,
+              max: 7,
+              onChanged: (value) =>
+                  setState(() => _weeklyTarget = value.toInt()),
+            ),
+            _buildSlider(
+              label: 'Monthly target: $_monthlyTarget check-ins',
+              value: _monthlyTarget.toDouble(),
+              min: 5,
+              max: 60,
+              onChanged: (value) =>
+                  setState(() => _monthlyTarget = value.toInt()),
+            ),
+            const SizedBox(height: AppSizes.paddingXXL),
+            _buildSectionTitle('Active Days', colors),
+            const SizedBox(height: AppSizes.paddingM),
+            _buildWeekdaySelector(colors),
+            const SizedBox(height: AppSizes.paddingXXL),
             _buildSectionTitle('Reminders', colors),
             const SizedBox(height: AppSizes.paddingM),
             if (_reminders.isEmpty)
@@ -340,6 +366,114 @@ class _AddHabitModalState extends State<AddHabitModal> {
     );
   }
 
+  Widget _buildWeekdaySelector(AppColors colors) {
+    final weekdays = [
+      {'label': 'Mon', 'value': 1},
+      {'label': 'Tue', 'value': 2},
+      {'label': 'Wed', 'value': 3},
+      {'label': 'Thu', 'value': 4},
+      {'label': 'Fri', 'value': 5},
+      {'label': 'Sat', 'value': 6},
+      {'label': 'Sun', 'value': 7},
+    ];
+
+    // Preset options
+    final presets = [
+      {
+        'label': 'Every day',
+        'days': const [1, 2, 3, 4, 5, 6, 7],
+        'icon': Icons.calendar_today,
+      },
+      {
+        'label': 'Weekdays',
+        'days': const [1, 2, 3, 4, 5],
+        'icon': Icons.business_center,
+      },
+      {
+        'label': 'Weekends',
+        'days': const [6, 7],
+        'icon': Icons.weekend,
+      },
+      {
+        'label': 'Once a week',
+        'days': const [1], // Default to Monday, user can change
+        'icon': Icons.event,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Preset buttons
+        Wrap(
+          spacing: AppSizes.paddingS,
+          runSpacing: AppSizes.paddingS,
+          children: presets.map((preset) {
+            final presetDays = preset['days'] as List<int>;
+            final isSelected = _activeWeekdays.length == presetDays.length &&
+                _activeWeekdays.every((day) => presetDays.contains(day)) &&
+                presetDays.every((day) => _activeWeekdays.contains(day));
+
+            return FilterChip(
+              avatar: Icon(
+                preset['icon'] as IconData,
+                size: 16,
+              ),
+              label: Text(preset['label'] as String),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _activeWeekdays = List<int>.from(presetDays);
+                  });
+                }
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppSizes.paddingM),
+        // Individual day selectors
+        Wrap(
+          spacing: AppSizes.paddingS,
+          runSpacing: AppSizes.paddingS,
+          children: weekdays.map((day) {
+            final dayValue = day['value'] as int;
+            final isSelected = _activeWeekdays.contains(dayValue);
+
+            return FilterChip(
+              label: Text(day['label'] as String),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _activeWeekdays = List<int>.from(_activeWeekdays)
+                      ..add(dayValue)
+                      ..sort();
+                  } else {
+                    _activeWeekdays = List<int>.from(_activeWeekdays)
+                      ..remove(dayValue);
+                    // Ensure at least one day is selected
+                    if (_activeWeekdays.isEmpty) {
+                      _activeWeekdays = [dayValue]; // Keep current day
+                    }
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppSizes.paddingS),
+        Text(
+          'Selected: ${_activeWeekdays.length} day${_activeWeekdays.length != 1 ? 's' : ''}',
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildIconSelector(AppColors colors) {
     return Wrap(
       spacing: AppSizes.paddingM,
@@ -438,6 +572,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
           difficulty: _selectedDifficulty,
           weeklyTarget: _weeklyTarget,
           monthlyTarget: _monthlyTarget,
+          activeWeekdays: _activeWeekdays,
           reminders: _reminders,
         ) ??
         Habit(
@@ -453,6 +588,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
           difficulty: _selectedDifficulty,
           weeklyTarget: _weeklyTarget,
           monthlyTarget: _monthlyTarget,
+          activeWeekdays: _activeWeekdays,
           reminders: _reminders,
         );
 
