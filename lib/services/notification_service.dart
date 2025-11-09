@@ -7,14 +7,28 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/habit.dart';
+import 'notification_backend.dart';
+import 'notification_schedule_calculator.dart';
 
 /// Service for scheduling and managing habit reminder notifications.
 /// Fully integrated with mobile support - Windows/Web builds skip
 ///gracefully.
 class NotificationService {
-  NotificationService() : _plugin = FlutterLocalNotificationsPlugin();
+  NotificationService({
+    NotificationBackend? backend,
+    PlatformWrapper? platformWrapper,
+    NotificationScheduleCalculator? scheduleCalculator,
+    DateTimeProvider? dateTimeProvider,
+  })  : _backend = backend ?? FlutterLocalNotificationsBackend(),
+        _platform = platformWrapper ?? const PlatformWrapper(),
+        _scheduleCalculator = scheduleCalculator ??
+            NotificationScheduleCalculator(
+              dateTimeProvider: dateTimeProvider ?? const DateTimeProvider(),
+            );
 
-  final FlutterLocalNotificationsPlugin _plugin;
+  final NotificationBackend _backend;
+  final PlatformWrapper _platform;
+  final NotificationScheduleCalculator _scheduleCalculator;
   bool _initialized = false;
   // Store scheduled dates for pending notifications (notificationId -> scheduledDate)
   final Map<int, DateTime> _scheduledDates = {};
@@ -23,7 +37,7 @@ class NotificationService {
 
   bool get _isPlatformSupported {
     if (kIsWeb) return false;
-    return Platform.isAndroid || Platform.isIOS;
+    return _platform.isAndroid || _platform.isIOS;
   }
 
   Future<void> initialize() async {
@@ -52,7 +66,7 @@ class NotificationService {
         iOS: iosSettings,
       );
 
-      await _plugin.initialize(
+      await _backend.initialize(
         initSettings,
         onDidReceiveNotificationResponse: (response) {
           // TODO: Handle notification taps (deep links) when UX is ready.
@@ -60,27 +74,19 @@ class NotificationService {
       );
 
       // Request permissions for iOS
-      if (Platform.isIOS) {
-        await _plugin
-            .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin
-            >()
-            ?.requestPermissions(alert: true, badge: true, sound: true);
+      if (_platform.isIOS) {
+        await _backend.requestIOSPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
       }
 
       // Request notification permission for Android 13+ (API 33+)
-      if (Platform.isAndroid) {
-        final androidImplementation = _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
-        if (androidImplementation != null) {
-          // Check if permission is already granted
-          final granted = await androidImplementation
-              .requestNotificationsPermission();
-          if (granted == false) {
-            debugPrint('Notification permission denied on Android');
-          }
+      if (_platform.isAndroid) {
+        final granted = await _backend.requestAndroidPermission();
+        if (granted == false) {
+          debugPrint('Notification permission denied on Android');
         }
       }
 
@@ -94,95 +100,35 @@ class NotificationService {
     await initialize();
     if (!_isPlatformSupported) return;
 
-    // Check permission before scheduling (Android 13+)
-    if (Platform.isAndroid) {
-      final androidImplementation = _plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      if (androidImplementation != null) {
-        final granted = await androidImplementation
-            .requestNotificationsPermission();
-        if (granted == false) {
-          debugPrint(
-            'Cannot schedule reminder: notification permission not granted',
-          );
-          return;
-        }
+    if (_platform.isAndroid) {
+      final granted = await _backend.requestAndroidPermission();
+      if (granted == false) {
+        debugPrint(
+          'Cannot schedule reminder: notification permission not granted',
+        );
+        return;
       }
     }
 
     try {
-      // Generate unique notification ID using habit.id + reminder.id combination
-      // This prevents collisions when different habits have reminders with same ID
-      final uniqueId = '${habit.id}_${reminder.id}';
-      final id = uniqueId.hashCode & 0x7fffffff;
-      final now = tz.TZDateTime.now(tz.local);
-      tz.TZDateTime scheduleDate = tz.TZDateTime(
-        tz.local,
-        now.year,
-        now.month,
-        now.day,
-        reminder.hour,
-        reminder.minute,
-      );
+      final id = _scheduleCalculator.notificationIdFor(habit, reminder);
+      final scheduleDate = _scheduleCalculator.resolveNextSchedule(reminder);
 
-      // Prevent infinite loop: if weekdays is empty, use today as fallback
-      if (reminder.weekdays.isEmpty) {
-        debugPrint('Warning: Reminder has no weekdays, scheduling for today');
-        scheduleDate = now.add(
-          const Duration(minutes: 1),
-        ); // Schedule 1 minute from now
-      } else {
-        int maxDays = 14; // Safety limit: check max 2 weeks ahead
-        int daysChecked = 0;
-        while ((scheduleDate.isBefore(now) ||
-                !reminder.weekdays.contains(scheduleDate.weekday)) &&
-            daysChecked < maxDays) {
-          scheduleDate = scheduleDate.add(const Duration(days: 1));
-          daysChecked++;
-        }
-        // If still no valid day found after 2 weeks, schedule for next available weekday
-        if (daysChecked >= maxDays &&
-            !reminder.weekdays.contains(scheduleDate.weekday)) {
-          debugPrint(
-            'Warning: Could not find valid weekday in 2 weeks, scheduling for first available weekday',
-          );
-          // Find next available weekday
-          for (int i = 0; i < 7; i++) {
-            final checkDate = scheduleDate.add(Duration(days: i));
-            if (reminder.weekdays.contains(checkDate.weekday)) {
-              scheduleDate = checkDate;
-              break;
-            }
-          }
-        }
-      }
-
-      // Check if exact alarms are permitted (Android 12+)
       AndroidScheduleMode scheduleMode =
           AndroidScheduleMode.exactAllowWhileIdle;
-      if (Platform.isAndroid) {
-        final androidImplementation = _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
-        if (androidImplementation != null) {
-          final canScheduleExactAlarms = await androidImplementation
-              .canScheduleExactNotifications();
-          if (canScheduleExactAlarms == false) {
-            // Fallback to inexact alarms if exact alarms not permitted
-            scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
-            // Only log once to prevent spam
-            if (!_exactAlarmsWarningLogged) {
-              debugPrint('Exact alarms not permitted, using inexact alarms');
-              _exactAlarmsWarningLogged = true;
-            }
+      if (_platform.isAndroid) {
+        final canScheduleExactAlarms =
+            await _backend.canScheduleExactNotifications();
+        if (canScheduleExactAlarms == false) {
+          scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
+          if (!_exactAlarmsWarningLogged) {
+            debugPrint('Exact alarms not permitted, using inexact alarms');
+            _exactAlarmsWarningLogged = true;
           }
         }
       }
 
-      await _plugin.zonedSchedule(
+      await _backend.zonedSchedule(
         id,
         habit.title,
         habit.description ?? 'Time to complete ${habit.title}!',
@@ -199,7 +145,7 @@ class NotificationService {
             enableLights: true,
             enableVibration: true,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             sound: 'default',
             presentAlert: true,
             presentBadge: true,
@@ -210,23 +156,24 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
 
-      // Store scheduled date for tracking
       _scheduledDates[id] = scheduleDate.toLocal();
     } catch (e) {
       debugPrint('Schedule reminder error: $e');
     }
   }
 
-  Future<void> cancelReminder(HabitReminder reminder) async {
+  Future<void> cancelReminder(
+    HabitReminder reminder, {
+    Habit? habit,
+  }) async {
     await initialize();
     if (!_isPlatformSupported) return;
 
     try {
-      // Note: This method needs habit context to generate unique ID
-      // For now, we'll cancel by reminder.id only (may cancel wrong notification if collision)
-      // TODO: Pass habit context or store habit-reminder mapping
-      final id = reminder.id.hashCode & 0x7fffffff;
-      await _plugin.cancel(id);
+      final id = habit != null
+          ? _scheduleCalculator.notificationIdFor(habit, reminder)
+          : reminder.id.hashCode & 0x7fffffff;
+      await _backend.cancel(id);
     } catch (e) {
       debugPrint('Cancel reminder error: $e');
     }
@@ -239,9 +186,8 @@ class NotificationService {
       if (!_isPlatformSupported) continue;
 
       try {
-        final uniqueId = '${habit.id}_${reminder.id}';
-        final id = uniqueId.hashCode & 0x7fffffff;
-        await _plugin.cancel(id);
+        final id = _scheduleCalculator.notificationIdFor(habit, reminder);
+        await _backend.cancel(id);
       } catch (e) {
         debugPrint('Cancel reminder error: $e');
       }
@@ -253,7 +199,7 @@ class NotificationService {
     if (!_isPlatformSupported) return;
 
     try {
-      await _plugin.cancelAll();
+      await _backend.cancelAll();
     } catch (e) {
       debugPrint('Cancel all notifications error: $e');
     }
@@ -270,7 +216,7 @@ class NotificationService {
     if (!_isPlatformSupported) return;
 
     try {
-      await _plugin.show(
+      await _backend.show(
         999999, // Special test ID
         title,
         body,
@@ -310,7 +256,7 @@ class NotificationService {
     if (!_isPlatformSupported) return [];
 
     try {
-      return await _plugin.pendingNotificationRequests();
+      return await _backend.pendingNotificationRequests();
     } catch (e) {
       debugPrint('Get pending notifications error: $e');
       return [];
@@ -322,7 +268,7 @@ class NotificationService {
     if (!_isPlatformSupported) return [];
 
     try {
-      final pending = await _plugin.pendingNotificationRequests();
+      final pending = await _backend.pendingNotificationRequests();
       return pending
           .map((n) => 'ID: ${n.id}, Title: ${n.title ?? ''}')
           .toList();
@@ -345,4 +291,28 @@ class NotificationService {
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
   }
+
+  tz.TZDateTime resolveNextSchedule(
+    HabitReminder reminder, {
+    tz.TZDateTime? from,
+  }) =>
+      _scheduleCalculator.resolveNextSchedule(reminder, from: from);
+
+  int notificationIdFor(Habit habit, HabitReminder reminder) =>
+      _scheduleCalculator.notificationIdFor(habit, reminder);
+}
+
+class PlatformWrapper {
+  const PlatformWrapper({
+    bool? isAndroidOverride,
+    bool? isIOSOverride,
+  })  : _isAndroidOverride = isAndroidOverride,
+        _isIOSOverride = isIOSOverride;
+
+  final bool? _isAndroidOverride;
+  final bool? _isIOSOverride;
+
+  bool get isAndroid =>
+      _isAndroidOverride ?? (!kIsWeb && Platform.isAndroid);
+  bool get isIOS => _isIOSOverride ?? (!kIsWeb && Platform.isIOS);
 }
