@@ -125,6 +125,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _confettiController.play();
+            // Clear color after animation completes (save memory)
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) {
+                setState(() {
+                  _currentHabitColor = null;
+                  _currentHabitDifficulty = null;
+                });
+              }
+            });
           }
         });
       }
@@ -1063,46 +1072,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               cacheExtent: 500,
               slivers: slivers,
             ),
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor?.value ?? 'default'}'),
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                particleDrag: 0.05,
-                emissionFrequency: 0.03,
-                numberOfParticles: _currentHabitDifficulty != null
-                    ? _getParticleCount(_currentHabitDifficulty!)
-                    : 50, // Default fallback
-                gravity: 0.2,
-                shouldLoop: false,
-                colors: _currentHabitColor != null
-                    ? _generateColorPalette(_currentHabitColor!)
-                    : [
-                        // Fallback colors if no habit color
-                        const Color(0xFFD4C4B0),
-                        const Color(0xFFC9B8A3),
-                        const Color(0xFFB8A892),
-                      ],
-                createParticlePath: (size) {
-                  // Custom beautiful shapes: stars, circles, and diamonds
-                  // Use size-based hash for variety
-                  final hash = (size.width * 1000 + size.height * 1000).toInt();
-                  final random = hash % 3;
-                  
-                  if (random == 0) {
-                    // Star shape
-                    return _createStarPath(size);
-                  } else if (random == 1) {
-                    // Diamond shape
-                    return _createDiamondPath(size);
-                  } else {
-                    // Circle with inner decoration
-                    return _createDecoratedCirclePath(size);
-                  }
-                },
+            // Confetti widget - only render when needed (performance optimization)
+            if (_currentHabitColor != null)
+              Align(
+                alignment: Alignment.topCenter,
+                child: IgnorePointer(
+                  ignoring: true, // Don't intercept touches
+                  child: ConfettiWidget(
+                    key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor?.value ?? 'default'}'),
+                    confettiController: _confettiController,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    particleDrag: 0.05,
+                    emissionFrequency: 0.03,
+                    numberOfParticles: _currentHabitDifficulty != null
+                        ? _getParticleCount(_currentHabitDifficulty!)
+                        : 50, // Default fallback
+                    gravity: 0.2,
+                    shouldLoop: false,
+                    colors: _currentHabitColor != null
+                        ? _generateColorPalette(_currentHabitColor!)
+                        : [
+                            // Fallback colors if no habit color
+                            const Color(0xFFD4C4B0),
+                            const Color(0xFFC9B8A3),
+                            const Color(0xFFB8A892),
+                          ],
+                    createParticlePath: (size) {
+                      // Custom beautiful shapes: stars, circles, and diamonds
+                      // Use size-based hash for variety
+                      final hash = (size.width * 1000 + size.height * 1000).toInt();
+                      final random = hash % 3;
+                      
+                      if (random == 0) {
+                        // Star shape
+                        return _createStarPath(size);
+                      } else if (random == 1) {
+                        // Diamond shape
+                        return _createDiamondPath(size);
+                      } else {
+                        // Circle with inner decoration
+                        return _createDecoratedCirclePath(size);
+                      }
+                    },
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),
