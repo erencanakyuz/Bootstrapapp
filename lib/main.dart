@@ -41,7 +41,7 @@ class BootstrapApp extends ConsumerWidget {
           backgroundColor: colors.background,
           body: Center(
             child: CircularProgressIndicator(
-              color: colors.primary,
+              color: colors.textPrimary,
             ),
           ),
         ),

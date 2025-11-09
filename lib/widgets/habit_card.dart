@@ -43,7 +43,7 @@ class HabitCard extends StatelessWidget {
     // Professional shadow and border for beige theme
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9), // Light beige - user requested
+        color: const Color(0xFFFFF8F0), // Light cream/yellow cream // Light beige - user requested
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5), // More subtle border

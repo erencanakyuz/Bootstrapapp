@@ -186,7 +186,14 @@ class _HomeScreenState extends State<HomeScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              colors.gradientPeachStart,
+              colors.gradientPeachEnd,
+            ],
+          ),
           borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
           boxShadow: AppShadows.cardSoft(null),
         ),
@@ -288,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen>
     AppTextStyles textStyles,
     double horizontalPadding,
   ) {
-    // Removed - Weekly Progress card removed per user request
+    // Removed - Future Journal card removed per user request
     return const SizedBox.shrink();
   }
 
@@ -300,12 +307,15 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-          border: Border.all(
-            color: colors.outline.withValues(alpha: 0.3),
-            width: 1,
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Color(0xFFE8D5C4), // Muted cream-beige
+              Color(0xFFF5E6D3), // Muted peach-cream
+            ],
           ),
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
           boxShadow: AppShadows.cardSoft(null),
         ),
         child: Row(
@@ -522,8 +532,8 @@ class _HomeScreenState extends State<HomeScreen>
                     height: height,
                     decoration: BoxDecoration(
                       color: height % 2 == 0
-                          ? colors.brandAccentPurple
-                          : colors.brandAccentPurpleSoft,
+                          ? colors.textPrimary
+                          : colors.textTertiary,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -897,9 +907,9 @@ class _HomeScreenState extends State<HomeScreen>
                 gravity: 0.3,
                 shouldLoop: false,
                 colors: [
-                  colors.textPrimary,
-                  colors.textSecondary,
-                  colors.textTertiary,
+                  Color(0xFFD4C4B0), // Muted beige
+                  Color(0xFFC9B8A3), // Muted cream
+                  Color(0xFFB8A892), // Muted tan
                 ],
               ),
             ),

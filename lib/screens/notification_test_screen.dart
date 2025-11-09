@@ -451,7 +451,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: colors.primary.withValues(alpha: 0.2),
+                              color: colors.textPrimary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(AppSizes.radiusS),
                             ),
                             child: Text(
@@ -459,7 +459,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: colors.primary,
+                                color: colors.textPrimary,
                               ),
                             ),
                           ),
@@ -649,7 +649,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       child: ElevatedButton(
         onPressed: _isLoading ? null : onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: colors.primary,
+          backgroundColor: colors.textPrimary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.all(AppSizes.paddingM),
           alignment: Alignment.centerLeft,

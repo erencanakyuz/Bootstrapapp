@@ -110,7 +110,7 @@ Create a cute 3D floating island badge illustration for a "Seven-Day Spark" achi
 
 **Habit Hero:**
 ```
-Create a cute 3D floating island badge illustration for a "Habit Hero" achievement (30-day streak). The scene features a small floating island with a trophy or crown element, representing hero status. Include celebration elements like confetti, stars, and golden accents. The color palette should include golden tones (#F0B429), soft purples (#A371F2), and success greens (#4BAE88). Style: cute, friendly, gamified 3D rendered illustration with soft shadows. The island should feel victorious and celebratory.
+Create a cute 3D floating island badge illustration for a "Habit RHero" achievement (30-day streak). The scene features a small floating island with a trophy or crown element, representing hero status. Include celebration elements like confetti, stars, and golden accents. The color palette should include golden tones (#F0B429), soft purples (#A371F2), and success greens (#4BAE88). Style: cute, friendly, gamified 3D rendered illustration with soft shadows. The island should feel victorious and celebratory.
 ```
 
 **Centurion:**
