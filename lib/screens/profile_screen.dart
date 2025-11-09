@@ -310,7 +310,58 @@ class ProfileScreen extends ConsumerWidget {
     if (result != null && result.files.single.path != null) {
       final file = File(result.files.single.path!);
       final json = await file.readAsString();
-      await ref.read(habitsProvider.notifier).importHabits(json);
+      final importedSettings =
+          await ref.read(habitsProvider.notifier).importHabits(json);
+      
+      // Restore settings if available
+      if (importedSettings != null) {
+        final settingsNotifier =
+            ref.read(profileSettingsProvider.notifier);
+        
+        // Update all settings from imported data
+        if (importedSettings.containsKey('name')) {
+          await settingsNotifier.updateName(
+            importedSettings['name'] as String,
+          );
+        }
+        if (importedSettings.containsKey('notificationsEnabled')) {
+          await settingsNotifier.toggleNotifications(
+            importedSettings['notificationsEnabled'] as bool,
+          );
+        }
+        if (importedSettings.containsKey('hapticsEnabled')) {
+          await settingsNotifier.toggleHaptics(
+            importedSettings['hapticsEnabled'] as bool,
+          );
+        }
+        if (importedSettings.containsKey('soundsEnabled')) {
+          await settingsNotifier.toggleSounds(
+            importedSettings['soundsEnabled'] as bool,
+          );
+        }
+        if (importedSettings.containsKey('confettiEnabled')) {
+          await settingsNotifier.toggleConfetti(
+            importedSettings['confettiEnabled'] as bool,
+          );
+        }
+        if (importedSettings.containsKey('animationsEnabled')) {
+          await settingsNotifier.toggleAnimations(
+            importedSettings['animationsEnabled'] as bool,
+          );
+        }
+        if (importedSettings.containsKey('avatarSeed')) {
+          final seed = importedSettings['avatarSeed'] as int;
+          final service = ref.read(appSettingsServiceProvider);
+          await service.setAvatarSeed(seed);
+          // Refresh settings
+          ref.invalidate(profileSettingsProvider);
+        }
+        if (importedSettings.containsKey('allowPastDatesBeforeCreation')) {
+          await settingsNotifier.toggleAllowPastDatesBeforeCreation(
+            importedSettings['allowPastDatesBeforeCreation'] as bool,
+          );
+        }
+      }
     }
   }
 

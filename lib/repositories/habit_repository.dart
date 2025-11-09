@@ -375,20 +375,35 @@ class HabitRepository {
         .toList();
   }
 
-  Future<String> exportHabits({bool includeArchived = true}) async {
+  Future<String> exportHabits({
+    bool includeArchived = true,
+    Map<String, dynamic>? settings,
+  }) async {
     final habits = includeArchived ? _cache : activeHabits;
     final payload = habits.map((habit) => habit.toJson()).toList();
-    return jsonEncode({
+    final exportData = {
       'exportedAt': DateTime.now().toIso8601String(),
+      'version': '1.0.0',
       'count': payload.length,
       'habits': payload,
-    });
+    };
+    
+    // Include settings if provided
+    if (settings != null) {
+      exportData['settings'] = settings;
+    }
+    
+    return jsonEncode(exportData);
   }
 
   /// Import habits from JSON string
+  /// Returns imported settings if available, null otherwise
   /// Throws [FormatException] if JSON is invalid
   /// Throws [StorageException] if validation fails
-  Future<void> importHabits(String jsonString, {bool merge = true}) async {
+  Future<Map<String, dynamic>?> importHabits(
+    String jsonString, {
+    bool merge = true,
+  }) async {
     try {
       // Parse JSON
       final decoded = jsonDecode(jsonString);
@@ -509,6 +524,12 @@ class HabitRepository {
       }
 
       await _persist();
+      
+      // Return imported settings if available (for external handling)
+      if (decoded.containsKey('settings')) {
+        return decoded['settings'] as Map<String, dynamic>?;
+      }
+      return null;
     } on HabitValidationException catch (e) {
       throw FormatException(e.toString());
     } on FormatException {
