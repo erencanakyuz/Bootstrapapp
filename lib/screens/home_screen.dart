@@ -1,4 +1,5 @@
 import 'package:confetti/confetti.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import '../utils/responsive.dart';
 import '../widgets/add_habit_modal.dart';
 import '../widgets/habit_card.dart';
 import 'habit_detail_screen.dart';
+import 'onboarding_screen.dart';
 
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
 class HomeScreen extends StatefulWidget {
@@ -129,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -153,6 +156,29 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
             ),
+            // TODO: Remove this dev-only button before release
+            if (kDebugMode)
+              IconButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const OnboardingScreen(),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.info_outline_rounded,
+                  size: 20,
+                  color: colors.textSecondary,
+                ),
+                tooltip: 'Open Onboarding',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 18),

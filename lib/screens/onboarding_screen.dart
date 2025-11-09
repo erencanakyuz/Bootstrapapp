@@ -159,6 +159,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _completeOnboarding() async {
     await ref.read(onboardingControllerProvider).completeOnboarding();
+    // If this screen was pushed as a route, pop back to previous screen
+    // Otherwise (initial route), main.dart will handle navigation automatically
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 }
 
