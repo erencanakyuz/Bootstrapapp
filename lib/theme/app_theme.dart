@@ -226,20 +226,20 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     statusComplete: Color(0xFF6B7D5A), // Muted military/olive green
     statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
     statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose
-    // RefactorUi.md specific gradients
-    brandAccentPurple: Color(0xFFA371F2),
-    brandAccentPurpleSoft: Color(0xFFC39BF8),
+    // RefactorUi.md specific gradients - Muted palette
+    brandAccentPurple: Color(0xFF9B8FA8), // Muted dusty lavender (replacing bright purple)
+    brandAccentPurpleSoft: Color(0xFFB5A8C2), // Muted soft lavender
     brandAccentPeach: Color(0xFFF8C9A2),
     brandAccentPeachSoft: Color(0xFFFDE5C9),
     brandMutedIcon: Color(0xFFB7A89A),
     gradientPeachStart: Color(0xFFF8C9A2), // gradientPeachHorizontalStart
     gradientPeachEnd: Color(0xFFFDE5C9), // gradientPeachHorizontalEnd
-    gradientPurpleStart: Color(0xFFA371F2), // gradientPurpleVerticalStart
-    gradientPurpleEnd: Color(0xFFD9B5FF), // gradientPurpleVerticalEnd
-    gradientPurpleLighterStart: Color(0xFFE5D4FF), // gradientPurpleLighterStart
-    gradientPurpleLighterEnd: Color(0xFFF8ECFF), // gradientPurpleLighterEnd
-    gradientBlueAudioStart: Color(0xFFCBDCFF), // gradientBlueAudioStart
-    gradientBlueAudioEnd: Color(0xFFF2F6FF), // gradientBlueAudioEnd
+    gradientPurpleStart: Color(0xFF9B8FA8), // Muted dusty lavender
+    gradientPurpleEnd: Color(0xFFB5A8C2), // Muted soft lavender
+    gradientPurpleLighterStart: Color(0xFFD4C9D9), // Muted very light lavender
+    gradientPurpleLighterEnd: Color(0xFFE8E0E8), // Muted pale lavender
+    gradientBlueAudioStart: Color(0xFFD4D9E0), // Muted blue-gray
+    gradientBlueAudioEnd: Color(0xFFE8EBF0), // Muted pale blue-gray
     chipOutline: Color(0xFFD7C9BA), // chipOutline - RefactorUi.md
   ),
   AppPalette.dark: AppColors(

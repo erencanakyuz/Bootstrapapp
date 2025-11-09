@@ -17,6 +17,12 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
+  
+  // Lock to portrait by default - prevent automatic rotation
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   runApp(const ProviderScope(child: BootstrapApp()));
 }

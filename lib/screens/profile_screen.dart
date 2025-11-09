@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
@@ -22,6 +23,12 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(profileSettingsProvider);
     final colors = Theme.of(context).extension<AppColors>()!;
+    
+    // Lock to portrait orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
     return settingsAsync.when(
       loading: () => Scaffold(
@@ -47,8 +54,11 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(AppSizes.paddingXXL),
+          body: SafeArea(
+            top: true,
+            bottom: true, // Bottom safe area for navigation bar
+            child: ListView(
+              padding: const EdgeInsets.all(AppSizes.paddingXXL),
             children: [
               Center(
                 child: CircleAvatar(
@@ -175,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFCF9),
+                      color: colors.elevatedSurface, // Use theme elevatedSurface
                       borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       border: Border.all(
                         color: colors.outline.withValues(alpha: 0.5),
@@ -238,10 +248,11 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Future<void> _exportHabits(BuildContext context, WidgetRef ref) async {
     final json = await ref.read(habitsProvider.notifier).exportHabits();

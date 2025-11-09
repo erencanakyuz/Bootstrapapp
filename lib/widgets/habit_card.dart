@@ -43,7 +43,7 @@ class HabitCard extends StatelessWidget {
     // Professional shadow and border for beige theme
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F0), // Light cream/yellow cream // Light beige - user requested
+        color: colors.elevatedSurface, // Light cream/yellow cream - use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5), // More subtle border
@@ -66,7 +66,7 @@ class HabitCard extends StatelessWidget {
           ),
           // Subtle inner glow for depth
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: colors.surface.withValues(alpha: 0.95), // Use theme surface
             blurRadius: 0,
             spreadRadius: -1,
             offset: const Offset(0, 1),
@@ -270,7 +270,7 @@ class HabitCard extends StatelessWidget {
                     child: Text(
                       'NEW',
                       style: textStyles.captionUppercase.copyWith(
-                        color: Colors.white, // badgeNewText
+                        color: colors.surface, // badgeNewText - use theme surface
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -308,7 +308,7 @@ class HabitCard extends StatelessWidget {
       child: isCompleted
           ? Icon(
               PhosphorIconsFill.check,
-              color: Colors.white,
+              color: colors.surface, // Checkmark color - use theme surface
               size: iconSize,
             )
           : null,

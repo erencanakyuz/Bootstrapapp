@@ -129,7 +129,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                         value: value,
                         title: '${(value * 100).toStringAsFixed(0)}%',
                         titleStyle: TextStyle(
-                          color: const Color(0xFFFFFCF9),
+                          color: colors.surface, // Use theme surface color
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -223,7 +223,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXL),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
@@ -269,7 +269,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface, // Use theme elevatedSurface
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
@@ -326,17 +326,17 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   Color _colorForCategory(HabitCategory category) {
     switch (category) {
       case HabitCategory.health:
-        return const Color(0xFF6F8F72);
+        return const Color(0xFF6B7D5A); // Muted military/olive green
       case HabitCategory.productivity:
-        return const Color(0xFF8AA1C1);
+        return const Color(0xFF6B8FA3); // Muted blue-gray
       case HabitCategory.learning:
-        return const Color(0xFFD6A15D);
+        return const Color(0xFFC9A882); // Muted warm beige-orange
       case HabitCategory.mindfulness:
-        return const Color(0xFFB18AB4);
+        return const Color(0xFF9B8FA8); // Muted dusty lavender
       case HabitCategory.wellness:
-        return const Color(0xFF7CB7C8);
+        return const Color(0xFF7A9B9B); // Muted dusty teal
       case HabitCategory.creativity:
-        return const Color(0xFFE999A9);
+        return const Color(0xFFC99FA3); // Muted dusty pink
     }
   }
 }

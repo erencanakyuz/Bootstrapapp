@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
@@ -55,6 +56,13 @@ class InsightsScreen extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColors>()!;
     final horizontalPadding = context.horizontalGutter;
     final statsColumns = context.responsiveGridColumns(compact: 2);
+    
+    // Lock to portrait orientation - prevent automatic rotation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    
     final statsCards = [
       StatsCard(
         title: 'Today',
@@ -88,7 +96,10 @@ class InsightsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: CustomScrollView(
+      body: SafeArea(
+        top: true,
+        bottom: false, // Bottom navigation handled by MainScreen
+        child: CustomScrollView(
         slivers: [
           // App bar
           SliverAppBar(
@@ -216,6 +227,7 @@ class InsightsScreen extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -234,7 +246,7 @@ class InsightsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.paddingXL),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
           border: Border.all(
             color: colors.outline.withValues(alpha: 0.5),
@@ -394,7 +406,7 @@ class InsightsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXXL),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF9),
+          color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(AppSizes.radiusXL),
           border: Border.all(
             color: colors.outline.withValues(alpha: 0.3),
