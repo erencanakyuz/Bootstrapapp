@@ -44,17 +44,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Ensure portrait when Calendar screen becomes visible
-    // This is called when the screen is displayed in IndexedStack
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-  }
-
   static DateTime _getWeekStart(DateTime date) {
     final weekday = date.weekday;
     return date.subtract(Duration(days: weekday - 1));
@@ -62,11 +51,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   void dispose() {
-    // Reset to portrait when leaving calendar
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     // Reset system UI mode
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.edgeToEdge,
@@ -171,26 +155,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 if (hapticsEnabled) {
                   HapticFeedback.lightImpact();
                 }
-                // Set landscape BEFORE navigating to prevent race conditions
-                SystemChrome.setPreferredOrientations([
-                  DeviceOrientation.landscapeLeft,
-                  DeviceOrientation.landscapeRight,
-                ]);
-                // Small delay to ensure orientation is set before navigation
-                Future.delayed(const Duration(milliseconds: 50), () {
-                  Navigator.of(context).push(
-                    PageTransitions.fadeAndSlide(
-                      FullCalendarScreen(habits: widget.habits),
-                    ),
-                  ).then((_) {
-                    // When returning from FullCalendarScreen, restore portrait
-                    // FullCalendarScreen's dispose already resets to portrait
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.portraitUp,
-                      DeviceOrientation.portraitDown,
-                    ]);
-                  });
-                });
+                Navigator.of(context).push(
+                  PageTransitions.fadeAndSlide(
+                    FullCalendarScreen(habits: widget.habits),
+                  ),
+                );
               },
               backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
@@ -202,15 +171,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               onPressed: () {
                 Navigator.of(context).push(
                   PageTransitions.fadeAndSlide(const ProfileScreen()),
-                ).then((_) {
-                  // When returning from Profile, ensure portrait is maintained
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.portraitUp,
-                      DeviceOrientation.portraitDown,
-                    ]);
-                  });
-                });
+                );
               },
               backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
@@ -386,22 +347,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
-        // Reset to portrait before navigating to habit detail
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
         Navigator.of(context).push(
           PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
-        ).then((_) {
-          // When returning from HabitDetail, ensure portrait is maintained
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            SystemChrome.setPreferredOrientations([
-              DeviceOrientation.portraitUp,
-              DeviceOrientation.portraitDown,
-            ]);
-          });
-        });
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
