@@ -197,7 +197,7 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => _loadMockData(context, ref),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.notifications_active),
+                   leading: const Icon(Icons.notifications_active),
                     title: const Text('Notification Test Screen'),
                     subtitle: const Text('Test all notification scenarios'),
                     onTap: () {
