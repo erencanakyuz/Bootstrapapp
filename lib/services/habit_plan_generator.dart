@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -110,13 +112,16 @@ class HabitPlanGenerator {
     }
 
     // Adjust based on lifestyle
-    final adjustedHabits = _adjustForLifestyle(habits, preferences.lifestyle);
+    final adjustedHabits = _adjustForLifestyle(habits, preferences.lifestyle)
+        .map(_alignTargetsWithSchedule)
+        .toList();
 
-    // Limit to commitment level and shuffle for variety
-    final finalHabits = adjustedHabits.take(preferences.commitmentLevel.clamp(3, 10)).toList();
-    finalHabits.shuffle(); // Randomize order for variety
+    adjustedHabits.shuffle(); // Randomize order for variety
 
-    return finalHabits;
+    // Limit to commitment level after shuffling for better variety
+    return adjustedHabits
+        .take(preferences.commitmentLevel.clamp(3, 10))
+        .toList();
   }
 
   static List<Habit> _adjustForLifestyle(List<Habit> habits, String lifestyle) {
@@ -129,6 +134,25 @@ class HabitPlanGenerator {
     }
     // Balanced - keep all
     return habits;
+  }
+
+  static Habit _alignTargetsWithSchedule(Habit habit) {
+    final activeDays =
+        habit.activeWeekdays.isEmpty ? 7 : habit.activeWeekdays.length;
+    final cappedWeeklyTarget =
+        math.max(1, math.min(habit.weeklyTarget, activeDays));
+    final cappedMonthlyTarget =
+        math.max(1, math.min(habit.monthlyTarget, activeDays * 4));
+
+    if (cappedWeeklyTarget == habit.weeklyTarget &&
+        cappedMonthlyTarget == habit.monthlyTarget) {
+      return habit;
+    }
+
+    return habit.copyWith(
+      weeklyTarget: cappedWeeklyTarget,
+      monthlyTarget: cappedMonthlyTarget,
+    );
   }
 
   static List<Habit> _getHealthHabits(UserPreferences prefs, bool isDefault) {

@@ -672,49 +672,81 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _isCreatingPlan = true);
     HapticFeedback.mediumImpact();
 
-    // Map UI selections to preferences
-    final goals = _selectedGoals.map((g) {
-      switch (g) {
-        case 'Health & Fitness':
-          return 'health';
-        case 'Productivity':
-          return 'productivity';
-        case 'Learning':
-          return 'learning';
-        case 'Mindfulness':
-          return 'mindfulness';
-        case 'Creativity':
-          return 'creativity';
-        default:
-          return 'health';
+    try {
+      // Map UI selections to preferences
+      final goals = _selectedGoals.map((g) {
+        switch (g) {
+          case 'Health & Fitness':
+            return 'health';
+          case 'Productivity':
+            return 'productivity';
+          case 'Learning':
+            return 'learning';
+          case 'Mindfulness':
+            return 'mindfulness';
+          case 'Creativity':
+            return 'creativity';
+          default:
+            return 'health';
+        }
+      }).toList();
+
+      final lifestyle = _selectedLifestyle?.toLowerCase() ?? 'balanced';
+      final interests =
+          _selectedInterests.map((i) => i.toLowerCase()).toList();
+      final scheduleType = _normalizedSchedulePreference();
+
+      final preferences = UserPreferences(
+        goals: goals.isEmpty ? ['health'] : goals,
+        lifestyle: lifestyle,
+        interests: interests.isEmpty ? ['fitness'] : interests,
+        scheduleType: scheduleType,
+        commitmentLevel: _commitmentLevel,
+      );
+
+      // Generate habits based on preferences
+      final habits = HabitPlanGenerator.generatePlan(preferences);
+
+      // Add habits to the app
+      for (final habit in habits) {
+        await ref.read(habitsProvider.notifier).addHabit(habit);
       }
-    }).toList();
 
-    final lifestyle = _selectedLifestyle?.toLowerCase() ?? 'balanced';
-    final interests = _selectedInterests.map((i) => i.toLowerCase()).toList();
-    final scheduleType = _selectedScheduleType?.toLowerCase() ?? 'mixed';
+      // Small delay for better UX
+      await Future.delayed(const Duration(milliseconds: 500));
 
-    final preferences = UserPreferences(
-      goals: goals.isEmpty ? ['health'] : goals,
-      lifestyle: lifestyle,
-      interests: interests.isEmpty ? ['fitness'] : interests,
-      scheduleType: scheduleType,
-      commitmentLevel: _commitmentLevel,
-    );
-
-    // Generate habits based on preferences
-    final habits = HabitPlanGenerator.generatePlan(preferences);
-
-    // Add habits to the app
-    for (final habit in habits) {
-      await ref.read(habitsProvider.notifier).addHabit(habit);
+      // Complete onboarding
+      await _completeOnboarding();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to create starter plan: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (!mounted) {
+        _isCreatingPlan = false;
+      } else {
+        setState(() => _isCreatingPlan = false);
+      }
     }
+  }
 
-    // Small delay for better UX
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Complete onboarding
-    await _completeOnboarding();
+  String _normalizedSchedulePreference() {
+    switch (_selectedScheduleType) {
+      case 'Daily':
+        return 'daily';
+      case 'Weekly':
+        return 'weekly';
+      case 'Weekend Only':
+        return 'weekend';
+      case 'Mixed':
+        return 'mixed';
+      default:
+        return 'mixed';
+    }
   }
 
   Future<void> _completeOnboarding() async {
