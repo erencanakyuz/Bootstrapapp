@@ -13,6 +13,7 @@ import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../screens/notification_test_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/mock_data_generator.dart';
 import '../utils/page_transitions.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -189,6 +190,12 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSizes.paddingL),
+                  ListTile(
+                    leading: const Icon(Icons.auto_awesome),
+                    title: const Text('Load Mock Data'),
+                    subtitle: const Text('Generate 8 habits with 1 month of data'),
+                    onTap: () => _loadMockData(context, ref),
+                  ),
                   ListTile(
                     leading: const Icon(Icons.notifications_active),
                     title: const Text('Notification Test Screen'),
@@ -388,6 +395,62 @@ class ProfileScreen extends ConsumerWidget {
     if (!context.mounted) return;
     if (confirmed ?? false) {
       await ref.read(habitsProvider.notifier).clearAll();
+    }
+  }
+
+  Future<void> _loadMockData(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Load Mock Data'),
+        content: const Text(
+          'This will replace all current habits with 8 mock habits '
+          'containing 1 month of completion data. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Load'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+    if (confirmed ?? false) {
+      try {
+        // Clear existing habits first
+        await ref.read(habitsProvider.notifier).clearAll();
+        
+        // Generate mock habits
+        final mockHabits = MockDataGenerator.generateMockHabits();
+        
+        // Add each habit
+        for (final habit in mockHabits) {
+          await ref.read(habitsProvider.notifier).addHabit(habit);
+        }
+
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Loaded ${mockHabits.length} mock habits with completion data'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading mock data: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 }
