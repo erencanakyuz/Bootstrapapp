@@ -298,6 +298,7 @@ class Habit {
   }
 
   /// Get weekly progress (completions this week vs weekly target)
+  /// Only counts completions on active weekdays
   int getWeeklyProgress(DateTime referenceDate) {
     final startOfWeek = referenceDate.subtract(
       Duration(days: referenceDate.weekday - 1),
@@ -307,13 +308,17 @@ class Habit {
     int completions = 0;
     for (final completion in completedDates) {
       if (!completion.isBefore(startOfWeek) && !completion.isAfter(endOfWeek)) {
-        completions++;
+        // Only count if the completion date is on an active weekday
+        if (isActiveOnDate(completion)) {
+          completions++;
+        }
       }
     }
     return completions;
   }
 
   /// Get monthly progress (completions this month vs monthly target)
+  /// Only counts completions on active weekdays
   int getMonthlyProgress(DateTime referenceDate) {
     final start = DateTime(referenceDate.year, referenceDate.month, 1);
     final end = DateTime(referenceDate.year, referenceDate.month + 1, 0);
@@ -321,10 +326,34 @@ class Habit {
     int completions = 0;
     for (final completion in completedDates) {
       if (!completion.isBefore(start) && !completion.isAfter(end)) {
-        completions++;
+        // Only count if the completion date is on an active weekday
+        if (isActiveOnDate(completion)) {
+          completions++;
+        }
       }
     }
     return completions;
+  }
+  
+  /// Get number of active days in a week
+  int getActiveDaysInWeek() {
+    return activeWeekdays.length;
+  }
+  
+  /// Get number of active days in a month (approximate)
+  int getActiveDaysInMonth(DateTime referenceDate) {
+    final end = DateTime(referenceDate.year, referenceDate.month + 1, 0);
+    final daysInMonth = end.day;
+    
+    // Count how many of each weekday appear in the month
+    int activeDaysCount = 0;
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(referenceDate.year, referenceDate.month, day);
+      if (isActiveOnDate(date)) {
+        activeDaysCount++;
+      }
+    }
+    return activeDaysCount;
   }
 
   /// Check if weekly target is met

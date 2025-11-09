@@ -216,12 +216,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (widget.habits.isEmpty)
                       _buildEmptyState(colors, horizontalPadding)
                     else
-                      ...widget.habits.map(
-                        (habit) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildHabitCard(colors, habit),
-                        ),
-                      ),
+                      ...widget.habits
+                          .where((habit) {
+                            // Filter habits: only show if active on at least one day in the selected week
+                            final weekDays = _getWeekDays();
+                            return weekDays.any((date) => habit.isActiveOnDate(date));
+                          })
+                          .map(
+                            (habit) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _buildHabitCard(colors, habit),
+                            ),
+                          ),
                   ],
                 ),
               ),
@@ -340,10 +346,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildHabitCard(AppColors colors, Habit habit) {
     final weekDays = _getWeekDays();
     final now = DateTime.now();
+    
+    // Count completions only on active days
     final completedThisWeek = weekDays
-        .where((date) => habit.isCompletedOn(date))
+        .where((date) => 
+            habit.isActiveOnDate(date) && habit.isCompletedOn(date))
         .length;
-    final weekProgress = completedThisWeek / 7.0;
+    
+    // Count active days in this week
+    final activeDaysThisWeek = weekDays
+        .where((date) => habit.isActiveOnDate(date))
+        .length;
+    
+    final weekProgress = activeDaysThisWeek > 0 
+        ? completedThisWeek / activeDaysThisWeek 
+        : 0.0;
 
     return GestureDetector(
       onLongPress: () {
@@ -403,7 +420,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Row(
                         children: [
                           Text(
-                            '$completedThisWeek/7 this week',
+                            '$completedThisWeek/$activeDaysThisWeek this week',
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.textTertiary,
@@ -440,6 +457,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               children: weekDays.asMap().entries.map((entry) {
                 final index = entry.key;
                 final date = entry.value;
+                final isActive = habit.isActiveOnDate(date);
                 final isCompleted = habit.isCompletedOn(date);
                 final isToday =
                     date.year == now.year &&
@@ -452,98 +470,101 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                 return Expanded(
                   child: GestureDetector(
-                    onTap: () => _toggleHabitCompletion(habit, date),
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        left: index > 0 ? 4 : 0,
-                        right: index < 6 ? 4 : 0,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? habit.color.withValues(alpha: 0.15)
-                            : (isToday
-                                  ? colors.outline.withValues(alpha: 0.08)
-                                  : Colors.transparent),
-                        borderRadius: BorderRadius.circular(12),
-                        border: isToday
-                            ? Border.all(color: colors.textPrimary, width: 2)
-                            : null,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            dayName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isToday
-                                  ? colors.textPrimary
-                                  : colors.textTertiary,
+                    onTap: isActive ? () => _toggleHabitCompletion(habit, date) : null,
+                    child: Opacity(
+                      opacity: isActive ? 1.0 : 0.4,
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          left: index > 0 ? 4 : 0,
+                          right: index < 6 ? 4 : 0,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isCompleted
+                              ? habit.color.withValues(alpha: 0.15)
+                              : (isToday
+                                    ? colors.outline.withValues(alpha: 0.08)
+                                    : Colors.transparent),
+                          borderRadius: BorderRadius.circular(12),
+                          border: isToday
+                              ? Border.all(color: colors.textPrimary, width: 2)
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              dayName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isToday
+                                    ? colors.textPrimary
+                                    : colors.textTertiary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOut,
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: isCompleted
-                                  ? habit.color
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                              border: Border.all(
+                            const SizedBox(height: 6),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOut,
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
                                 color: isCompleted
                                     ? habit.color
-                                    : (isToday
-                                          ? colors.textPrimary
-                                          : colors.outline.withValues(
-                                              alpha: 0.3,
-                                            )),
-                                width: isToday ? 2.5 : 2,
-                              ),
-                              boxShadow: isCompleted
-                                  ? [
-                                      BoxShadow(
-                                        color: habit.color.withValues(
-                                          alpha: 0.3,
+                                    : Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isCompleted
+                                      ? habit.color
+                                      : (isToday
+                                            ? colors.textPrimary
+                                            : colors.outline.withValues(
+                                                alpha: 0.3,
+                                              )),
+                                  width: isToday ? 2.5 : 2,
+                                ),
+                                boxShadow: isCompleted
+                                    ? [
+                                        BoxShadow(
+                                          color: habit.color.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
                                         ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                child: isCompleted
-                                    ? Icon(
-                                        Icons.check,
-                                        size: 20,
-                                        color:
-                                            colors.surface, // Use theme surface
-                                        key: const ValueKey('check'),
-                                      )
-                                    : Text(
-                                        dayNumber.toString(),
-                                        key: ValueKey('day'),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: isToday
-                                              ? FontWeight.w800
-                                              : FontWeight.w600,
-                                          color: isToday
-                                              ? colors.textPrimary
-                                              : colors.textPrimary,
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  child: isCompleted
+                                      ? Icon(
+                                          Icons.check,
+                                          size: 20,
+                                          color:
+                                              colors.surface, // Use theme surface
+                                          key: const ValueKey('check'),
+                                        )
+                                      : Text(
+                                          dayNumber.toString(),
+                                          key: ValueKey('day'),
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: isToday
+                                                ? FontWeight.w800
+                                                : FontWeight.w600,
+                                            color: isToday
+                                                ? colors.textPrimary
+                                                : colors.textPrimary,
+                                          ),
                                         ),
-                                      ),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
