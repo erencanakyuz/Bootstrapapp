@@ -130,98 +130,104 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const SizedBox.shrink(),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        top: true,
-        bottom: false, // Bottom navigation handled by MainScreen
-        child: Column(
-          children: [
-            _buildWeekSelector(colors, textStyles, horizontalPadding),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    final settingsAsync = ref.read(profileSettingsProvider);
-                    final hapticsEnabled = settingsAsync.maybeWhen(
-                      data: (settings) => settings.hapticsEnabled,
-                      orElse: () => true,
-                    );
-                    if (hapticsEnabled) {
-                      HapticFeedback.lightImpact();
-                    }
-                    Navigator.of(context).push(
-                      PageTransitions.fadeAndSlide(
-                        FullCalendarScreen(habits: widget.habits),
-                      ),
-                    );
-                  },
-                  icon: Icon(
-                    Icons.calendar_view_month,
-                    size: 18,
-                    color: colors.surface,
-                  ),
-                  label: Text(
-                    'Table View',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colors.surface,
+      body: Column(
+        children: [
+          SafeArea(
+            top: true,
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Column(
+                children: [
+                  _buildWeekSelector(colors, textStyles, horizontalPadding),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      0,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.textPrimary,
-                    foregroundColor: colors.surface,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: horizontalPadding,
-                    right: horizontalPadding,
-                    top: 12,
-                    bottom: 12 + MediaQuery.of(context).padding.bottom,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (widget.habits.isEmpty)
-                        _buildEmptyState(colors, horizontalPadding)
-                      else
-                        ...widget.habits.map(
-                          (habit) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildHabitCard(colors, habit),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final settingsAsync = ref.read(profileSettingsProvider);
+                          final hapticsEnabled = settingsAsync.maybeWhen(
+                            data: (settings) => settings.hapticsEnabled,
+                            orElse: () => true,
+                          );
+                          if (hapticsEnabled) {
+                            HapticFeedback.lightImpact();
+                          }
+                          Navigator.of(context).push(
+                            PageTransitions.fadeAndSlide(
+                              FullCalendarScreen(habits: widget.habits),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.calendar_view_month,
+                          size: 18,
+                          color: colors.surface,
+                        ),
+                        label: Text(
+                          'Table View',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.surface,
                           ),
                         ),
-                    ],
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.textPrimary,
+                          foregroundColor: colors.surface,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: horizontalPadding,
+                  right: horizontalPadding,
+                  top: 12,
+                  bottom: 12 + MediaQuery.of(context).padding.bottom,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.habits.isEmpty)
+                      _buildEmptyState(colors, horizontalPadding)
+                    else
+                      ...widget.habits.map(
+                        (habit) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildHabitCard(colors, habit),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -254,9 +260,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: Container(
         margin: EdgeInsets.fromLTRB(
           horizontalPadding,
-          12,
+          0,
           horizontalPadding,
-          16,
+          12,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
