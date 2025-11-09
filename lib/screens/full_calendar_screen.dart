@@ -1733,7 +1733,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       useRootNavigator: true,
     );
 
-    if (result == null) return;
+    // Early return if dialog was cancelled
+    if (result == null || !mounted) return;
 
     setState(() => _isSharing = true);
 
@@ -1765,6 +1766,11 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         shareTableWidth,
       );
 
+      // Safely extract result values with defaults
+      final includeStats = result['includeStats'] as bool? ?? true;
+      final includeWatermark = result['includeWatermark'] as bool? ?? true;
+      final customMessage = result['customMessage'] as String?;
+
       // Build shareable widget in a separate overlay
       final shareableWidget = _shareService.buildShareableWidget(
         calendarWidget: tableWidget,
@@ -1772,14 +1778,29 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         habits: widget.habits,
         completedDates: completedDates,
         repaintBoundaryKey: _shareRepaintBoundaryKey,
-        includeStats: result['includeStats'] ?? true,
-        includeWatermark: result['includeWatermark'] ?? true,
-        customMessage: result['customMessage'],
+        includeStats: includeStats,
+        includeWatermark: includeWatermark,
+        customMessage: customMessage,
       );
 
       // Store context values before async operations
       // Check mounted before using context after async gap
       if (!mounted) return;
+      
+      // Additional safety checks
+      if (widget.habits.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('No habits to share'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        setState(() => _isSharing = false);
+        return;
+      }
+      
       final overlay = Overlay.of(context, rootOverlay: true);
       final mediaQueryData = MediaQuery.of(context);
       

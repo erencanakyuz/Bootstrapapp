@@ -3,20 +3,32 @@
 *.log
 *.pyc
 *.swp
+*.swo
+*~
 .DS_Store
 .atom/
 .buildlog/
 .history
 .svn/
+*.orig
 
-# IntelliJ related
+# IntelliJ IDEA / Android Studio
 *.iml
 *.ipr
 *.iws
 .idea/
+.gradle/
+local.properties
+*.hprof
+*.classpath
+*.project
+*.settings/
+*.sublime-project
+*.sublime-workspace
 
 # Flutter/Dart/Pub related
 **/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -24,40 +36,192 @@
 .pub-cache/
 .pub/
 /build/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
 
-# Android Studio
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/android/**/*.jks
+**/android/**/*.keystore
+**/android/**/bootstrap-release-key.jks
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+**/android/app/src/main/kotlin/io/flutter/plugins/GeneratedPluginRegistrant.kt
+**/android/app/src/main/java/**/GeneratedPluginRegistrant.java
+**/android/app/src/main/kotlin/**/GeneratedPluginRegistrant.kt
 
-# Windows batch scripts (local development tools)
-*.bat
-!android/gradlew.bat
+# iOS/XCode related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Podfile.lock
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter-Debug.xcconfig
+**/ios/Flutter/Flutter-Release.xcconfig
+**/ios/Flutter/Flutter-Profile.xcconfig
 
-# Local development scripts
-wifi_connect.bat
-wifi_disconnect.bat
-wifi_check.bat
-run_android.bat
-quick_run.bat
+# Windows related
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# Linux related
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# macOS related
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/Flutter-Profile.xcconfig
+
+# Web related
+**/web/.dart_tool/
 
 # Build outputs
-android/build/
-ios/build/
-windows/build/
-linux/build/
-macos/build/
+build/
+**/build/
+**/android/build/
+**/android/app/build/
+**/ios/build/
+**/windows/build/
+**/linux/build/
+**/macos/build/
+*.apk
+*.aab
+*.ipa
+*.app
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Coverage
+coverage/
+*.lcov
+test/.test_coverage.dart
+
+# Exceptions to above rules
+!**/android/gradlew
+!**/android/gradlew.bat
+!**/android/gradle/wrapper/gradle-wrapper.jar
+!**/ios/Podfile
+!**/ios/Podfile.lock
 
 # IDE
 .vscode/
 *.code-workspace
+*.sublime-project
+*.sublime-workspace
 
 # OS
 Thumbs.db
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
 
 # Temporary files
 *.tmp
 *.temp
+*.bak
 *.swp
+*.swo
 *~
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android release keys (NEVER commit these!)
+**/key.properties
+*.jks
+*.keystore
+**/bootstrap-release-key.jks
+
+# Keep script files (user requested)
+# Scripts are NOT ignored - they will be committed
+
+# Generated files
+**/GeneratedPluginRegistrant.java
+**/GeneratedPluginRegistrant.kt
+**/GeneratedPluginRegistrant.swift
+**/GeneratedPluginRegistrant.m
+**/GeneratedPluginRegistrant.h
+
+# Firebase (if used)
+**/google-services.json
+**/GoogleService-Info.plist
+firebase_options.dart
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# FVM (Flutter Version Management)
+.fvm/
+
+# Fastlane
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# App Bundle
+*.aab
+
+# Symbolication
+*.symbols
+
+# Obfuscation
+*.map
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
