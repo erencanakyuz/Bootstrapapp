@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
@@ -56,13 +55,6 @@ class InsightsScreen extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColors>()!;
     final horizontalPadding = context.horizontalGutter;
     final statsColumns = context.responsiveGridColumns(compact: 2);
-    
-    // Lock to portrait orientation - prevent automatic rotation
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    
     final statsCards = [
       StatsCard(
         title: 'Today',

@@ -67,11 +67,6 @@ class _HomeScreenState extends State<HomeScreen>
         AnimationController(vsync: this, duration: AppAnimations.normal);
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
-    // Lock to portrait orientation
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
   }
 
   @override
@@ -79,11 +74,6 @@ class _HomeScreenState extends State<HomeScreen>
     _fabAnimationController.dispose();
     _confettiController.dispose();
     _scrollController.dispose();
-    // Ensure portrait when leaving home screen
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     super.dispose();
   }
 
