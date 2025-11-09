@@ -130,25 +130,28 @@ class _AddHabitModalState extends State<AddHabitModal> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final bottomPadding = viewInsets.bottom;
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusXXL),
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.easeOut,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppSizes.radiusXXL),
+          ),
         ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.paddingXXL),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSizes.paddingXXL),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Center(
                 child: Container(
                   width: 40,
@@ -359,6 +362,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
           ],
         ),
         ),
+      ),
       ),
     );
   }

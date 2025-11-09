@@ -434,24 +434,31 @@ class HabitDetailScreen extends ConsumerWidget {
     final controller = TextEditingController(text: initialText);
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Daily note'),
-        content: TextField(
-          controller: controller,
-          maxLines: 4,
-          decoration: const InputDecoration(hintText: 'What did you notice?'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final viewInsets = MediaQuery.viewInsetsOf(context);
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: AlertDialog(
+            title: const Text('Daily note'),
+            content: TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(hintText: 'What did you notice?'),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (!context.mounted) {
@@ -476,6 +483,9 @@ class HabitDetailScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => AddHabitModal(habitToEdit: habit),
     );
 
