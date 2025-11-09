@@ -463,6 +463,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     date.year == now.year &&
                     date.month == now.month &&
                     date.day == now.day;
+                    // Check if habit was missed: active but not completed, date is in the past,
+                    // and date is not before habit creation date (don't show warnings for days before habit existed)
+                    final normalizedDate = DateTime(date.year, date.month, date.day);
+                    final normalizedToday = DateTime(now.year, now.month, now.day);
+                    final normalizedCreatedAt = DateTime(
+                      habit.createdAt.year,
+                      habit.createdAt.month,
+                      habit.createdAt.day,
+                    );
+                    final isMissed = isActive && 
+                        !isCompleted && 
+                        normalizedDate.isBefore(normalizedToday) &&
+                        !normalizedDate.isBefore(normalizedCreatedAt);
                 final dayName = DateFormat(
                   'E',
                 ).format(date).substring(0, 1); // First letter
@@ -547,19 +560,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                               colors.surface, // Use theme surface
                                           key: const ValueKey('check'),
                                         )
-                                      : Text(
-                                          dayNumber.toString(),
-                                          key: ValueKey('day'),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: isToday
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
-                                            color: isToday
-                                                ? colors.textPrimary
-                                                : colors.textPrimary,
-                                          ),
-                                        ),
+                                      : isMissed
+                                          ? CustomPaint(
+                                              size: const Size(16, 16),
+                                              painter: _TriangleWarningPainter(
+                                                color: colors.statusIncomplete,
+                                              ),
+                                              key: const ValueKey('warning'),
+                                            )
+                                          : Text(
+                                              dayNumber.toString(),
+                                              key: ValueKey('day'),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: isToday
+                                                    ? FontWeight.w800
+                                                    : FontWeight.w600,
+                                                color: isToday
+                                                    ? colors.textPrimary
+                                                    : colors.textPrimary,
+                                              ),
+                                            ),
                                 ),
                               ),
                             ),
@@ -614,5 +635,53 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
     );
+  }
+}
+
+/// Custom painter for triangle warning icon
+class _TriangleWarningPainter extends CustomPainter {
+  final Color color;
+
+  _TriangleWarningPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    // Draw upward-pointing triangle (warning symbol)
+    path.moveTo(size.width / 2, 0); // Top point
+    path.lineTo(0, size.height); // Bottom left
+    path.lineTo(size.width, size.height); // Bottom right
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    // Draw exclamation mark inside triangle
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: '!',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size.width - textPainter.width) / 2,
+        (size.height - textPainter.height) / 2 - size.height * 0.05,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TriangleWarningPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

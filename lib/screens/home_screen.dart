@@ -205,6 +205,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       } else {
         widget.onAddHabit(result);
         HapticFeedback.mediumImpact();
+        
+        // TODO: Show app rating pop-up when first habit is added.
+        // Check if rating has been shown before using AppSettingsService.
+        // If not shown yet, show rating dialog with theme-matched styling (AppColors, AppTextStyles).
+        // Use showModalBottomSheet or showDialog with theme colors.
+        // Store rating shown status in SharedPreferences via AppSettingsService.
       }
     }
   }
@@ -1080,7 +1086,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: IgnorePointer(
                   ignoring: true, // Don't intercept touches
                   child: ConfettiWidget(
-                    key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor?.value ?? 'default'}'),
+                    key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor != null ? _currentHabitColor!.hashCode : 'default'}'),
                     confettiController: _confettiController,
                     blastDirectionality: BlastDirectionality.explosive,
                     particleDrag: 0.05,

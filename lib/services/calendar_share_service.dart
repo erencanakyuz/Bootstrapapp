@@ -33,16 +33,20 @@ class CalendarShareService {
         return null;
       }
 
+      // Store context values BEFORE async operations to avoid BuildContext usage warnings
+      final contextBeforeAsync = repaintBoundaryKey.currentContext;
+      // Calculate devicePixelRatio BEFORE async gap
+      final devicePixelRatio = contextBeforeAsync != null
+          ? (MediaQuery.maybeOf(contextBeforeAsync)?.devicePixelRatio ??
+              View.of(contextBeforeAsync).devicePixelRatio)
+          : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
+      final pixelRatio = devicePixelRatio.clamp(1.0, 3.0);
+      
       if (boundary.debugNeedsPaint) {
         await Future.delayed(const Duration(milliseconds: 16));
       }
 
-      final context = repaintBoundaryKey.currentContext;
-      final devicePixelRatio = context != null
-          ? (MediaQuery.maybeOf(context)?.devicePixelRatio ??
-              View.of(context).devicePixelRatio)
-          : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
-      final pixelRatio = devicePixelRatio.clamp(1.0, 3.0);
+      // Use stored pixelRatio (calculated before async gap)
 
       final image = await boundary.toImage(pixelRatio: pixelRatio);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -79,10 +83,12 @@ class CalendarShareService {
       );
       await tempFile.writeAsBytes(imageBytes);
 
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: _buildShareText(month, habits, completedDates),
-        subject: 'My ${DateFormat('MMMM yyyy').format(month)} Calendar',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(tempFile.path)],
+          text: _buildShareText(month, habits, completedDates),
+          subject: 'My ${DateFormat('MMMM yyyy').format(month)} Calendar',
+        ),
       );
 
       return true;
@@ -289,7 +295,7 @@ class CalendarShareService {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: watermarkColor.withOpacity(watermarkOpacity),
+                color: watermarkColor.withValues(alpha: (watermarkOpacity * 255).round().toDouble()),
                 fontFamily: 'Inter',
               ),
             ),
@@ -301,7 +307,7 @@ class CalendarShareService {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: watermarkColor.withOpacity(watermarkOpacity),
+            color: watermarkColor.withValues(alpha: (watermarkOpacity * 255).round().toDouble()),
             letterSpacing: 1.5,
             fontFamily: 'Fraunces',
           ),

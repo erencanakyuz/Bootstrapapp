@@ -19,6 +19,7 @@ class NotificationService {
     PlatformWrapper? platformWrapper,
     NotificationScheduleCalculator? scheduleCalculator,
     DateTimeProvider? dateTimeProvider,
+    this.onNotificationTap,
   })  : _backend = backend ?? FlutterLocalNotificationsBackend(),
         _platform = platformWrapper ?? const PlatformWrapper(),
         _scheduleCalculator = scheduleCalculator ??
@@ -34,6 +35,8 @@ class NotificationService {
   final Map<int, DateTime> _scheduledDates = {};
   // Track if we've already logged exact alarms warning (prevent log spam)
   bool _exactAlarmsWarningLogged = false;
+  // Callback for notification tap handling
+  final void Function(String habitId)? onNotificationTap;
 
   bool get _isPlatformSupported {
     if (kIsWeb) return false;
@@ -69,7 +72,13 @@ class NotificationService {
       await _backend.initialize(
         initSettings,
         onDidReceiveNotificationResponse: (response) {
-          // TODO: Handle notification taps (deep links) when UX is ready.
+          // Handle notification taps - navigate to habit detail screen
+          if (response.payload != null && response.payload!.isNotEmpty) {
+            final habitId = response.payload!;
+            debugPrint('Notification tapped for habit: $habitId');
+            // Call callback if provided
+            onNotificationTap?.call(habitId);
+          }
         },
       );
 
@@ -128,10 +137,19 @@ class NotificationService {
         }
       }
 
+      // Create rich notification content similar to habit card
+      final notificationTitle = habit.title;
+      final notificationBody = habit.description?.isNotEmpty == true
+          ? habit.description!
+          : 'Time to complete ${habit.title}!';
+      
+      // Include habit ID in payload for tap handling
+      final payload = habit.id;
+
       await _backend.zonedSchedule(
         id,
-        habit.title,
-        habit.description ?? 'Time to complete ${habit.title}!',
+        notificationTitle,
+        notificationBody,
         scheduleDate,
         NotificationDetails(
           android: AndroidNotificationDetails(
@@ -145,7 +163,7 @@ class NotificationService {
             enableLights: true,
             enableVibration: true,
           ),
-          iOS: const DarwinNotificationDetails(
+          iOS: DarwinNotificationDetails(
             sound: 'default',
             presentAlert: true,
             presentBadge: true,
@@ -154,6 +172,7 @@ class NotificationService {
         ),
         androidScheduleMode: scheduleMode,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: payload,
       );
 
       _scheduledDates[id] = scheduleDate.toLocal();

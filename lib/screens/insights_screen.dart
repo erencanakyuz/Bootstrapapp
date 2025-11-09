@@ -55,6 +55,12 @@ class InsightsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Convert InsightsScreen to StatefulWidget and check rating pop-up on screen entry.
+    // If user dismissed rating pop-up before, show it again on 2nd visit to Insights screen.
+    // Track insights visit count using AppSettingsService (SharedPreferences).
+    // Show rating dialog with theme-matched styling (AppColors, AppTextStyles) if conditions met.
+    // Use WidgetsBinding.instance.addPostFrameCallback to show dialog after build completes.
+    
     final colors = Theme.of(context).extension<AppColors>()!;
     final horizontalPadding = context.horizontalGutter;
     final statsColumns = context.responsiveGridColumns(compact: 2);

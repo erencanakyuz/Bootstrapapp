@@ -7,6 +7,9 @@ import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
 
+// Global navigator key for notification tap handling
+final navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -57,6 +60,7 @@ class BootstrapApp extends ConsumerWidget {
         home: Scaffold(body: Center(child: Text('Error: $error'))),
       ),
       data: (completed) => MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
         theme: theme,
