@@ -4,6 +4,9 @@ class AppSettingsService {
   static const _onboardingKey = 'onboarding_complete';
   static const _notificationsKey = 'notifications_enabled';
   static const _hapticsKey = 'haptics_enabled';
+  static const _soundsKey = 'sounds_enabled';
+  static const _confettiKey = 'confetti_enabled';
+  static const _animationsKey = 'animations_enabled';
   static const _userNameKey = 'user_name';
   static const _avatarSeedKey = 'avatar_seed';
   static const _allowPastDatesKey = 'allow_past_dates_before_creation';
@@ -38,6 +41,36 @@ class AppSettingsService {
   Future<void> setHapticsEnabled(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_hapticsKey, enabled);
+  }
+
+  Future<bool> soundsEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_soundsKey) ?? true;
+  }
+
+  Future<void> setSoundsEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_soundsKey, enabled);
+  }
+
+  Future<bool> confettiEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_confettiKey) ?? true;
+  }
+
+  Future<void> setConfettiEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_confettiKey, enabled);
+  }
+
+  Future<bool> animationsEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_animationsKey) ?? true;
+  }
+
+  Future<void> setAnimationsEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_animationsKey, enabled);
   }
 
   Future<String> userName() async {

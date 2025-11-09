@@ -109,6 +109,36 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 SwitchListTile(
+                  value: settings.soundsEnabled,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleSounds(value),
+                  title: const Text('Sound effects'),
+                  subtitle: const Text(
+                    'Audio feedback for button clicks and interactions',
+                  ),
+                ),
+                SwitchListTile(
+                  value: settings.confettiEnabled,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleConfetti(value),
+                  title: const Text('Celebration confetti'),
+                  subtitle: const Text(
+                    'Show confetti when completing habits',
+                  ),
+                ),
+                SwitchListTile(
+                  value: settings.animationsEnabled,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleAnimations(value),
+                  title: const Text('Animations'),
+                  subtitle: const Text(
+                    'Enable UI animations and transitions',
+                  ),
+                ),
+                SwitchListTile(
                   value: settings.allowPastDatesBeforeCreation,
                   onChanged: (value) => ref
                       .read(profileSettingsProvider.notifier)

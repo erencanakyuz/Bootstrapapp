@@ -2,11 +2,15 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
+import '../providers/app_settings_providers.dart';
+import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/page_transitions.dart';
 import '../utils/responsive.dart';
@@ -16,7 +20,7 @@ import 'habit_detail_screen.dart';
 import 'onboarding_screen.dart';
 
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
   final Function(Habit) onAddHabit;
   final Function(Habit) onUpdateHabit;
@@ -31,10 +35,10 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const List<double> _waveformHeights = [
     28,
     44,
@@ -59,6 +63,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   late ConfettiController _confettiController;
+  Color? _currentHabitColor; // Store the color of the completed habit
+  HabitDifficulty? _currentHabitDifficulty; // Store the difficulty of the completed habit
+  int _confettiPaletteSeed = 0; // Forces ConfettiWidget to rebuild with new colors
 
   @override
   void initState() {
@@ -81,9 +88,64 @@ class _HomeScreenState extends State<HomeScreen> {
     widget.onUpdateHabit(updatedHabit);
 
     if (!wasCompleted && updatedHabit.isCompletedOn(DateTime.now())) {
-      _confettiController.play();
+      // Check confetti setting
+      final settingsAsync = ref.read(profileSettingsProvider);
+      final confettiEnabled = settingsAsync.maybeWhen(
+        data: (settings) => settings.confettiEnabled,
+        orElse: () => true,
+      );
+
+      if (confettiEnabled) {
+        // Store habit color and difficulty for confetti
+        setState(() {
+          _currentHabitColor = habit.color;
+          _currentHabitDifficulty = habit.difficulty;
+          _confettiPaletteSeed++;
+        });
+
+        // Delay play until the frame after state updates so colors are applied
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _confettiController.play();
+          }
+        });
+      }
+      
       HapticFeedback.mediumImpact();
+      // Play success sound when habit is completed
+      ref.read(soundServiceProvider).playSuccess();
     }
+  }
+
+  /// Get number of particles based on difficulty
+  int _getParticleCount(HabitDifficulty difficulty) {
+    switch (difficulty) {
+      case HabitDifficulty.easy:
+        return 30; // Less particles for easy tasks
+      case HabitDifficulty.medium:
+        return 50; // Medium particles
+      case HabitDifficulty.hard:
+        return 80; // More particles for hard tasks - bigger celebration!
+    }
+  }
+
+  /// Generate color palette from habit color (light tones)
+  List<Color> _generateColorPalette(Color baseColor) {
+    // Create lighter, softer tones of the base color
+    final hsl = HSLColor.fromColor(baseColor);
+    
+    return [
+      // Main color - slightly lighter
+      hsl.withLightness((hsl.lightness + 0.15).clamp(0.0, 1.0)).toColor(),
+      // Lighter tone
+      hsl.withLightness((hsl.lightness + 0.25).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.8).clamp(0.0, 1.0)).toColor(),
+      // Even lighter, more pastel
+      hsl.withLightness((hsl.lightness + 0.35).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.6).clamp(0.0, 1.0)).toColor(),
+      // Softest tone
+      hsl.withLightness((hsl.lightness + 0.4).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.4).clamp(0.0, 1.0)).toColor(),
+      // Original color with slight transparency variation
+      baseColor.withValues(alpha: 0.9),
+    ];
   }
 
   Future<void> _openHabitDetail(Habit habit) async {
@@ -929,18 +991,41 @@ class _HomeScreenState extends State<HomeScreen> {
             Align(
               alignment: Alignment.topCenter,
               child: ConfettiWidget(
+                key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor?.value ?? 'default'}'),
                 confettiController: _confettiController,
                 blastDirectionality: BlastDirectionality.explosive,
                 particleDrag: 0.05,
-                emissionFrequency: 0.05,
-                numberOfParticles: 30,
-                gravity: 0.3,
+                emissionFrequency: 0.03,
+                numberOfParticles: _currentHabitDifficulty != null
+                    ? _getParticleCount(_currentHabitDifficulty!)
+                    : 50, // Default fallback
+                gravity: 0.2,
                 shouldLoop: false,
-                colors: [
-                  Color(0xFFD4C4B0), // Muted beige
-                  Color(0xFFC9B8A3), // Muted cream
-                  Color(0xFFB8A892), // Muted tan
-                ],
+                colors: _currentHabitColor != null
+                    ? _generateColorPalette(_currentHabitColor!)
+                    : [
+                        // Fallback colors if no habit color
+                        const Color(0xFFD4C4B0),
+                        const Color(0xFFC9B8A3),
+                        const Color(0xFFB8A892),
+                      ],
+                createParticlePath: (size) {
+                  // Custom beautiful shapes: stars, circles, and diamonds
+                  // Use size-based hash for variety
+                  final hash = (size.width * 1000 + size.height * 1000).toInt();
+                  final random = hash % 3;
+                  
+                  if (random == 0) {
+                    // Star shape
+                    return _createStarPath(size);
+                  } else if (random == 1) {
+                    // Diamond shape
+                    return _createDiamondPath(size);
+                  } else {
+                    // Circle with inner decoration
+                    return _createDecoratedCirclePath(size);
+                  }
+                },
               ),
             ),
           ],
@@ -977,5 +1062,76 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  /// Create a beautiful star path
+  Path _createStarPath(Size size) {
+    final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final outerRadius = math.min(size.width, size.height) / 2;
+    final innerRadius = outerRadius * 0.4;
+    final numPoints = 5;
+
+    for (int i = 0; i < numPoints * 2; i++) {
+      final angle = (i * math.pi / numPoints) - (math.pi / 2);
+      final radius = i.isEven ? outerRadius : innerRadius;
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+      
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  /// Create a diamond path
+  Path _createDiamondPath(Size size) {
+    final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+
+    path.moveTo(center.dx, center.dy - radius);
+    path.lineTo(center.dx + radius * 0.7, center.dy);
+    path.lineTo(center.dx, center.dy + radius);
+    path.lineTo(center.dx - radius * 0.7, center.dy);
+    path.close();
+    
+    // Add inner decoration
+    final innerPath = Path();
+    innerPath.moveTo(center.dx, center.dy - radius * 0.5);
+    innerPath.lineTo(center.dx + radius * 0.35, center.dy);
+    innerPath.lineTo(center.dx, center.dy + radius * 0.5);
+    innerPath.lineTo(center.dx - radius * 0.35, center.dy);
+    innerPath.close();
+    
+    return Path.combine(PathOperation.difference, path, innerPath);
+  }
+
+  /// Create a decorated circle path
+  Path _createDecoratedCirclePath(Size size) {
+    final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+    
+    // Outer circle
+    path.addOval(Rect.fromCircle(center: center, radius: radius));
+    
+    // Inner decoration - small circles
+    final innerRadius = radius * 0.3;
+    final numCircles = 4;
+    for (int i = 0; i < numCircles; i++) {
+      final angle = (i * 2 * math.pi / numCircles);
+      final offset = Offset(
+        center.dx + radius * 0.5 * math.cos(angle),
+        center.dy + radius * 0.5 * math.sin(angle),
+      );
+      path.addOval(Rect.fromCircle(center: offset, radius: innerRadius));
+    }
+    
+    return path;
   }
 }

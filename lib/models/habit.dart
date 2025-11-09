@@ -248,6 +248,7 @@ class Habit {
   final DateTime? archivedAt;
   final int weeklyTarget;
   final int monthlyTarget;
+  final List<int> activeWeekdays; // 1 = Monday ... 7 = Sunday, empty = all days
   final List<String> dependencyIds;
   final int freezeUsesThisWeek;
   final DateTime? lastFreezeReset;
@@ -270,6 +271,7 @@ class Habit {
     this.archivedAt,
     this.weeklyTarget = 5,
     this.monthlyTarget = 20,
+    List<int>? activeWeekdays,
     List<String>? dependencyIds,
     this.freezeUsesThisWeek = 0,
     this.lastFreezeReset,
@@ -279,7 +281,61 @@ class Habit {
        reminders = List.unmodifiable(reminders ?? []),
        notes = Map.unmodifiable(notes ?? {}),
        dependencyIds = List.unmodifiable(dependencyIds ?? []),
-       tags = List.unmodifiable(tags ?? const []);
+       tags = List.unmodifiable(tags ?? const []),
+       activeWeekdays = List.unmodifiable(activeWeekdays ?? const [1, 2, 3, 4, 5, 6, 7]); // Default: all days
+
+  /// Check if habit is active on a specific weekday
+  /// Returns true if activeWeekdays is empty (all days) or contains the weekday
+  bool isActiveOnWeekday(int weekday) {
+    // weekday: 1 = Monday, 7 = Sunday
+    if (activeWeekdays.isEmpty) return true; // Empty means all days
+    return activeWeekdays.contains(weekday);
+  }
+
+  /// Check if habit is active on a specific date
+  bool isActiveOnDate(DateTime date) {
+    return isActiveOnWeekday(date.weekday);
+  }
+
+  /// Get weekly progress (completions this week vs weekly target)
+  int getWeeklyProgress(DateTime referenceDate) {
+    final startOfWeek = referenceDate.subtract(
+      Duration(days: referenceDate.weekday - 1),
+    );
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    
+    int completions = 0;
+    for (final completion in completedDates) {
+      if (!completion.isBefore(startOfWeek) && !completion.isAfter(endOfWeek)) {
+        completions++;
+      }
+    }
+    return completions;
+  }
+
+  /// Get monthly progress (completions this month vs monthly target)
+  int getMonthlyProgress(DateTime referenceDate) {
+    final start = DateTime(referenceDate.year, referenceDate.month, 1);
+    final end = DateTime(referenceDate.year, referenceDate.month + 1, 0);
+    
+    int completions = 0;
+    for (final completion in completedDates) {
+      if (!completion.isBefore(start) && !completion.isAfter(end)) {
+        completions++;
+      }
+    }
+    return completions;
+  }
+
+  /// Check if weekly target is met
+  bool isWeeklyTargetMet(DateTime referenceDate) {
+    return getWeeklyProgress(referenceDate) >= weeklyTarget;
+  }
+
+  /// Check if monthly target is met
+  bool isMonthlyTargetMet(DateTime referenceDate) {
+    return getMonthlyProgress(referenceDate) >= monthlyTarget;
+  }
 
   /// Check if habit is completed on a specific date
   bool isCompletedOn(DateTime date) {
@@ -525,6 +581,7 @@ class Habit {
     DateTime? archivedAt,
     int? weeklyTarget,
     int? monthlyTarget,
+    List<int>? activeWeekdays,
     List<String>? dependencyIds,
     int? freezeUsesThisWeek,
     DateTime? lastFreezeReset,
@@ -547,6 +604,7 @@ class Habit {
       archivedAt: archivedAt ?? this.archivedAt,
       weeklyTarget: weeklyTarget ?? this.weeklyTarget,
       monthlyTarget: monthlyTarget ?? this.monthlyTarget,
+      activeWeekdays: activeWeekdays ?? this.activeWeekdays,
       dependencyIds: dependencyIds ?? this.dependencyIds,
       freezeUsesThisWeek: freezeUsesThisWeek ?? this.freezeUsesThisWeek,
       lastFreezeReset: lastFreezeReset ?? this.lastFreezeReset,
@@ -573,6 +631,7 @@ class Habit {
       'archivedAt': archivedAt?.toIso8601String(),
       'weeklyTarget': weeklyTarget,
       'monthlyTarget': monthlyTarget,
+      'activeWeekdays': activeWeekdays,
       'dependencyIds': dependencyIds,
       'freezeUsesThisWeek': freezeUsesThisWeek,
       'lastFreezeReset': lastFreezeReset?.toIso8601String(),
@@ -653,6 +712,21 @@ class Habit {
       parsedMonthlyTarget = 20; // Default fallback
     }
 
+    // Parse activeWeekdays (default: all days)
+    List<int> parsedActiveWeekdays = const [1, 2, 3, 4, 5, 6, 7];
+    if (json['activeWeekdays'] != null) {
+      parsedActiveWeekdays = List<int>.from(json['activeWeekdays']);
+      // Validate: must be between 1-7 and not empty
+      parsedActiveWeekdays = parsedActiveWeekdays
+          .where((day) => day >= 1 && day <= 7)
+          .toSet()
+          .toList()
+        ..sort();
+      if (parsedActiveWeekdays.isEmpty) {
+        parsedActiveWeekdays = const [1, 2, 3, 4, 5, 6, 7]; // Fallback to all days
+      }
+    }
+
     // Validate and sanitize freezeUsesThisWeek (must be >= 0)
     int parsedFreezeUsesThisWeek = json['freezeUsesThisWeek'] ?? 0;
     if (parsedFreezeUsesThisWeek < 0) {
@@ -690,6 +764,7 @@ class Habit {
       archivedAt: parsedArchivedAt,
       weeklyTarget: parsedWeeklyTarget,
       monthlyTarget: parsedMonthlyTarget,
+      activeWeekdays: parsedActiveWeekdays,
       dependencyIds: (json['dependencyIds'] as List<dynamic>? ?? [])
           .cast<String>(),
       freezeUsesThisWeek: parsedFreezeUsesThisWeek,

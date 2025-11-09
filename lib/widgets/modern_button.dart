@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../services/sound_service.dart';
 
 /// Circular icon button with shadow and ripple effect
-class ModernIconButton extends StatelessWidget {
+class ModernIconButton extends ConsumerWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final Color? backgroundColor;
@@ -11,6 +13,7 @@ class ModernIconButton extends StatelessWidget {
   final double size;
   final bool hasBadge;
   final Color? borderColor;
+  final bool playSound;
 
   const ModernIconButton({
     super.key,
@@ -21,10 +24,18 @@ class ModernIconButton extends StatelessWidget {
     this.size = 48,
     this.hasBadge = false,
     this.borderColor,
+    this.playSound = true,
   });
 
+  void _handlePress(WidgetRef ref) {
+    if (playSound) {
+      ref.read(soundServiceProvider).playClick();
+    }
+    onPressed();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<AppColors>()!;
 
     return Container(
@@ -47,7 +58,7 @@ class ModernIconButton extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(size / 2),
-              onTap: onPressed,
+              onTap: () => _handlePress(ref),
               child: Center(
                 child: Icon(
                   icon,
@@ -77,7 +88,7 @@ class ModernIconButton extends StatelessWidget {
 }
 
 /// Modern elevated button with rounded corners
-class ModernButton extends StatelessWidget {
+class ModernButton extends ConsumerWidget {
   final String text;
   final VoidCallback onPressed;
   final Color? backgroundColor;
@@ -85,6 +96,7 @@ class ModernButton extends StatelessWidget {
   final IconData? icon;
   final bool isLoading;
   final double? width;
+  final bool playSound;
 
   const ModernButton({
     super.key,
@@ -95,17 +107,25 @@ class ModernButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.width,
+    this.playSound = true,
   });
 
+  void _handlePress(WidgetRef ref) {
+    if (playSound && !isLoading) {
+      ref.read(soundServiceProvider).playClick();
+    }
+    onPressed();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<AppColors>()!;
 
     return SizedBox(
       width: width,
       height: 54,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : () => _handlePress(ref),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor ?? colors.textPrimary,
           foregroundColor: textColor ?? Colors.white,
