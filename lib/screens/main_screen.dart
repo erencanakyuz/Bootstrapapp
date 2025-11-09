@@ -22,7 +22,7 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _currentIndex = 1; // Default to Home (note icon) like reference image
+  int _currentIndex = 0; // Default to Home
 
   @override
   void initState() {
@@ -65,17 +65,17 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _buildContent(AppColors colors, List<Habit> habits) {
     final screens = [
       _KeepAliveWrapper(
-        child: CalendarScreen(
-          habits: habits,
-          onUpdateHabit: _handleUpdateHabit,
-        ),
-      ),
-      _KeepAliveWrapper(
         child: HomeScreen(
           habits: habits,
           onAddHabit: _handleAddHabit,
           onUpdateHabit: _handleUpdateHabit,
           onDeleteHabit: _handleDeleteHabit,
+        ),
+      ),
+      _KeepAliveWrapper(
+        child: CalendarScreen(
+          habits: habits,
+          onUpdateHabit: _handleUpdateHabit,
         ),
       ),
       _KeepAliveWrapper(child: InsightsScreen(habits: habits)),
@@ -117,21 +117,21 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-                icon: Icons.calendar_month_outlined,
+                icon: Icons.home_outlined,
                 label: '',
                 index: 0,
                 colors: colors,
                 textStyles: textStyles,
               ),
               _buildNavItem(
-                icon: Icons.note_outlined,
+                icon: Icons.calendar_month_outlined,
                 label: '',
                 index: 1,
                 colors: colors,
                 textStyles: textStyles,
               ),
               _buildNavItem(
-                icon: Icons.remove,
+                icon: Icons.insights_outlined,
                 label: '',
                 index: 2,
                 colors: colors,
