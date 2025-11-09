@@ -22,6 +22,7 @@ import 'onboarding_screen.dart';
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
 class HomeScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
+  final List<Habit> todayHabits;
   final Function(Habit) onAddHabit;
   final Function(Habit) onUpdateHabit;
   final Function(String) onDeleteHabit;
@@ -29,6 +30,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
     required this.habits,
+    required this.todayHabits,
     required this.onAddHabit,
     required this.onUpdateHabit,
     required this.onDeleteHabit,
@@ -67,6 +69,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   HabitDifficulty? _currentHabitDifficulty; // Store the difficulty of the completed habit
   int _confettiPaletteSeed = 0; // Forces ConfettiWidget to rebuild with new colors
 
+  List<Habit> get _activeTodayHabits =>
+      widget.todayHabits.where((habit) => !habit.archived).toList();
+
   @override
   void initState() {
     super.initState();
@@ -82,12 +87,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _toggleHabitCompletion(Habit habit) {
+    final today = DateTime.now();
+    if (!habit.isActiveOnDate(today)) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${habit.title} isn\'t scheduled for today.'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
-    final wasCompleted = habit.isCompletedOn(DateTime.now());
-    final updatedHabit = habit.toggleCompletion(DateTime.now());
+    final wasCompleted = habit.isCompletedOn(today);
+    final updatedHabit = habit.toggleCompletion(today);
     widget.onUpdateHabit(updatedHabit);
 
-    if (!wasCompleted && updatedHabit.isCompletedOn(DateTime.now())) {
+    if (!wasCompleted && updatedHabit.isCompletedOn(today)) {
       // Check confetti setting
       final settingsAsync = ref.read(profileSettingsProvider);
       final confettiEnabled = settingsAsync.maybeWhen(
@@ -274,10 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColors colors,
     AppTextStyles textStyles,
   ) {
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     final total = activeHabits.length;
     final totalStreak = _getTotalStreak();
     final weeklyCompletions = _getWeeklyCompletions();
@@ -438,15 +453,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildRestDayCard(AppColors colors, AppTextStyles textStyles) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.4),
+        ),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'No habits scheduled today',
+            style: textStyles.titleSection,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enjoy a little reset or add a new ritual if you feel inspired.',
+            style: textStyles.bodySecondary,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDailyFocusSection(AppColors colors, AppTextStyles textStyles) {
     final counts = _getTimeBlockCounts();
     final hasHabits = counts.values.any((count) => count > 0);
     if (!hasHabits) return const SizedBox.shrink();
-    
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,10 +549,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   SliverList _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -797,10 +833,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   int _getTotalStreak() {
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     if (activeHabits.isEmpty) return 0;
     int maxStreak = 0;
     for (final habit in activeHabits) {
@@ -814,10 +847,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     int count = 0;
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     for (final habit in activeHabits) {
       for (int i = 0; i < 7; i++) {
         final date = weekStart.add(Duration(days: i));
@@ -830,10 +860,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String _getMotivationalMessage() {
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     final completedToday = activeHabits
         .where((h) => h.isCompletedOn(DateTime.now()))
         .length;
@@ -859,10 +886,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Map<HabitTimeBlock, int> _getTimeBlockCounts() {
-    final today = DateTime.now();
-    final activeHabits = widget.habits.where((habit) => 
-      !habit.archived && habit.isActiveOnDate(today)
-    ).toList();
+    final activeHabits = _activeTodayHabits;
     final counts = {for (final block in HabitTimeBlock.values) block: 0};
     for (final habit in activeHabits) {
       counts[habit.timeBlock] = counts[habit.timeBlock]! + 1;
@@ -894,7 +918,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     final today = DateTime.now();
-    final completedToday = widget.habits
+    final todayActiveHabits = _activeTodayHabits;
+    final completedToday = todayActiveHabits
         .where((h) => h.isCompletedOn(today))
         .length;
     final horizontalPadding = context.horizontalGutter;
@@ -977,15 +1002,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildDailyFocusSection(colors, textStyles),
           ),
         ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            20,
-            horizontalPadding,
-            0,
+        if (todayActiveHabits.isEmpty)
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              20,
+              horizontalPadding,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _buildRestDayCard(colors, textStyles),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              20,
+              horizontalPadding,
+              0,
+            ),
+            sliver: _buildHabitListSliver(colors, textStyles),
           ),
-          sliver: _buildHabitListSliver(colors, textStyles),
-        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
