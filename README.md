@@ -1,16 +1,30 @@
-# bootstrap_app
+# Bootstrap Your Life
 
-A new Flutter project.
+Daily habits and goals tracking app built with Flutter.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+- ✅ Habit tracking with custom recurrence patterns
+- ✅ Weekly and monthly targets
+- ✅ Beautiful calendar visualization
+- ✅ Analytics dashboard
+- ✅ Export/import functionality
+- ✅ Local notifications
+- ✅ Customizable settings (sounds, confetti, animations)
+- ✅ Calendar sharing with branding
 
-A few resources to get you started if this is your first Flutter project:
+## License
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**PROPRIETARY LICENSE - ALL RIGHTS RESERVED**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Copyright (c) 2025 Bootstrap Your Life
+
+This software is proprietary and confidential. All rights are reserved.
+
+**NO PERMISSION TO USE**: You are NOT granted permission to use, copy, modify, distribute, publish, sell, sublicense, or otherwise deal with this software in any way, for any purpose, commercial or non-commercial.
+
+See [LICENSE](LICENSE) file for full terms and restrictions.
+
+---
+
+© 2025 Bootstrap Your Life. All Rights Reserved.
