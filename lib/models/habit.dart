@@ -230,6 +230,71 @@ class HabitNote {
   }
 }
 
+/// To-Do task for a habit
+class HabitTask {
+  final String id;
+  final String title;
+  final bool completed;
+  final DateTime? completedAt;
+  final DateTime createdAt;
+
+  HabitTask({
+    String? id,
+    required this.title,
+    this.completed = false,
+    this.completedAt,
+    DateTime? createdAt,
+  }) : id = id ?? _uuid.v4(),
+       createdAt = createdAt ?? DateTime.now();
+
+  HabitTask copyWith({
+    String? id,
+    String? title,
+    bool? completed,
+    DateTime? completedAt,
+    DateTime? createdAt,
+  }) {
+    return HabitTask(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      completed: completed ?? this.completed,
+      completedAt: completedAt ?? this.completedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  HabitTask toggle() {
+    return copyWith(
+      completed: !completed,
+      completedAt: !completed ? DateTime.now() : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'completed': completed,
+      'completedAt': completedAt?.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory HabitTask.fromJson(Map<String, dynamic> json) {
+    return HabitTask(
+      id: json['id'],
+      title: json['title'] ?? '',
+      completed: json['completed'] ?? false,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'])
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
 /// Represents a single habit or goal to track
 class Habit {
   final String id;
@@ -244,6 +309,7 @@ class Habit {
   final HabitDifficulty difficulty;
   final List<HabitReminder> reminders;
   final Map<String, HabitNote> notes;
+  final List<HabitTask> tasks;
   final bool archived;
   final DateTime? archivedAt;
   final int weeklyTarget;
@@ -267,6 +333,7 @@ class Habit {
     this.difficulty = HabitDifficulty.medium,
     List<HabitReminder>? reminders,
     Map<String, HabitNote>? notes,
+    List<HabitTask>? tasks,
     this.archived = false,
     this.archivedAt,
     this.weeklyTarget = 5,
@@ -280,6 +347,7 @@ class Habit {
        createdAt = createdAt ?? DateTime.now(),
        reminders = List.unmodifiable(reminders ?? []),
        notes = Map.unmodifiable(notes ?? {}),
+       tasks = List.unmodifiable(tasks ?? []),
        dependencyIds = List.unmodifiable(dependencyIds ?? []),
        tags = List.unmodifiable(tags ?? const []),
        activeWeekdays = List.unmodifiable(activeWeekdays ?? const [1, 2, 3, 4, 5, 6, 7]); // Default: all days
@@ -457,6 +525,30 @@ class Habit {
   HabitNote? noteFor(DateTime date) =>
       notes['${date.year}-${date.month}-${date.day}'];
 
+  /// Add a task
+  Habit addTask(HabitTask task) {
+    final updated = List<HabitTask>.from(tasks)..add(task);
+    return copyWith(tasks: updated);
+  }
+
+  /// Update a task
+  Habit updateTask(HabitTask task) {
+    final updated = tasks.map((t) => t.id == task.id ? task : t).toList();
+    return copyWith(tasks: updated);
+  }
+
+  /// Remove a task
+  Habit removeTask(String taskId) {
+    final updated = tasks.where((t) => t.id != taskId).toList();
+    return copyWith(tasks: updated);
+  }
+
+  /// Toggle task completion
+  Habit toggleTask(String taskId) {
+    final updated = tasks.map((t) => t.id == taskId ? t.toggle() : t).toList();
+    return copyWith(tasks: updated);
+  }
+
   /// Current streak (consecutive completed days)
   int getCurrentStreak({DateTime? referenceDate}) {
     if (completedDates.isEmpty) return 0;
@@ -606,6 +698,7 @@ class Habit {
     HabitDifficulty? difficulty,
     List<HabitReminder>? reminders,
     Map<String, HabitNote>? notes,
+    List<HabitTask>? tasks,
     bool? archived,
     DateTime? archivedAt,
     int? weeklyTarget,
@@ -629,6 +722,7 @@ class Habit {
       difficulty: difficulty ?? this.difficulty,
       reminders: reminders ?? this.reminders,
       notes: notes ?? this.notes,
+      tasks: tasks ?? this.tasks,
       archived: archived ?? this.archived,
       archivedAt: archivedAt ?? this.archivedAt,
       weeklyTarget: weeklyTarget ?? this.weeklyTarget,
@@ -656,6 +750,7 @@ class Habit {
       'difficulty': difficulty.name,
       'reminders': reminders.map((r) => r.toJson()).toList(),
       'notes': notes.map((key, note) => MapEntry(key, note.toJson())),
+      'tasks': tasks.map((t) => t.toJson()).toList(),
       'archived': archived,
       'archivedAt': archivedAt?.toIso8601String(),
       'weeklyTarget': weeklyTarget,
@@ -789,6 +884,9 @@ class Habit {
         (key, value) =>
             MapEntry(key, HabitNote.fromJson(Map<String, dynamic>.from(value))),
       ),
+      tasks: (json['tasks'] as List<dynamic>? ?? [])
+          .map((t) => HabitTask.fromJson(Map<String, dynamic>.from(t)))
+          .toList(),
       archived: json['archived'] ?? false,
       archivedAt: parsedArchivedAt,
       weeklyTarget: parsedWeeklyTarget,

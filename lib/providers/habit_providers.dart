@@ -323,6 +323,66 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
     }
   }
 
+  Future<void> addTask({
+    required String habitId,
+    required HabitTask task,
+  }) async {
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      if (habit == null) return;
+      final updated = habit.addTask(task);
+      await repository.upsertHabit(updated);
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
+  }
+
+  Future<void> toggleTask({
+    required String habitId,
+    required String taskId,
+  }) async {
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      if (habit == null) return;
+      final updated = habit.toggleTask(taskId);
+      await repository.upsertHabit(updated);
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
+  }
+
+  Future<void> removeTask({
+    required String habitId,
+    required String taskId,
+  }) async {
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      final habit = repository.byId(habitId);
+      if (habit == null) return;
+      final updated = habit.removeTask(taskId);
+      await repository.upsertHabit(updated);
+      state = AsyncData(repository.current);
+    } on StorageException catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      await Future.delayed(AppAnimations.errorDisplay);
+      final repository = ref.read(habitRepositoryProvider);
+      state = AsyncData(repository.current);
+      rethrow;
+    }
+  }
+
   Future<void> clearAll() async {
     try {
       final repository = ref.read(habitRepositoryProvider);

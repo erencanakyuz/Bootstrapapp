@@ -177,7 +177,17 @@ class ProfileScreen extends ConsumerWidget {
                     color: colors.statusIncomplete,
                   ),
                   title: const Text('Clear all data'),
+                  subtitle: const Text('Remove all habits and history'),
                   onTap: () => _confirmClear(context, ref),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_sweep,
+                    color: colors.statusIncomplete,
+                  ),
+                  title: const Text('Delete all habits'),
+                  subtitle: const Text('Remove all habits but keep settings'),
+                  onTap: () => _confirmDeleteAllHabits(context, ref),
                 ),
                 if (kDebugMode) ...[
                   const Divider(height: 40),
@@ -368,6 +378,59 @@ class ProfileScreen extends ConsumerWidget {
             importedSettings['allowPastDatesBeforeCreation'] as bool,
           );
         }
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAllHabits(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete all habits'),
+        content: const Text(
+          'This will permanently delete all your habits. '
+          'This action cannot be undone. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: colors.statusIncomplete,
+            ),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+    if (confirmed ?? false) {
+      try {
+        final habits = await ref.read(habitsProvider.future);
+        for (final habit in habits) {
+          await ref.read(habitsProvider.notifier).deleteHabit(habit.id);
+        }
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All habits deleted successfully'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting habits: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
