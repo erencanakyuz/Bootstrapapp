@@ -28,6 +28,14 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
   final TransformationController _yearlyTableController = TransformationController();
   static const double _minTableScale = 0.3;
   static const double _maxTableScale = 4.0;
+  double get _referenceTableHeight =>
+      _tableHeaderHeight + _referenceHabitRows * _habitRowHeight;
+
+  double _calculateTableWidth(int daysInMonth) =>
+      200 + daysInMonth * 40.0;
+  static const int _referenceHabitRows = 8;
+  static const double _habitRowHeight = 50.0;
+  static const double _tableHeaderHeight = 60.0;
 
   @override
   void initState() {
