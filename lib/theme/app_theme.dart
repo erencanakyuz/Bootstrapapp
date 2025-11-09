@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Google Fonts paketi kaldırıldı - font'lar bundle'a dahil edildi
+// import 'package:google_fonts/google_fonts.dart';
 
 /// Theme palettes for bootstrap motivation app
 /// Only modern (light) is active, dark is reserved for future use
@@ -318,7 +319,8 @@ class AppTextStyles {
   final AppColors _colors;
 
   // Serif Display (Fraunces) - For headings
-  TextStyle get displayHero => GoogleFonts.fraunces(
+  TextStyle get displayHero => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 34,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.6,
@@ -326,7 +328,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get displayLarge => GoogleFonts.fraunces(
+  TextStyle get displayLarge => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 28,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.4,
@@ -334,7 +337,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get headline1 => GoogleFonts.fraunces(
+  TextStyle get headline1 => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 34,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.6,
@@ -342,7 +346,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get headline2 => GoogleFonts.fraunces(
+  TextStyle get headline2 => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 28,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.4,
@@ -350,7 +355,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get headline3 => GoogleFonts.fraunces(
+  TextStyle get headline3 => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 22,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.2,
@@ -358,7 +364,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get titlePage => GoogleFonts.fraunces(
+  TextStyle get titlePage => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 22,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.2,
@@ -366,7 +373,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get titleSection => GoogleFonts.fraunces(
+  TextStyle get titleSection => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 20,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.1,
@@ -374,7 +382,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get titleCard => GoogleFonts.fraunces(
+  TextStyle get titleCard => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 18,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.1,
@@ -383,7 +392,8 @@ class AppTextStyles {
   );
 
   // Sans Body (Inter) - For body text
-  TextStyle get body => GoogleFonts.inter(
+  TextStyle get body => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     height: 1.4,
     fontWeight: FontWeight.w400,
@@ -391,7 +401,8 @@ class AppTextStyles {
     color: _colors.textSecondary,
   );
 
-  TextStyle get bodyPrimary => GoogleFonts.inter(
+  TextStyle get bodyPrimary => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     height: 1.4,
     fontWeight: FontWeight.w400,
@@ -399,7 +410,8 @@ class AppTextStyles {
     color: _colors.textSecondary,
   );
 
-  TextStyle get bodySecondary => GoogleFonts.inter(
+  TextStyle get bodySecondary => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 13,
     height: 1.4,
     fontWeight: FontWeight.w400,
@@ -407,7 +419,8 @@ class AppTextStyles {
     color: _colors.textSecondary,
   );
 
-  TextStyle get bodyBold => GoogleFonts.inter(
+  TextStyle get bodyBold => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: FontWeight.w600,
     height: 1.4,
@@ -415,7 +428,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get caption => GoogleFonts.inter(
+  TextStyle get caption => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: FontWeight.w400,
     letterSpacing: 0.1,
@@ -423,7 +437,8 @@ class AppTextStyles {
     color: _colors.textSecondary,
   );
 
-  TextStyle get captionUppercase => GoogleFonts.inter(
+  TextStyle get captionUppercase => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.25,
@@ -432,7 +447,8 @@ class AppTextStyles {
   );
 
   // Sans UI (Inter with rounded feel) - For buttons
-  TextStyle get buttonLabel => GoogleFonts.inter(
+  TextStyle get buttonLabel => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
@@ -440,7 +456,8 @@ class AppTextStyles {
     color: _colors.textPrimary,
   );
 
-  TextStyle get buttonLabelGhost => GoogleFonts.inter(
+  TextStyle get buttonLabelGhost => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
@@ -448,7 +465,8 @@ class AppTextStyles {
     color: _colors.textSecondary,
   );
 
-  TextStyle get button => GoogleFonts.inter(
+  TextStyle get button => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
@@ -456,7 +474,8 @@ class AppTextStyles {
   );
 
   // Numeric Badge (Fraunces) - For large numbers
-  TextStyle get numericBadge => GoogleFonts.fraunces(
+  TextStyle get numericBadge => TextStyle(
+    fontFamily: 'Fraunces',
     fontSize: 52,
     fontWeight: FontWeight.w700,
     letterSpacing: -2.0,
@@ -471,9 +490,68 @@ ThemeData buildAppTheme(AppPalette palette) {
       ? ThemeData.dark(useMaterial3: true)
       : ThemeData.light(useMaterial3: true);
 
-  final TextTheme textTheme = GoogleFonts.interTextTheme(
-    base.textTheme,
-  ).apply(bodyColor: colors.textPrimary, displayColor: colors.textPrimary);
+  final TextTheme textTheme = base.textTheme.copyWith(
+    bodyLarge: base.textTheme.bodyLarge?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    bodyMedium: base.textTheme.bodyMedium?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    bodySmall: base.textTheme.bodySmall?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    displayLarge: base.textTheme.displayLarge?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    displayMedium: base.textTheme.displayMedium?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    displaySmall: base.textTheme.displaySmall?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    headlineLarge: base.textTheme.headlineLarge?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    headlineMedium: base.textTheme.headlineMedium?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    headlineSmall: base.textTheme.headlineSmall?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    titleLarge: base.textTheme.titleLarge?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    titleMedium: base.textTheme.titleMedium?.copyWith(
+      fontFamily: 'Fraunces',
+      color: colors.textPrimary,
+    ),
+    titleSmall: base.textTheme.titleSmall?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    labelLarge: base.textTheme.labelLarge?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    labelMedium: base.textTheme.labelMedium?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+    labelSmall: base.textTheme.labelSmall?.copyWith(
+      fontFamily: 'Inter',
+      color: colors.textPrimary,
+    ),
+  );
 
   final SystemUiOverlayStyle systemOverlayStyle =
       colors.background.computeLuminance() > 0.45
