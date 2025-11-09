@@ -22,6 +22,7 @@ class AddHabitModal extends StatefulWidget {
 class _AddHabitModalState extends State<AddHabitModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   late Color _selectedColor;
   late IconData _selectedIcon;
@@ -32,6 +33,8 @@ class _AddHabitModalState extends State<AddHabitModal> {
   late int _monthlyTarget;
   late List<int> _activeWeekdays; // 1 = Monday ... 7 = Sunday
   List<HabitReminder> _reminders = [];
+  
+  String? _errorMessage;
 
   final List<Color> _colors = const [
     Color(0xFF6B8FA3), // Muted blue-gray
@@ -71,10 +74,54 @@ class _AddHabitModalState extends State<AddHabitModal> {
       _activeWeekdays = const [1, 2, 3, 4, 5, 6, 7]; // Default: all days
       _reminders = [];
     }
+    
+    // Listen to title changes for real-time validation
+    _titleController.addListener(_validateTitle);
+    _descriptionController.addListener(_validateDescription);
+  }
+  
+  void _validateTitle() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      setState(() => _errorMessage = null); // Clear error while typing
+    } else if (title.length > 200) {
+      setState(() => _errorMessage = 'Title cannot exceed 200 characters');
+    } else {
+      setState(() => _errorMessage = null);
+    }
+  }
+  
+  void _validateDescription() {
+    final description = _descriptionController.text.trim();
+    if (description.isNotEmpty && description.length > 500) {
+      setState(() => _errorMessage = 'Description cannot exceed 500 characters');
+    } else if (_errorMessage?.contains('Description') == true) {
+      setState(() => _errorMessage = null);
+    }
+  }
+  
+  void _validateTargets() {
+    if (_weeklyTarget > _activeWeekdays.length) {
+      setState(() => _errorMessage = 
+        'Weekly target ($_weeklyTarget) cannot exceed active days (${_activeWeekdays.length})');
+      return;
+    }
+    if (_monthlyTarget < _weeklyTarget * 2) {
+      setState(() => _errorMessage = 
+        'Monthly target should be at least ${_weeklyTarget * 2} (2x weekly target)');
+      return;
+    }
+    if (_monthlyTarget > _activeWeekdays.length * 31) {
+      setState(() => _errorMessage = 
+        'Monthly target seems too high. Maximum recommended: ${_activeWeekdays.length * 31}');
+      return;
+    }
   }
 
   @override
   void dispose() {
+    _titleController.removeListener(_validateTitle);
+    _descriptionController.removeListener(_validateDescription);
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -96,47 +143,56 @@ class _AddHabitModalState extends State<AddHabitModal> {
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.paddingXXL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.outline,
-                  borderRadius: BorderRadius.circular(2),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.outline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSizes.paddingM),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded),
-                color: colors.textPrimary,
-                splashRadius: 20,
-                tooltip: 'Close',
-                onPressed: () => Navigator.of(context).maybePop(),
+              const SizedBox(height: AppSizes.paddingM),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  color: colors.textPrimary,
+                  splashRadius: 20,
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSizes.paddingL),
-            Text(
-              widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: colors.textPrimary,
+              const SizedBox(height: AppSizes.paddingL),
+              Text(
+                widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildTextField(
-              controller: _titleController,
-              label: 'Habit Title',
-              hint: 'e.g., Morning Meditation',
-              colors: colors,
-            ),
+              const SizedBox(height: AppSizes.paddingXXL),
+              // Error banner
+              if (_errorMessage != null) ...[
+                _buildErrorBanner(_errorMessage!, colors),
+                const SizedBox(height: AppSizes.paddingL),
+              ],
+              _buildTextField(
+                controller: _titleController,
+                label: 'Habit Title',
+                hint: 'e.g., Morning Meditation',
+                colors: colors,
+                maxLength: 200,
+                required: true,
+              ),
             const SizedBox(height: AppSizes.paddingL),
             _buildTextField(
               controller: _descriptionController,
@@ -144,6 +200,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
               hint: 'e.g., 10 mindful minutes',
               colors: colors,
               maxLines: 2,
+              maxLength: 500,
             ),
             const SizedBox(height: AppSizes.paddingXXL),
             _buildSectionTitle('Category', colors),
@@ -219,37 +276,26 @@ class _AddHabitModalState extends State<AddHabitModal> {
             _buildSlider(
               label: 'Weekly target: $_weeklyTarget days',
               value: _weeklyTarget.toDouble(),
-              min: 1,
-              max: 7,
-              onChanged: (value) =>
-                  setState(() => _weeklyTarget = value.toInt()),
+              min: 1.0,
+              max: _activeWeekdays.length.clamp(1, 7).toDouble(),
+              onChanged: (value) {
+                setState(() {
+                  _weeklyTarget = value.toInt();
+                  _validateTargets();
+                });
+              },
             ),
             _buildSlider(
               label: 'Monthly target: $_monthlyTarget check-ins',
               value: _monthlyTarget.toDouble(),
-              min: 5,
-              max: 60,
-              onChanged: (value) =>
-                  setState(() => _monthlyTarget = value.toInt()),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Weekly & Monthly Targets', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            _buildSlider(
-              label: 'Weekly target: $_weeklyTarget days',
-              value: _weeklyTarget.toDouble(),
-              min: 1,
-              max: 7,
-              onChanged: (value) =>
-                  setState(() => _weeklyTarget = value.toInt()),
-            ),
-            _buildSlider(
-              label: 'Monthly target: $_monthlyTarget check-ins',
-              value: _monthlyTarget.toDouble(),
-              min: 5,
-              max: 60,
-              onChanged: (value) =>
-                  setState(() => _monthlyTarget = value.toInt()),
+              min: (_weeklyTarget * 2).toDouble(),
+              max: (_activeWeekdays.length * 31).clamp(10, 100).toDouble(),
+              onChanged: (value) {
+                setState(() {
+                  _monthlyTarget = value.toInt();
+                  _validateTargets();
+                });
+              },
             ),
             const SizedBox(height: AppSizes.paddingXXL),
             _buildSectionTitle('Active Days', colors),
@@ -312,6 +358,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
             const SizedBox(height: AppSizes.paddingM),
           ],
         ),
+        ),
       ),
     );
   }
@@ -322,19 +369,86 @@ class _AddHabitModalState extends State<AddHabitModal> {
     required String hint,
     required AppColors colors,
     int maxLines = 1,
+    int? maxLength,
+    bool required = false,
   }) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: label + (required ? ' *' : ''),
         hintText: hint,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusM),
         ),
         filled: true,
         fillColor: colors.surface,
+        counterText: maxLength != null 
+          ? '${controller.text.length}/$maxLength' 
+          : null,
+        errorText: _errorMessage != null && 
+          (_errorMessage!.contains('Title') || _errorMessage!.contains('Description'))
+          ? _errorMessage
+          : null,
+        errorMaxLines: 2,
       ),
       maxLines: maxLines,
+      maxLength: maxLength,
+      buildCounter: maxLength != null
+        ? (context, {required currentLength, required isFocused, maxLength}) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '$currentLength/$maxLength',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                ),
+              ),
+            );
+          }
+        : null,
+    );
+  }
+  
+  Widget _buildErrorBanner(String message, AppColors colors) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.paddingM),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEBEE), // Light red background
+        borderRadius: BorderRadius.circular(AppSizes.radiusM),
+        border: Border.all(
+          color: const Color(0xFFE57373), // Light red border
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: const Color(0xFFD32F2F), // Red icon
+            size: 20,
+          ),
+          const SizedBox(width: AppSizes.paddingM),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: const Color(0xFFD32F2F),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18),
+            color: const Color(0xFFD32F2F),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => setState(() => _errorMessage = null),
+          ),
+        ],
+      ),
     );
   }
 
@@ -425,6 +539,11 @@ class _AddHabitModalState extends State<AddHabitModal> {
                 if (selected) {
                   setState(() {
                     _activeWeekdays = List<int>.from(presetDays);
+                    // Adjust weekly target if it exceeds active days
+                    if (_weeklyTarget > _activeWeekdays.length) {
+                      _weeklyTarget = _activeWeekdays.length;
+                    }
+                    _validateTargets();
                   });
                 }
               },
@@ -455,6 +574,12 @@ class _AddHabitModalState extends State<AddHabitModal> {
                     // Ensure at least one day is selected
                     if (_activeWeekdays.isEmpty) {
                       _activeWeekdays = [dayValue]; // Keep current day
+                    } else {
+                      // Adjust weekly target if it exceeds active days
+                      if (_weeklyTarget > _activeWeekdays.length) {
+                        _weeklyTarget = _activeWeekdays.length;
+                      }
+                      _validateTargets();
                     }
                   }
                 });
@@ -552,10 +677,44 @@ class _AddHabitModalState extends State<AddHabitModal> {
   }
 
   void _saveHabit() {
-    if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a habit title')),
-      );
+    // Clear previous errors
+    setState(() => _errorMessage = null);
+    
+    // Validate title
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      setState(() => _errorMessage = 'Please enter a habit title');
+      return;
+    }
+    
+    if (title.length > 200) {
+      setState(() => _errorMessage = 'Title cannot exceed 200 characters');
+      return;
+    }
+    
+    // Validate description
+    final description = _descriptionController.text.trim();
+    if (description.length > 500) {
+      setState(() => _errorMessage = 'Description cannot exceed 500 characters');
+      return;
+    }
+    
+    // Validate targets
+    if (_weeklyTarget > _activeWeekdays.length) {
+      setState(() => _errorMessage = 
+        'Weekly target ($_weeklyTarget) cannot exceed active days (${_activeWeekdays.length})');
+      return;
+    }
+    
+    if (_monthlyTarget < _weeklyTarget * 2) {
+      setState(() => _errorMessage = 
+        'Monthly target should be at least ${_weeklyTarget * 2} (2x weekly target)');
+      return;
+    }
+    
+    if (_monthlyTarget > _activeWeekdays.length * 31) {
+      setState(() => _errorMessage = 
+        'Monthly target seems too high. Maximum recommended: ${_activeWeekdays.length * 31}');
       return;
     }
 

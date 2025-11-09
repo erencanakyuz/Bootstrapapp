@@ -274,7 +274,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColors colors,
     AppTextStyles textStyles,
   ) {
-    final total = widget.habits.length;
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
+    final total = activeHabits.length;
     final totalStreak = _getTotalStreak();
     final weeklyCompletions = _getWeeklyCompletions();
     final progress = total == 0 ? 0.0 : completed / total;
@@ -438,6 +442,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final counts = _getTimeBlockCounts();
     final hasHabits = counts.values.any((count) => count > 0);
     if (!hasHabits) return const SizedBox.shrink();
+    
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,7 +455,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Today\'s flow', style: textStyles.titleSection),
-            Text('${widget.habits.length} habits', style: textStyles.caption),
+            Text('${activeHabits.length} habits', style: textStyles.caption),
           ],
         ),
         const SizedBox(height: 12),
@@ -501,14 +510,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   SliverList _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
+    
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final habit = widget.habits[index];
+          final habit = activeHabits[index];
           final isNew = _isNewHabit(habit);
           return Padding(
             padding: EdgeInsets.only(
-              bottom: index == widget.habits.length - 1 ? 0 : 16,
+              bottom: index == activeHabits.length - 1 ? 0 : 16,
             ),
             child: HabitCard(
               key: ValueKey(habit.id),
@@ -520,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         },
-        childCount: widget.habits.length,
+        childCount: activeHabits.length,
         addAutomaticKeepAlives: false,
         addRepaintBoundaries: true,
         addSemanticIndexes: false,
@@ -783,9 +797,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   int _getTotalStreak() {
-    if (widget.habits.isEmpty) return 0;
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
+    if (activeHabits.isEmpty) return 0;
     int maxStreak = 0;
-    for (final habit in widget.habits) {
+    for (final habit in activeHabits) {
       final streak = habit.getCurrentStreak();
       if (streak > maxStreak) maxStreak = streak;
     }
@@ -796,20 +814,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     int count = 0;
-    for (final habit in widget.habits) {
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
+    for (final habit in activeHabits) {
       for (int i = 0; i < 7; i++) {
         final date = weekStart.add(Duration(days: i));
-        if (habit.isCompletedOn(date)) count++;
+        if (habit.isActiveOnDate(date) && habit.isCompletedOn(date)) {
+          count++;
+        }
       }
     }
     return count;
   }
 
   String _getMotivationalMessage() {
-    final completedToday = widget.habits
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
+    final completedToday = activeHabits
         .where((h) => h.isCompletedOn(DateTime.now()))
         .length;
-    final total = widget.habits.length;
+    final total = activeHabits.length;
     final progress = total > 0 ? completedToday / total : 0.0;
 
     if (progress == 1.0) {
@@ -831,8 +859,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Map<HabitTimeBlock, int> _getTimeBlockCounts() {
+    final today = DateTime.now();
+    final activeHabits = widget.habits.where((habit) => 
+      !habit.archived && habit.isActiveOnDate(today)
+    ).toList();
     final counts = {for (final block in HabitTimeBlock.values) block: 0};
-    for (final habit in widget.habits) {
+    for (final habit in activeHabits) {
       counts[habit.timeBlock] = counts[habit.timeBlock]! + 1;
     }
     return counts;
