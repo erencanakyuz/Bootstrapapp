@@ -359,7 +359,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                       // Habit rows
@@ -446,10 +446,10 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                   ),
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),

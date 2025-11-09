@@ -395,9 +395,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                 final scheduledDate = _notificationService.getScheduledDate(n.id);
                 final now = DateTime.now();
                 final isPast = scheduledDate != null && scheduledDate.isBefore(now);
-                final timeUntil = scheduledDate != null 
-                  ? scheduledDate.difference(now)
-                  : null;
+                final timeUntil = scheduledDate?.difference(now);
                 
                 String countdownText = 'Unknown';
                 Color countdownColor = colors.textTertiary;
@@ -440,7 +438,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              '${n.title ?? "No title"}',
+                              n.title ?? "No title",
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: colors.textPrimary,

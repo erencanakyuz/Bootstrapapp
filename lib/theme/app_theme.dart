@@ -59,6 +59,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.gradientPurpleLighterEnd,
     required this.gradientBlueAudioStart,
     required this.gradientBlueAudioEnd,
+    required this.chipOutline,
   });
 
   final Color primary;
@@ -88,9 +89,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color gradientPurpleStart;
   final Color gradientPurpleEnd;
   final Color gradientPurpleLighterStart;
-  final Color gradientPurpleLighterEnd;
-  final Color gradientBlueAudioStart;
-  final Color gradientBlueAudioEnd;
+    final Color gradientPurpleLighterEnd;
+    final Color gradientBlueAudioStart;
+    final Color gradientBlueAudioEnd;
+    final Color chipOutline;
 
   @override
   AppColors copyWith({
@@ -123,6 +125,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? gradientPurpleLighterEnd,
     Color? gradientBlueAudioStart,
     Color? gradientBlueAudioEnd,
+    Color? chipOutline,
   }) {
     return AppColors(
       primary: primary ?? this.primary,
@@ -154,6 +157,7 @@ class AppColors extends ThemeExtension<AppColors> {
       gradientPurpleLighterEnd: gradientPurpleLighterEnd ?? this.gradientPurpleLighterEnd,
       gradientBlueAudioStart: gradientBlueAudioStart ?? this.gradientBlueAudioStart,
       gradientBlueAudioEnd: gradientBlueAudioEnd ?? this.gradientBlueAudioEnd,
+      chipOutline: chipOutline ?? this.chipOutline,
     );
   }
 
@@ -198,6 +202,7 @@ class AppColors extends ThemeExtension<AppColors> {
       gradientPurpleLighterEnd: lerpColor(gradientPurpleLighterEnd, other.gradientPurpleLighterEnd),
       gradientBlueAudioStart: lerpColor(gradientBlueAudioStart, other.gradientBlueAudioStart),
       gradientBlueAudioEnd: lerpColor(gradientBlueAudioEnd, other.gradientBlueAudioEnd),
+      chipOutline: lerpColor(chipOutline, other.chipOutline),
     );
   }
 }
@@ -211,7 +216,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     accentGreen: Color(0xFF4BAE88), // success
     accentBlue: Color(0xFF5F8BE5), // info
     accentAmber: Color(0xFFF8C9A2), // brandAccentPeach
-    background: Color(0xFFE7DCD1), // brandBackground - soft beige
+    background: Color(0xFFF9F3F0), // Light beige - user requested
     surface: Color(0xFFFFFFFF), // brandCardBackground
     elevatedSurface: Color(0xFFFFFCF8), // brandSurfaceAlt
     outline: Color(0xFFEFE4D9), // brandBorderSubtle
@@ -235,6 +240,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     gradientPurpleLighterEnd: Color(0xFFF8ECFF), // gradientPurpleLighterEnd
     gradientBlueAudioStart: Color(0xFFCBDCFF), // gradientBlueAudioStart
     gradientBlueAudioEnd: Color(0xFFF2F6FF), // gradientBlueAudioEnd
+    chipOutline: Color(0xFFD7C9BA), // chipOutline - RefactorUi.md
   ),
   AppPalette.dark: AppColors(
     // Dark theme - Reserved for future use
@@ -268,6 +274,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     gradientPurpleLighterEnd: Color(0xFF0F172A), // Dark purple lighter end
     gradientBlueAudioStart: Color(0xFF1E293B), // Dark blue audio start
     gradientBlueAudioEnd: Color(0xFF0F172A), // Dark blue audio end
+    chipOutline: Color(0xFF6B7280), // Dark theme chip outline
   ),
 };
 

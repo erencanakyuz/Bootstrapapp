@@ -3,14 +3,13 @@ import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 
-/// Habit Card - RefactorUi.md cardJournalPreview style with unique gradients
-/// Each card gets a different gradient based on category and index
+/// Habit card that matches RefactorUi.md `promiseCard` spec exactly:
+/// flat white surface, subtle border, soft elevation, and checkbox meta row.
 class HabitCard extends StatelessWidget {
   final Habit habit;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onCompletionToggle;
-  final String gradientType; // 'peach', 'purpleLighter', 'purpleVertical', 'purplePeach', 'blue'
   final bool showNewBadge;
 
   const HabitCard({
@@ -19,7 +18,6 @@ class HabitCard extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.onCompletionToggle,
-    this.gradientType = 'peach',
     this.showNewBadge = false,
   });
 
@@ -32,71 +30,50 @@ class HabitCard extends StatelessWidget {
     final isCompletedToday = habit.isCompletedOn(today);
     final completionRate = habit.completionRate(days: 14);
 
-    // Get gradient colors based on type
-    List<Color> gradientColors;
-    AlignmentGeometry gradientBegin;
-    AlignmentGeometry gradientEnd;
-    bool isRadial = false;
-
-    switch (gradientType) {
-      case 'peach':
-        gradientColors = [colors.gradientPeachStart, colors.gradientPeachEnd];
-        gradientBegin = Alignment.topLeft;
-        gradientEnd = Alignment.bottomRight;
-        break;
-      case 'purpleLighter':
-        gradientColors = [colors.gradientPurpleLighterStart, colors.gradientPurpleLighterEnd];
-        gradientBegin = Alignment.topLeft;
-        gradientEnd = Alignment.bottomRight;
-        break;
-      case 'purpleVertical':
-        gradientColors = [colors.gradientPurpleStart, colors.gradientPurpleEnd];
-        gradientBegin = Alignment.topCenter;
-        gradientEnd = Alignment.bottomCenter;
-        break;
-      case 'purplePeach':
-        gradientColors = [colors.gradientPurpleLighterStart, colors.gradientPeachEnd];
-        gradientBegin = Alignment.topLeft;
-        gradientEnd = Alignment.bottomRight;
-        break;
-      case 'blue':
-        gradientColors = [colors.gradientBlueAudioStart, colors.gradientBlueAudioEnd];
-        isRadial = true;
-        gradientBegin = Alignment.center;
-        gradientEnd = Alignment.bottomCenter;
-        break;
-      default:
-        gradientColors = [colors.gradientPeachStart, colors.gradientPeachEnd];
-        gradientBegin = Alignment.topLeft;
-        gradientEnd = Alignment.bottomRight;
-    }
-
-    // RefactorUi.md cardJournalPreview: gradient background, borderRadius xl (24), padding 18
+    // RefactorUi.md promiseCard tokens
+    // Professional shadow and border for beige theme
     return Container(
       decoration: BoxDecoration(
-        gradient: isRadial
-            ? RadialGradient(
-                center: Alignment(0.5, 0.3),
-                colors: gradientColors,
-              )
-            : LinearGradient(
-                begin: gradientBegin,
-                end: gradientEnd,
-                colors: gradientColors,
-              ),
-        borderRadius: BorderRadius.circular(24), // xl = 24
-        boxShadow: AppShadows.cardSoft(null), // elevation cardSoft
+        color: const Color(0xFFFFFCF9), // Light beige - user requested
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5), // More subtle border
+          width: 1,
+        ),
+        boxShadow: [
+          // Strong outer shadow - very visible for testing
+          BoxShadow(
+            color: colors.textPrimary.withValues(alpha: 0.15),
+            blurRadius: 32,
+            spreadRadius: 0,
+            offset: const Offset(0, 10),
+          ),
+          // Additional depth shadow
+          BoxShadow(
+            color: colors.textPrimary.withValues(alpha: 0.06),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+          // Subtle inner glow for depth
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.95),
+            blurRadius: 0,
+            spreadRadius: -1,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.all(18), // RefactorUi.md cardJournalPreview padding
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -105,12 +82,12 @@ class HabitCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon container
+                        // Icon container - RefactorUi.md promiseCard style
                         Container(
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: colors.primary.withValues(alpha: 0.1), // Subtle purple tint
                             borderRadius: BorderRadius.circular(12), // md = 12
                           ),
                           child: Icon(
@@ -119,7 +96,7 @@ class HabitCard extends StatelessWidget {
                             size: 24,
                           ),
                         ),
-                        const SizedBox(width: 12), // sm = 12
+                        const SizedBox(width: AppSizes.paddingS),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,8 +143,8 @@ class HabitCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12), // sm = 12
-                    // Metadata row - RefactorUi.md metaRowStyle caption
+                    const SizedBox(height: AppSizes.paddingS),
+                    // Metadata row - RefactorUi.md promiseCard tagCategory style
                     Wrap(
                       spacing: 8, // xs = 8
                       runSpacing: 6,
@@ -177,29 +154,30 @@ class HabitCard extends StatelessWidget {
                           textStyles,
                           habit.timeBlock.icon,
                           habit.timeBlock.label,
-                          Colors.white.withValues(alpha: 0.3),
+                          colors.elevatedSurface, // brandSurfaceAlt (#FFFCF8) - hafif sarımsı ton
                         ),
                         _buildTagChip(
                           colors,
                           textStyles,
                           null,
                           habit.difficulty.label,
-                          Colors.white.withValues(alpha: 0.2),
+                          colors.elevatedSurface, // brandSurfaceAlt (#FFFCF8)
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.paddingS),
                     // Progress bar
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8), // sm = 8
                       child: LinearProgressIndicator(
                         value: completionRate,
                         minHeight: 6,
-                        backgroundColor: Colors.white.withValues(alpha: 0.3),
+                        backgroundColor:
+                            colors.outline.withValues(alpha: 0.2),
                         valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.paddingS),
                     // Stats row - RefactorUi.md metaRowStyle caption
                     Row(
                       children: [
@@ -261,6 +239,7 @@ class HabitCard extends StatelessWidget {
   }
 
   // RefactorUi.md toggleCheckbox: size 24, borderRadius 8, borderWidth 1.5
+  // borderColorOff: chipOutline (#D7C9BA), borderColorOn: brandAccentPurple (#A371F2)
   Widget _buildCompletionCheckbox(bool isCompleted, AppColors colors) {
     return AnimatedContainer(
       duration: AppAnimations.normal,
@@ -268,12 +247,12 @@ class HabitCard extends StatelessWidget {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: isCompleted ? colors.textPrimary : Colors.transparent,
+        color: isCompleted ? colors.brandAccentPurple : Colors.transparent,
         borderRadius: BorderRadius.circular(8), // sm = 8
         border: Border.all(
           color: isCompleted
-              ? colors.textPrimary
-              : Colors.white.withValues(alpha: 0.6),
+              ? colors.brandAccentPurple // borderColorOn
+              : colors.chipOutline, // borderColorOff
           width: 1.5,
         ),
       ),
