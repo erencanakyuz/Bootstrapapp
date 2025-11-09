@@ -185,18 +185,11 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            colors.gradientPeachStart,
-            colors.gradientPeachEnd,
-          ],
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF9),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+          boxShadow: AppShadows.cardSoft(null),
         ),
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -307,15 +300,12 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              colors.gradientPurpleLighterStart,
-              colors.brandAccentPeachSoft,
-            ],
-          ),
+          color: const Color(0xFFFFFCF9),
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
           boxShadow: AppShadows.cardSoft(null),
         ),
         child: Row(
@@ -396,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen>
       margin: const EdgeInsets.only(right: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusPill),
         border: Border.all(color: colors.outline.withValues(alpha: 0.4)),
       ),
@@ -449,18 +439,15 @@ class _HomeScreenState extends State<HomeScreen>
   ) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.gradientBlueAudioStart,
-            colors.gradientBlueAudioEnd,
-          ],
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF9),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: AppShadows.cardSoft(null),
         ),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -609,7 +596,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
         boxShadow: AppShadows.cardSoft(null),
       ),
@@ -619,18 +606,17 @@ class _HomeScreenState extends State<HomeScreen>
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colors.gradientPurpleLighterStart,
-                  colors.gradientPurpleLighterEnd,
-                ],
-              ),
+              color: const Color(0xFFFFFCF9),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: colors.outline.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
             child: Icon(
               Icons.rocket_launch_rounded,
               size: 60,
-              color: colors.primary,
+              color: colors.textPrimary.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 24),
@@ -655,7 +641,7 @@ class _HomeScreenState extends State<HomeScreen>
         final colors = Theme.of(context).extension<AppColors>()!;
         return Container(
           decoration: BoxDecoration(
-            color: colors.surface,
+            color: const Color(0xFFFFFCF9),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(32),
             ),
@@ -911,9 +897,9 @@ class _HomeScreenState extends State<HomeScreen>
                 gravity: 0.3,
                 shouldLoop: false,
                 colors: [
-                  colors.primary,
-                  colors.accentAmber,
-                  colors.accentGreen,
+                  colors.textPrimary,
+                  colors.textSecondary,
+                  colors.textTertiary,
                 ],
               ),
             ),

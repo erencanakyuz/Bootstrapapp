@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
@@ -36,7 +37,18 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: colors.background,
-          appBar: AppBar(title: const Text('Insights Dashboard')),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              'Insights Dashboard',
+              style: GoogleFonts.fraunces(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
+          ),
           body: ListView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -97,8 +109,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
               const SizedBox(height: AppSizes.paddingXXL),
               Text(
                 'Category breakdown',
-                style: TextStyle(
-                  fontSize: 18,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
@@ -117,7 +129,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                         value: value,
                         title: '${(value * 100).toStringAsFixed(0)}%',
                         titleStyle: TextStyle(
-                          color: colors.surface,
+                          color: const Color(0xFFFFFCF9),
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -129,8 +141,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
               const SizedBox(height: AppSizes.paddingXXL),
               Text(
                 'Streak history',
-                style: TextStyle(
-                  fontSize: 18,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
@@ -146,7 +158,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                       (entry) {
                         final index = entry.key;
                         final habit = entry.value;
-                        final shade = colors.primary.withValues(
+                        final shade = colors.textPrimary.withValues(
                           alpha: 0.35 + (index % 3) * 0.1,
                         );
                         return BarChartGroupData(
@@ -169,8 +181,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
               const SizedBox(height: AppSizes.paddingXXL),
               Text(
                 'Best performers',
-                style: TextStyle(
-                  fontSize: 18,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
@@ -180,7 +192,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 (habit) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: colors.primarySoft,
+                    backgroundColor: colors.outline.withValues(alpha: 0.1),
                     child: Icon(habit.icon, color: colors.textPrimary),
                   ),
                   title: Text(habit.title),
@@ -211,9 +223,13 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXL),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        boxShadow: AppShadows.small(Colors.black),
+        color: const Color(0xFFFFFCF9),
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,9 +269,13 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

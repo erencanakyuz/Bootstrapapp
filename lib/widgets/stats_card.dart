@@ -28,16 +28,13 @@ class StatsCard extends StatelessWidget {
         vertical: AppSizes.paddingS,
       ),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-        border: Border.all(color: colors.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: const Color(0xFFFFFCF9),
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +43,7 @@ class StatsCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSizes.paddingXS),
             decoration: BoxDecoration(
-              color: colors.primarySoft,
+              color: colors.outline.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppSizes.radiusM),
             ),
             child: Icon(icon, color: color, size: AppSizes.iconS),

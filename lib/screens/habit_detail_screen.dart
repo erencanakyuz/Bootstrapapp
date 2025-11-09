@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../constants/app_constants.dart';
@@ -74,128 +75,209 @@ class HabitDetailScreen extends ConsumerWidget {
         return Scaffold(
           backgroundColor: colors.background,
           appBar: AppBar(
-            title: Text(habit.title),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              habit.title,
+              style: GoogleFonts.fraunces(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.ios_share),
+                icon: Icon(Icons.ios_share, color: colors.textPrimary),
                 onPressed: () => _shareHabit(habit),
               ),
               IconButton(
-                icon: const Icon(Icons.edit),
+                icon: Icon(Icons.edit, color: colors.textPrimary),
                 onPressed: () => _editHabit(context, ref, habit),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.delete_outline, color: colors.statusIncomplete),
                 onPressed: () => _deleteHabit(context, ref, habit),
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(AppSizes.paddingXXL),
-            children: [
-              Hero(
-                tag: 'habit-${habit.id}',
-                child: Container(
-                  padding: const EdgeInsets.all(AppSizes.paddingXL),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-                    boxShadow: AppShadows.small(Colors.black),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: colors.primarySoft,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                        ),
-                        child: Icon(
-                          habit.icon,
-                          color: colors.textPrimary,
-                          size: 32,
-                        ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: AppSizes.paddingM),
+                // Hero card matching habit card style
+                Hero(
+                  tag: 'habit-${habit.id}',
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFCF9), // Same as habit card
+                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                      border: Border.all(
+                        color: colors.outline.withValues(alpha: 0.5),
+                        width: 1,
                       ),
-                      const SizedBox(width: AppSizes.paddingXL),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              habit.title,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: colors.textPrimary,
+                      boxShadow: AppShadows.cardSoft(null),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colors.outline.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            habit.icon,
+                            color: colors.textPrimary.withValues(alpha: 0.7),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                habit.title,
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.25,
+                                  color: colors.textPrimary,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${habit.category.label} • ${habit.timeBlock.label}',
-                              style: TextStyle(color: colors.textSecondary),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                '${habit.category.label.toUpperCase()} • ${habit.timeBlock.label}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: colors.textPrimary.withValues(alpha: 0.65),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-              Text(
-                'Momentum overview',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-              SizedBox(
-                height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: const FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                        isCurved: true,
-                        color: habit.color,
-                        barWidth: 4,
-                        spots: _buildLineChartPoints(habit),
-                        dotData: const FlDotData(show: false),
-                      ),
-                    ],
+                const SizedBox(height: AppSizes.paddingXXL),
+                // Section headers matching home screen style
+                Text(
+                  'Momentum overview',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-              Text(
-                'Last 30 days',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+                const SizedBox(height: AppSizes.paddingM),
+                Container(
+                  height: 180,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFCF9),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                    border: Border.all(
+                      color: colors.outline.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                    boxShadow: AppShadows.cardSoft(null),
+                  ),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 1,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: colors.outline.withValues(alpha: 0.1),
+                            strokeWidth: 1,
+                          );
+                        },
+                      ),
+                      titlesData: FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          isCurved: true,
+                          color: habit.color,
+                          barWidth: 3,
+                          spots: _buildLineChartPoints(habit),
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) {
+                              return FlDotCirclePainter(
+                                radius: 3,
+                                color: habit.color,
+                                strokeWidth: 2,
+                                strokeColor: Colors.white,
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: habit.color.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-              _buildHeatmap(last30Days, habit, colors),
-              const SizedBox(height: AppSizes.paddingXXL),
-              _buildStatGrid(habit, colors, streak),
-              const SizedBox(height: AppSizes.paddingXXL),
-              Text(
-                'Daily note',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+                const SizedBox(height: AppSizes.paddingXXL),
+                Text(
+                  'Last 30 days',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-              _buildNoteCard(context, ref, habit, colors),
-            ],
+                const SizedBox(height: AppSizes.paddingM),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFCF9),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                    border: Border.all(
+                      color: colors.outline.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                    boxShadow: AppShadows.cardSoft(null),
+                  ),
+                  child: _buildHeatmap(last30Days, habit, colors),
+                ),
+                const SizedBox(height: AppSizes.paddingXXL),
+                _buildStatGrid(habit, colors, streak),
+                const SizedBox(height: AppSizes.paddingXXL),
+                Text(
+                  'Daily note',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.paddingM),
+                _buildNoteCard(context, ref, habit, colors),
+                const SizedBox(height: AppSizes.paddingXXL),
+              ],
+            ),
           ),
         );
       },
@@ -230,18 +312,18 @@ class HabitDetailScreen extends ConsumerWidget {
     AppColors colors,
   ) {
     return Wrap(
-      spacing: 4,
-      runSpacing: 4,
+      spacing: 6,
+      runSpacing: 6,
       children: days.map((day) {
         final completed = habit.isCompletedOn(day);
         return Container(
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
             color: completed
                 ? habit.color
-                : colors.outline.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(4),
+                : colors.outline.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(6),
           ),
         );
       }).toList(),
@@ -253,33 +335,33 @@ class HabitDetailScreen extends ConsumerWidget {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.5,
-      mainAxisSpacing: AppSizes.paddingL,
-      crossAxisSpacing: AppSizes.paddingL,
+      childAspectRatio: 1.6,
+      mainAxisSpacing: AppSizes.paddingM,
+      crossAxisSpacing: AppSizes.paddingM,
       children: [
         _StatTile(
           title: 'Streak',
           value: '${streak}d',
           icon: Icons.local_fire_department,
-          color: Colors.orange,
+          color: colors.textPrimary,
         ),
         _StatTile(
           title: 'Best streak',
           value: '${habit.bestStreak}d',
           icon: Icons.emoji_events,
-          color: colors.accentBlue,
+          color: colors.textPrimary,
         ),
         _StatTile(
           title: 'Completions',
           value: '${habit.totalCompletions}',
           icon: Icons.check_circle,
-          color: colors.accentGreen,
+          color: colors.textPrimary,
         ),
         _StatTile(
           title: 'Consistency',
           value: '${(habit.consistencyScore * 100).toStringAsFixed(0)}%',
           icon: Icons.timeline,
-          color: colors.accentAmber,
+          color: colors.textPrimary,
         ),
       ],
     );
@@ -293,24 +375,44 @@ class HabitDetailScreen extends ConsumerWidget {
   ) {
     final note = habit.noteFor(DateTime.now());
     return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingL),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             note?.text ?? 'No reflections yet.\nCapture what worked today.',
-            style: TextStyle(color: colors.textSecondary),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSizes.paddingM),
           OutlinedButton.icon(
             onPressed: () => _addNote(context, ref, habit, note?.text ?? ''),
-            icon: const Icon(Icons.edit_note),
-            label: Text(note == null ? 'Add note' : 'Update note'),
+            icon: Icon(Icons.edit_note, size: 16, color: colors.textPrimary),
+            label: Text(
+              note == null ? 'Add note' : 'Update note',
+              style: TextStyle(color: colors.textPrimary),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
         ],
       ),
@@ -435,35 +537,40 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.paddingXL,
-        vertical: AppSizes.paddingM,
-      ),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: AppSizes.paddingXS),
+          Icon(icon, color: colors.textPrimary.withValues(alpha: 0.7), size: 18),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            style: GoogleFonts.fraunces(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
               color: colors.textPrimary,
+              height: 1.0,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             title,
             style: TextStyle(
               color: colors.textSecondary,
-              fontSize: 12,
+              fontSize: 11,
+              letterSpacing: 0.1,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

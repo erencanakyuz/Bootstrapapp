@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/habit.dart';
 import '../providers/app_settings_providers.dart';
 import '../theme/app_theme.dart';
+import '../constants/app_constants.dart';
 
 enum CalendarViewMode {
   monthly,
@@ -204,7 +205,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.info_outline, size: 20, color: colors.primary),
+            icon: Icon(Icons.info_outline, size: 20, color: colors.textPrimary),
             onPressed: () => _showStatsDialog(colors, completedDates, now),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -220,13 +221,13 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
               _viewMode == CalendarViewMode.monthly
                   ? Icons.view_module
                   : Icons.calendar_month,
-              color: colors.primary,
+              color: colors.textPrimary,
               size: 16,
             ),
             label: Text(
               _viewMode == CalendarViewMode.monthly ? 'Year' : 'Month',
               style: TextStyle(
-                color: colors.primary,
+                color: colors.textPrimary,
                 fontWeight: FontWeight.w600,
                 fontSize: 11,
               ),
@@ -269,7 +270,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.chevron_left, size: 20, color: colors.primary),
+                        icon: Icon(Icons.chevron_left, size: 20, color: colors.textPrimary),
                         onPressed: _previousPeriod,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -281,12 +282,12 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: colors.primary,
+                            color: colors.textPrimary,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.chevron_right, size: 20, color: colors.primary),
+                        icon: Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
                         onPressed: _nextPeriod,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -317,7 +318,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                       // Header row with day numbers
                       TableRow(
                         decoration: BoxDecoration(
-                          color: colors.primary.withValues(alpha: 0.1),
+                          color: colors.outline.withValues(alpha: 0.08),
                         ),
                         children: [
                           TableCell(
@@ -328,7 +329,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: colors.primary,
+                                  color: colors.textPrimary,
                                   letterSpacing: 1,
                                 ),
                               ),
@@ -344,7 +345,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
                                 decoration: isToday
                                     ? BoxDecoration(
-                                        color: colors.primary.withValues(alpha: 0.2),
+                                        color: colors.outline.withValues(alpha: 0.1),
                                       )
                                     : null,
                                 child: Center(
@@ -353,7 +354,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                                      color: isToday ? colors.primary : colors.textPrimary,
+                                      color: isToday ? colors.textPrimary : colors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -418,7 +419,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                             : null,
                                         border: isToday
                                             ? Border.all(
-                                                color: Colors.black,
+                                                color: colors.textPrimary,
                                                 width: 2,
                                               )
                                             : (!isCompleted
@@ -485,7 +486,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.chevron_left, size: 20, color: colors.primary),
+                      icon: Icon(Icons.chevron_left, size: 20, color: colors.textPrimary),
                       onPressed: _previousPeriod,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -497,12 +498,12 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: colors.primary,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.chevron_right, size: 20, color: colors.primary),
+                      icon: Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
                       onPressed: _nextPeriod,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -568,7 +569,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: colors.surface,
+        backgroundColor: const Color(0xFFFFFCF9),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -586,7 +587,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Close',
-              style: TextStyle(color: colors.primary),
+              style: TextStyle(color: colors.textPrimary),
             ),
           ),
         ],
@@ -627,14 +628,14 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: colors.primary, size: 20),
+          Icon(icon, color: colors.textPrimary, size: 20),
           const SizedBox(height: 2),
           Text(
             value,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: colors.primary,
+              color: colors.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -666,7 +667,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
             Icon(
               Icons.calendar_today_outlined,
               size: 100,
-              color: colors.primary.withValues(alpha: 0.3),
+              color: colors.textPrimary.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 24),
             Text(
@@ -700,21 +701,15 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(12),
         border: isCurrentMonth
-            ? Border.all(color: colors.primary, width: 2)
+            ? Border.all(color: colors.textPrimary, width: 2)
             : Border.all(
-                color: colors.outline.withValues(alpha: 0.1),
+                color: colors.outline.withValues(alpha: 0.5),
                 width: 1,
               ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,14 +722,14 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isCurrentMonth ? colors.primary : colors.textPrimary,
+                  color: isCurrentMonth ? colors.textPrimary : colors.textPrimary,
                 ),
               ),
               if (isCurrentMonth)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.2),
+                    color: colors.outline.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -742,7 +737,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                     style: TextStyle(
                       fontSize: 8,
                       fontWeight: FontWeight.w800,
-                      color: colors.primary,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
@@ -755,7 +750,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
               child: LinearProgressIndicator(
                 value: rate,
                 backgroundColor: colors.outline.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
                 minHeight: 8,
               ),
             ),
@@ -777,7 +772,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: colors.primary,
+                  color: colors.textPrimary,
                 ),
               ),
             ],
