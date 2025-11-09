@@ -40,16 +40,11 @@ class CalendarShareService {
         await Future.delayed(const Duration(milliseconds: 100));
       }
 
-      final context = repaintBoundaryKey.currentContext;
-      final devicePixelRatio = context != null
-          ? (MediaQuery.maybeOf(context)?.devicePixelRatio ??
-              View.of(context).devicePixelRatio)
-          : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
+      // Use optimized pixel ratio for 16:9 share (1920x1080 base)
+      // 2.0 pixel ratio = 3840x2160 (4K quality)
+      const double optimizedPixelRatio = 2.0;
       
-      // Use a safe pixel ratio
-      final safePixelRatio = devicePixelRatio.clamp(1.0, 3.0);
-      
-      final image = await boundary.toImage(pixelRatio: safePixelRatio);
+      final image = await boundary.toImage(pixelRatio: optimizedPixelRatio);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       return byteData?.buffer.asUint8List();
@@ -102,6 +97,7 @@ class CalendarShareService {
   }
 
   /// Build shareable widget with branding and statistics
+  /// Optimized for 16:9 aspect ratio, full-screen share
   Widget buildShareableWidget({
     required Widget calendarWidget,
     required DateTime month,
@@ -113,36 +109,60 @@ class CalendarShareService {
     String? customMessage,
   }) {
     final stats = _calculateStats(month, habits, completedDates);
+    
+    // 16:9 aspect ratio for optimal sharing (1920x1080)
+    const double shareWidth = 1920.0;
+    const double shareHeight = 1080.0;
 
     return RepaintBoundary(
       key: repaintBoundaryKey,
       child: Material(
         color: Colors.white,
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(month, customMessage),
-              const SizedBox(height: 24),
-              calendarWidget,
-              if (includeStats) ...[
-                const SizedBox(height: 32),
-                _buildStatsSection(stats),
-              ],
-              if (includeWatermark) ...[
+        child: SizedBox(
+          width: shareWidth,
+          height: shareHeight,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 40,
+              right: 40,
+              top: 50,
+              bottom: 50,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header - compact
+                _buildHeader(month, customMessage),
                 const SizedBox(height: 24),
-                _buildFooter(),
+                // Calendar table - full width, takes most space
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SingleChildScrollView(
+                      child: calendarWidget,
+                    ),
+                  ),
+                ),
+                // Statistics - compact footer style
+                if (includeStats) ...[
+                  const SizedBox(height: 20),
+                  _buildStatsSection(stats),
+                ],
+                // Watermark - minimal footer
+                if (includeWatermark) ...[
+                  const SizedBox(height: 12),
+                  _buildFooter(),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Build header section
+  /// Build header section - optimized for share
   Widget _buildHeader(DateTime month, String? customMessage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,30 +170,30 @@ class CalendarShareService {
         Text(
           DateFormat('MMMM yyyy').format(month).toUpperCase(),
           style: const TextStyle(
-            fontSize: 32,
+            fontSize: 48,
             fontWeight: FontWeight.w800,
-            letterSpacing: 2,
+            letterSpacing: 3,
             color: Color(0xFF000000),
             fontFamily: 'Fraunces',
           ),
         ),
         if (customMessage != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             customMessage,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 20,
               fontWeight: FontWeight.w500,
               color: Color(0xFF666666),
               fontFamily: 'Inter',
             ),
           ),
         ],
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           'Generated on ${DateFormat('MMM d, yyyy').format(DateTime.now())}',
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w400,
             color: Color(0xFF999999),
             fontFamily: 'Inter',
@@ -183,13 +203,13 @@ class CalendarShareService {
     );
   }
 
-  /// Build statistics section
+  /// Build statistics section - compact for share
   Widget _buildStatsSection(CalendarStats stats) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -220,27 +240,27 @@ class CalendarShareService {
     );
   }
 
-  /// Build stat item widget
+  /// Build stat item widget - optimized for share
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 24, color: const Color(0xFF666666)),
-        const SizedBox(height: 8),
+        Icon(icon, size: 32, color: const Color(0xFF666666)),
+        const SizedBox(height: 12),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 28,
             fontWeight: FontWeight.w700,
             color: Color(0xFF000000),
             fontFamily: 'Inter',
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Color(0xFF666666),
             fontFamily: 'Inter',
@@ -250,24 +270,24 @@ class CalendarShareService {
     );
   }
 
-  /// Build footer with watermark
+  /// Build footer with watermark - minimal for share
   Widget _buildFooter() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // App link placeholder (can be QR code in future)
+        // App link
         Row(
           children: [
             const Icon(
               Icons.link,
-              size: 14,
+              size: 16,
               color: Color(0xFF999999),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(
               appWebsite,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: watermarkColor.withOpacity(watermarkOpacity),
                 fontFamily: 'Inter',
@@ -279,10 +299,10 @@ class CalendarShareService {
         Text(
           appName,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: watermarkColor.withOpacity(watermarkOpacity),
-            letterSpacing: 1,
+            letterSpacing: 1.5,
             fontFamily: 'Fraunces',
           ),
         ),
