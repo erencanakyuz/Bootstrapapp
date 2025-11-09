@@ -1725,13 +1725,23 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         (date) => date.year == _selectedMonth.year && date.month == _selectedMonth.month,
       ).toSet();
 
+      // Calculate optimal table width for share (full width minus padding)
+      const double shareWidth = 1920.0;
+      const double horizontalPadding = 80.0; // 40 left + 40 right
+      final availableWidth = shareWidth - horizontalPadding;
+      final calculatedTableWidth = _calculateTableWidth(daysInMonth);
+      // Use full available width if table is smaller, otherwise use calculated width
+      final shareTableWidth = calculatedTableWidth < availableWidth 
+          ? availableWidth 
+          : calculatedTableWidth;
+
       final tableWidget = _buildMonthlyTable(
         colors,
         days,
         daysInMonth,
         monthCompletedDates,
         now,
-        _calculateTableWidth(daysInMonth),
+        shareTableWidth,
       );
 
       // Build shareable widget in a separate overlay
@@ -1751,17 +1761,27 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       OverlayEntry? overlayEntry;
       try {
         final mediaQueryData = MediaQuery.of(context);
+        // 16:9 aspect ratio for share (1920x1080)
+        const double shareWidth = 1920.0;
+        const double shareHeight = 1080.0;
+        
         overlayEntry = OverlayEntry(
           builder: (_) => Positioned(
-            left: -10000, // Off-screen but still rendered
-            top: -10000,
+            left: -shareWidth, // Off-screen but still rendered
+            top: -shareHeight,
             child: IgnorePointer(
               ignoring: true,
               child: MediaQuery(
-                data: mediaQueryData,
+                data: mediaQueryData.copyWith(
+                  size: Size(shareWidth, shareHeight),
+                ),
                 child: Material(
                   color: Colors.transparent,
-                  child: shareableWidget,
+                  child: SizedBox(
+                    width: shareWidth,
+                    height: shareHeight,
+                    child: shareableWidget,
+                  ),
                 ),
               ),
             ),
