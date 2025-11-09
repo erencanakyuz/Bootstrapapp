@@ -471,6 +471,7 @@ class HabitDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Habit habit,
   ) async {
+    if (!context.mounted) return;
     final updatedHabit = await showModalBottomSheet<Habit>(
       context: context,
       isScrollControlled: true,
@@ -478,6 +479,7 @@ class HabitDetailScreen extends ConsumerWidget {
       builder: (context) => AddHabitModal(habitToEdit: habit),
     );
 
+    if (!context.mounted) return;
     if (updatedHabit != null) {
       await ref.read(habitsProvider.notifier).updateHabit(updatedHabit);
     }

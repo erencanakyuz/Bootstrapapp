@@ -625,29 +625,13 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     int habitCount,
   ) {
     final referenceHeight = _referenceTableHeight;
-    final actualHeight = _tableHeaderHeight + habitCount * _habitRowHeight;
-    final hasVerticalOverflow = actualHeight > referenceHeight;
 
-    Widget verticalContent;
-    if (hasVerticalOverflow) {
-      verticalContent = Scrollbar(
-        thumbVisibility: true,
-        child: SizedBox(
-          height: referenceHeight,
-          child: SingleChildScrollView(
-            child: table,
-          ),
-        ),
-      );
-    } else {
-      verticalContent = SizedBox(
-        height: referenceHeight,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: table,
-        ),
-      );
-    }
+    Widget verticalContent = SizedBox(
+      height: referenceHeight,
+      child: SingleChildScrollView(
+        child: table,
+      ),
+    );
 
     final availableWidth = MediaQuery.of(context).size.width;
     if (tableWidth <= availableWidth) {
@@ -660,19 +644,12 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       );
     }
 
-    final horizontalScroll = SingleChildScrollView(
+    return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
         width: tableWidth,
         child: verticalContent,
       ),
-    );
-
-    return Scrollbar(
-      thumbVisibility: true,
-      notificationPredicate: (notification) =>
-          notification.metrics.axis == Axis.horizontal,
-      child: horizontalScroll,
     );
   }
 
@@ -1072,55 +1049,72 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors.background,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colors.outline.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildMomentumCard(
-                        colors,
-                        monthCompletedDates,
-                        daysInMonth,
-                        now,
-                      ),
-                      const SizedBox(height: 24),
-                      _buildStatsContent(
-                        colors,
-                        monthCompletedDates.length,
-                        daysInMonth,
-                        completionRate,
-                        advancedStats,
-                      ),
-                    ],
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.3,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return SafeArea(
+              top: true,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors.background,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
                   ),
                 ),
+                child: Column(
+                  children: [
+                    // Drag handle - geniş ve belirgin
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      width: double.infinity,
+                      child: Center(
+                        child: Container(
+                          width: 44,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildMomentumCard(
+                              colors,
+                              monthCompletedDates,
+                              daysInMonth,
+                              now,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildStatsContent(
+                              colors,
+                              monthCompletedDates.length,
+                              daysInMonth,
+                              completionRate,
+                              advancedStats,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -1470,56 +1464,73 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors.background,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colors.outline.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildYearHero(
-                        colors,
-                        completedDays,
-                        totalDays,
-                        completionRate,
-                        advancedStats,
-                      ),
-                      const SizedBox(height: 24),
-                      _buildStatsContent(
-                        colors,
-                        completedDays,
-                        totalDays,
-                        completionRate,
-                        advancedStats,
-                      ),
-                    ],
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.3,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return SafeArea(
+              top: true,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors.background,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
                   ),
                 ),
+                child: Column(
+                  children: [
+                    // Drag handle - geniş ve belirgin
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      width: double.infinity,
+                      child: Center(
+                        child: Container(
+                          width: 44,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildYearHero(
+                              colors,
+                              completedDays,
+                              totalDays,
+                              completionRate,
+                              advancedStats,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildStatsContent(
+                              colors,
+                              completedDays,
+                              totalDays,
+                              completionRate,
+                              advancedStats,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

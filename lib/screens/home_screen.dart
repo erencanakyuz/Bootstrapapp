@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.08),
+      barrierColor: Colors.black.withValues(alpha: 0.08),
       builder: (_) => const _QuickLoaderDialog(),
     );
     await Future.delayed(const Duration(milliseconds: 220));
