@@ -95,6 +95,7 @@ class InsightsScreen extends StatelessWidget {
         top: true,
         bottom: false, // Bottom navigation handled by MainScreen
         child: CustomScrollView(
+          cacheExtent: 500,
           slivers: [
             // App bar
             SliverAppBar(
@@ -139,6 +140,8 @@ class InsightsScreen extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => statsCards[index],
                   childCount: statsCards.length,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
                 ),
               ),
             ),
@@ -210,6 +213,9 @@ class InsightsScreen extends StatelessWidget {
                   (context, index) =>
                       _buildHabitPerformanceCard(habits[index], colors),
                   childCount: habits.length,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
+                  addSemanticIndexes: false,
                 ),
               ),
             ),

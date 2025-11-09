@@ -30,13 +30,14 @@ class HabitCard extends StatelessWidget {
     final today = DateTime.now();
     final isCompletedToday = habit.isCompletedOn(today);
 
-    // Calculate weekly completions (this week)
+    // Calculate weekly completions (this week) - optimized
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(now.year, now.month, now.day - now.weekday + 1);
     int weeklyCompletions = 0;
     for (int i = 0; i < 7; i++) {
-      final date = weekStart.add(Duration(days: i));
-      if (habit.isCompletedOn(date)) weeklyCompletions++;
+      if (habit.isCompletedOn(weekStart.add(Duration(days: i)))) {
+        weeklyCompletions++;
+      }
     }
 
     // RefactorUi.md promiseCard tokens
@@ -311,25 +312,23 @@ class HabitCard extends StatelessWidget {
     final size = isLarge ? 32.0 : 24.0;
     final iconSize = isLarge ? 20.0 : 16.0;
 
-    return AnimatedContainer(
-      duration: AppAnimations.normal,
-      curve: AppAnimations.spring,
+    return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         color: isCompleted ? habitColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(8), // sm = 8
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isCompleted
-              ? habitColor // borderColorOn
-              : colors.chipOutline, // borderColorOff
+              ? habitColor
+              : colors.chipOutline,
           width: isLarge ? 2.0 : 1.5,
         ),
       ),
       child: isCompleted
           ? Icon(
               PhosphorIconsFill.check,
-              color: colors.surface, // Checkmark color - use theme surface
+              color: colors.surface,
               size: iconSize,
             )
           : null,

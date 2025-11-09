@@ -33,8 +33,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   static const List<double> _waveformHeights = [
     28,
     44,
@@ -58,17 +57,11 @@ class _HomeScreenState extends State<HomeScreen>
     36,
   ];
 
-  late AnimationController _fabAnimationController;
   late ConfettiController _confettiController;
-  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _fabAnimationController = AnimationController(
-      vsync: this,
-      duration: AppAnimations.normal,
-    );
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 2),
     );
@@ -76,9 +69,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    _fabAnimationController.dispose();
     _confettiController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -94,22 +85,8 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _showQuickLoaderOverlay() async {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.08),
-      builder: (_) => const _QuickLoaderDialog(),
-    );
-    await Future.delayed(const Duration(milliseconds: 220));
-    if (!mounted) return;
-    Navigator.of(context, rootNavigator: true).pop();
-  }
-
   Future<void> _openHabitDetail(Habit habit) async {
     HapticFeedback.lightImpact();
-    await _showQuickLoaderOverlay();
     if (!mounted) return;
     await Navigator.of(context).push(
       PageTransitions.slideFromRight(
@@ -120,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _showAddHabitModal({Habit? habitToEdit}) async {
     HapticFeedback.lightImpact();
-    await _showQuickLoaderOverlay();
     if (!mounted) return;
     final result = await showModalBottomSheet<Habit>(
       context: context,
@@ -453,22 +429,29 @@ class _HomeScreenState extends State<HomeScreen>
 
   SliverList _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final habit = widget.habits[index];
-        final isNew = _isNewHabit(habit);
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: index == widget.habits.length - 1 ? 0 : 16,
-          ),
-          child: HabitCard(
-            habit: habit,
-            showNewBadge: isNew,
-            onTap: () => _openHabitDetail(habit),
-            onCompletionToggle: () => _toggleHabitCompletion(habit),
-            onLongPress: () => _showHabitOptions(habit),
-          ),
-        );
-      }, childCount: widget.habits.length),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final habit = widget.habits[index];
+          final isNew = _isNewHabit(habit);
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index == widget.habits.length - 1 ? 0 : 16,
+            ),
+            child: HabitCard(
+              key: ValueKey(habit.id),
+              habit: habit,
+              showNewBadge: isNew,
+              onTap: () => _openHabitDetail(habit),
+              onCompletionToggle: () => _toggleHabitCompletion(habit),
+              onLongPress: () => _showHabitOptions(habit),
+            ),
+          );
+        },
+        childCount: widget.habits.length,
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
+        addSemanticIndexes: false,
+      ),
     );
   }
 
@@ -657,47 +640,70 @@ class _HomeScreenState extends State<HomeScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) {
         final colors = Theme.of(context).extension<AppColors>()!;
-        return Container(
-          decoration: BoxDecoration(
-            color: colors.elevatedSurface, // Use theme elevatedSurface
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 16),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.outline,
-                  borderRadius: BorderRadius.circular(2),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.25,
+          minChildSize: 0.2,
+          maxChildSize: 0.5,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: colors.elevatedSurface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
                 ),
               ),
-              ListTile(
-                leading: Icon(Icons.edit_rounded, color: colors.accentBlue),
-                title: const Text('Edit Habit'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddHabitModal(habitToEdit: habit);
-                },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.outline,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView(
+                      controller: scrollController,
+                      shrinkWrap: true,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.edit_rounded, color: colors.accentBlue),
+                          title: const Text('Edit Habit'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showAddHabitModal(habitToEdit: habit);
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.delete_rounded,
+                            color: colors.statusIncomplete,
+                          ),
+                          title: const Text('Delete Habit'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _deleteHabit(habit);
+                          },
+                        ),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_rounded,
-                  color: colors.statusIncomplete,
-                ),
-                title: const Text('Delete Habit'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteHabit(habit);
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -900,49 +906,39 @@ class _HomeScreenState extends State<HomeScreen>
       body: SafeArea(
         top: true,
         bottom: false, // Bottom navigation handled by MainScreen
-        child: RefreshIndicator(
-          color: colors.textPrimary,
-          onRefresh: () async {
-            HapticFeedback.lightImpact();
-            await Future.delayed(const Duration(milliseconds: 500));
-          },
-          child: Stack(
-            children: [
-              CustomScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                slivers: slivers,
+        child: Stack(
+          children: [
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
-              Align(
-                alignment: Alignment.topCenter,
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  particleDrag: 0.05,
-                  emissionFrequency: 0.05,
-                  numberOfParticles: 30,
-                  gravity: 0.3,
-                  shouldLoop: false,
-                  colors: [
-                    Color(0xFFD4C4B0), // Muted beige
-                    Color(0xFFC9B8A3), // Muted cream
-                    Color(0xFFB8A892), // Muted tan
-                  ],
-                ),
+              cacheExtent: 500,
+              slivers: slivers,
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                particleDrag: 0.05,
+                emissionFrequency: 0.05,
+                numberOfParticles: 30,
+                gravity: 0.3,
+                shouldLoop: false,
+                colors: [
+                  Color(0xFFD4C4B0), // Muted beige
+                  Color(0xFFC9B8A3), // Muted cream
+                  Color(0xFFB8A892), // Muted tan
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      floatingActionButton: ScaleTransition(
-        scale: Tween<double>(begin: 0.88, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _fabAnimationController,
-            curve: AppAnimations.spring,
-          ),
-        ),
+      floatingActionButton: AnimatedScale(
+        scale: 1.0,
+        duration: AppAnimations.normal,
+        curve: AppAnimations.spring,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSizes.radiusPill),
@@ -950,7 +946,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           child: FloatingActionButton.extended(
             onPressed: () {
-              _fabAnimationController.forward(from: 0);
               _showAddHabitModal();
             },
             backgroundColor: colors.textPrimary,
@@ -960,40 +955,13 @@ class _HomeScreenState extends State<HomeScreen>
             icon: Icon(
               Icons.add_rounded,
               color: colors.surface,
-            ), // Use theme surface
+            ),
             label: Text(
               'New Habit',
               style: textStyles.buttonLabel.copyWith(
                 color: colors.surface,
-              ), // Use theme surface
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickLoaderDialog extends StatelessWidget {
-  const _QuickLoaderDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>();
-    return Center(
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: colors?.surface ?? Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: AppShadows.cardSoft(colors?.textPrimary),
-        ),
-        padding: const EdgeInsets.all(18),
-        child: CircularProgressIndicator(
-          strokeWidth: 3,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            colors?.textPrimary ?? Colors.black87,
           ),
         ),
       ),
