@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
@@ -9,8 +10,9 @@ import '../services/habit_storage.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
 import 'calendar_screen.dart';
-import 'home_screen_new.dart';
+import 'home_screen.dart';
 import 'insights_screen.dart';
+import 'profile_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -20,7 +22,7 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _currentIndex = 0;
+  int _currentIndex = 1; // Default to Home (note icon) like reference image
 
   @override
   void dispose() {
@@ -42,7 +44,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _buildContent(AppColors colors, List<Habit> habits) {
     final screens = [
       _KeepAliveWrapper(
-        child: HomeScreenNew(
+        child: CalendarScreen(
+          habits: habits,
+          onUpdateHabit: _handleUpdateHabit,
+        ),
+      ),
+      _KeepAliveWrapper(
+        child: HomeScreen(
           habits: habits,
           onAddHabit: _handleAddHabit,
           onUpdateHabit: _handleUpdateHabit,
@@ -50,13 +58,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ),
       ),
       _KeepAliveWrapper(
-        child: CalendarScreen(
-          habits: habits,
-          onUpdateHabit: _handleUpdateHabit,
-        ),
+        child: InsightsScreen(habits: habits),
       ),
       _KeepAliveWrapper(
-        child: InsightsScreen(habits: habits),
+        child: ProfileScreen(),
       ),
     ];
 
@@ -69,47 +74,97 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
+  /// Bottom Navigation - Reference image style: white bar with rounded top corners
   Widget _buildBottomNavigation(AppColors colors) {
+    final textStyles = AppTextStyles(colors);
+    
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: Colors.white, // Pure white background
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20), // Rounded top corners
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, -2), // Shadow on top edge
           ),
         ],
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.paddingL,
-            vertical: AppSizes.paddingM,
-          ),
+        top: false,
+        child: Container(
+          height: 60, // Fixed height
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-                icon: Icons.home_rounded,
-                label: 'Home',
+                icon: Icons.calendar_month_outlined,
+                label: '',
                 index: 0,
                 colors: colors,
+                textStyles: textStyles,
               ),
               _buildNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Calendar',
+                icon: Icons.note_outlined,
+                label: '',
                 index: 1,
                 colors: colors,
+                textStyles: textStyles,
               ),
               _buildNavItem(
-                icon: Icons.insights_rounded,
-                label: 'Insights',
+                icon: Icons.remove,
+                label: '',
                 index: 2,
                 colors: colors,
+                textStyles: textStyles,
+              ),
+              _buildNavItem(
+                icon: Icons.person_outline,
+                label: '',
+                index: 3,
+                colors: colors,
+                textStyles: textStyles,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Nav Item - Reference image style: active has black circle, inactive are outline icons
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required AppColors colors,
+    required AppTextStyles textStyles,
+  }) {
+    final isActive = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _onTabSelected(index);
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: isActive
+            ? BoxDecoration(
+                color: Colors.black, // Black circle for active state
+                shape: BoxShape.circle,
+              )
+            : null,
+        child: Icon(
+          icon,
+          size: isActive ? 20 : 24,
+          color: isActive 
+              ? Colors.white // White icon on black circle
+              : Color(0xFF6D6256), // Dark grey outline for inactive
         ),
       ),
     );
@@ -123,12 +178,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildErrorState(AppColors colors, Object error) {
-    // Sanitize error message to prevent exposing stack traces or internal details
     String errorMessage = 'Something went wrong';
     if (error is HabitValidationException || error is StorageException) {
       errorMessage = error.toString();
     } else {
-      // For other errors, show generic message to avoid exposing internal details
       errorMessage = 'An unexpected error occurred. Please try again.';
     }
     
@@ -162,54 +215,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               onPressed: () => ref.read(habitsProvider.notifier).refresh(),
               child: const Text('Retry'),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-    required AppColors colors,
-  }) {
-    final isActive = _currentIndex == index;
-
-    return GestureDetector(
-      onTap: () => _onTabSelected(index),
-      child: AnimatedContainer(
-        duration: AppAnimations.normal,
-        curve: AppAnimations.emphasized,
-        padding: EdgeInsets.symmetric(
-          horizontal: isActive ? AppSizes.paddingXL : AppSizes.paddingM,
-          vertical: AppSizes.paddingM,
-        ),
-        decoration: BoxDecoration(
-          color: isActive
-              ? colors.primary.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isActive ? colors.primary : colors.textTertiary,
-              size: 24,
-            ),
-            if (isActive) ...[
-              const SizedBox(width: AppSizes.paddingS),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.primary,
-                ),
-              ),
-            ],
           ],
         ),
       ),
