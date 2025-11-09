@@ -154,27 +154,26 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                     gridData: const FlGridData(show: false),
                     titlesData: const FlTitlesData(show: false),
                     borderData: FlBorderData(show: false),
-                    barGroups: habits.asMap().entries.map(
-                      (entry) {
-                        final index = entry.key;
-                        final habit = entry.value;
-                        final shade = colors.textPrimary.withValues(
-                          alpha: 0.35 + (index % 3) * 0.1,
-                        );
-                        return BarChartGroupData(
-                          x: habit.id.hashCode,
-                          barRods: [
-                            BarChartRodData(
-                              toY: habit.bestStreak.toDouble(),
-                              color: shade,
-                              borderRadius:
-                                  BorderRadius.circular(AppSizes.radiusS),
-                              width: 16,
+                    barGroups: habits.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final habit = entry.value;
+                      final shade = colors.textPrimary.withValues(
+                        alpha: 0.35 + (index % 3) * 0.1,
+                      );
+                      return BarChartGroupData(
+                        x: habit.id.hashCode,
+                        barRods: [
+                          BarChartRodData(
+                            toY: habit.bestStreak.toDouble(),
+                            color: shade,
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusS,
                             ),
-                          ],
-                        );
-                      },
-                    ).toList(),
+                            width: 16,
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
@@ -251,10 +250,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
               color: colors.textSecondary,
             ),
           ),
-          Text(
-            subtitle,
-            style: TextStyle(color: colors.textTertiary),
-          ),
+          Text(subtitle, style: TextStyle(color: colors.textTertiary)),
         ],
       ),
     );
@@ -289,10 +285,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(color: colors.textSecondary),
-          ),
+          Text(title, style: TextStyle(color: colors.textSecondary)),
           Text(
             subtitle,
             style: TextStyle(fontSize: 12, color: colors.textTertiary),

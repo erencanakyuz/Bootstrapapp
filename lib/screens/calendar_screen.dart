@@ -52,9 +52,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   void dispose() {
     // Reset system UI mode
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-    );
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -107,20 +105,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       data: (s) => s,
       orElse: () => null,
     );
-    
+
     if (settings?.hapticsEnabled ?? true) {
       HapticFeedback.lightImpact();
     }
 
     final allowPastDates = settings?.allowPastDatesBeforeCreation ?? false;
-    final updatedHabit = habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates);
+    final updatedHabit = habit.toggleCompletion(
+      date,
+      allowPastDatesBeforeCreation: allowPastDates,
+    );
     await widget.onUpdateHabit(updatedHabit);
   }
 
   List<DateTime> _getWeekDays() {
-    return List.generate(7, (index) => _selectedWeekStart.add(Duration(days: index)));
+    return List.generate(
+      7,
+      (index) => _selectedWeekStart.add(Duration(days: index)),
+    );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -144,39 +147,41 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
         centerTitle: true,
         actions: [
-            ModernIconButton(
-              icon: Icons.calendar_view_month,
-              onPressed: () {
-                final settingsAsync = ref.read(profileSettingsProvider);
-                final hapticsEnabled = settingsAsync.maybeWhen(
-                  data: (settings) => settings.hapticsEnabled,
-                  orElse: () => true,
-                );
-                if (hapticsEnabled) {
-                  HapticFeedback.lightImpact();
-                }
-                Navigator.of(context).push(
-                  PageTransitions.fadeAndSlide(
-                    FullCalendarScreen(habits: widget.habits),
-                  ),
-                );
-              },
-              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
-              iconColor: colors.textPrimary,
-              size: 40,
-            ),
+          ModernIconButton(
+            icon: Icons.calendar_view_month,
+            onPressed: () {
+              final settingsAsync = ref.read(profileSettingsProvider);
+              final hapticsEnabled = settingsAsync.maybeWhen(
+                data: (settings) => settings.hapticsEnabled,
+                orElse: () => true,
+              );
+              if (hapticsEnabled) {
+                HapticFeedback.lightImpact();
+              }
+              Navigator.of(context).push(
+                PageTransitions.fadeAndSlide(
+                  FullCalendarScreen(habits: widget.habits),
+                ),
+              );
+            },
+            backgroundColor:
+                colors.elevatedSurface, // Use theme elevatedSurface
+            iconColor: colors.textPrimary,
+            size: 40,
+          ),
           const SizedBox(width: 8),
-            ModernIconButton(
-              icon: Icons.settings_outlined,
-              onPressed: () {
-                Navigator.of(context).push(
-                  PageTransitions.fadeAndSlide(const ProfileScreen()),
-                );
-              },
-              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
-              iconColor: colors.textPrimary,
-              size: 40,
-            ),
+          ModernIconButton(
+            icon: Icons.settings_outlined,
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(PageTransitions.fadeAndSlide(const ProfileScreen()));
+            },
+            backgroundColor:
+                colors.elevatedSurface, // Use theme elevatedSurface
+            iconColor: colors.textPrimary,
+            size: 40,
+          ),
           const SizedBox(width: 12),
         ],
       ),
@@ -204,10 +209,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       if (widget.habits.isEmpty)
                         _buildEmptyState(colors, horizontalPadding)
                       else
-                        ...widget.habits.map((habit) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildHabitCard(colors, habit),
-                        )),
+                        ...widget.habits.map(
+                          (habit) => Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildHabitCard(colors, habit),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -230,7 +237,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             widget.onUpdateHabit(newHabit);
           }
         },
-            backgroundColor: colors.textPrimary,
+        backgroundColor: colors.textPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Add Goal'),
       ),
@@ -245,7 +252,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final weekDays = _getWeekDays();
     final weekEnd = weekDays.last;
     final now = DateTime.now();
-    final isCurrentWeek = _selectedWeekStart.year == now.year &&
+    final isCurrentWeek =
+        _selectedWeekStart.year == now.year &&
         _selectedWeekStart.month == now.month &&
         _selectedWeekStart.day == _getWeekStart(now).day;
 
@@ -262,7 +270,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         }
       },
       child: Container(
-        margin: EdgeInsets.fromLTRB(horizontalPadding, 12, horizontalPadding, 16),
+        margin: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          12,
+          horizontalPadding,
+          16,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: colors.elevatedSurface, // Use theme elevatedSurface
@@ -279,7 +292,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ModernIconButton(
               icon: Icons.chevron_left,
               onPressed: _previousWeek,
-              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
+              backgroundColor:
+                  colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 44,
             ),
@@ -300,7 +314,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (isCurrentWeek)
                       Container(
                         margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: colors.outline.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -321,7 +338,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ModernIconButton(
               icon: Icons.chevron_right,
               onPressed: _nextWeek,
-              backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
+              backgroundColor:
+                  colors.elevatedSurface, // Use theme elevatedSurface
               iconColor: colors.textPrimary,
               size: 44,
             ),
@@ -334,7 +352,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildHabitCard(AppColors colors, Habit habit) {
     final weekDays = _getWeekDays();
     final now = DateTime.now();
-    final completedThisWeek = weekDays.where((date) => habit.isCompletedOn(date)).length;
+    final completedThisWeek = weekDays
+        .where((date) => habit.isCompletedOn(date))
+        .length;
     final weekProgress = completedThisWeek / 7.0;
 
     return GestureDetector(
@@ -408,8 +428,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               borderRadius: BorderRadius.circular(4),
                               child: LinearProgressIndicator(
                                 value: weekProgress,
-                                backgroundColor: colors.outline.withValues(alpha: 0.2),
-                                valueColor: AlwaysStoppedAnimation<Color>(habit.color),
+                                backgroundColor: colors.outline.withValues(
+                                  alpha: 0.2,
+                                ),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  habit.color,
+                                ),
                                 minHeight: 4,
                               ),
                             ),
@@ -429,10 +453,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 final index = entry.key;
                 final date = entry.value;
                 final isCompleted = habit.isCompletedOn(date);
-                final isToday = date.year == now.year &&
+                final isToday =
+                    date.year == now.year &&
                     date.month == now.month &&
                     date.day == now.day;
-                final dayName = DateFormat('E').format(date).substring(0, 1); // First letter
+                final dayName = DateFormat(
+                  'E',
+                ).format(date).substring(0, 1); // First letter
                 final dayNumber = date.day;
 
                 return Expanded(
@@ -448,14 +475,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         color: isCompleted
                             ? habit.color.withValues(alpha: 0.15)
                             : (isToday
-                                ? colors.outline.withValues(alpha: 0.08)
-                                : Colors.transparent),
+                                  ? colors.outline.withValues(alpha: 0.08)
+                                  : Colors.transparent),
                         borderRadius: BorderRadius.circular(12),
                         border: isToday
-                            ? Border.all(
-                                color: colors.textPrimary,
-                                width: 2,
-                              )
+                            ? Border.all(color: colors.textPrimary, width: 2)
                             : null,
                       ),
                       child: Column(
@@ -478,20 +502,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: isCompleted ? habit.color : Colors.transparent,
+                              color: isCompleted
+                                  ? habit.color
+                                  : Colors.transparent,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isCompleted
                                     ? habit.color
                                     : (isToday
-                                        ? colors.textPrimary
-                                        : colors.outline.withValues(alpha: 0.3)),
+                                          ? colors.textPrimary
+                                          : colors.outline.withValues(
+                                              alpha: 0.3,
+                                            )),
                                 width: isToday ? 2.5 : 2,
                               ),
                               boxShadow: isCompleted
                                   ? [
                                       BoxShadow(
-                                        color: habit.color.withValues(alpha: 0.3),
+                                        color: habit.color.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -505,7 +535,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                     ? Icon(
                                         Icons.check,
                                         size: 20,
-                                        color: colors.surface, // Use theme surface
+                                        color:
+                                            colors.surface, // Use theme surface
                                         key: const ValueKey('check'),
                                       )
                                     : Text(
@@ -540,7 +571,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildEmptyState(AppColors colors, double horizontalPadding) {
     return Container(
       padding: const EdgeInsets.all(32),
-      margin: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.15),
+      margin: EdgeInsets.symmetric(
+        vertical: MediaQuery.of(context).size.height * 0.15,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

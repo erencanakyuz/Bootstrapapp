@@ -26,7 +26,7 @@ class ModernIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    
+
     return Container(
       height: size,
       width: size,
@@ -49,7 +49,11 @@ class ModernIconButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(size / 2),
               onTap: onPressed,
               child: Center(
-                child: Icon(icon, size: 24, color: iconColor ?? colors.textPrimary),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: iconColor ?? colors.textPrimary,
+                ),
               ),
             ),
           ),

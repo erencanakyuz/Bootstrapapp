@@ -66,12 +66,18 @@ class HabitRepository {
     }
   }
 
-  Future<void> upsertHabit(Habit habit, {bool allowPastDatesBeforeCreation = false}) async {
+  Future<void> upsertHabit(
+    Habit habit, {
+    bool allowPastDatesBeforeCreation = false,
+  }) async {
     // Validate basic fields first
-    _validateHabitFields(habit, allowPastDatesBeforeCreation: allowPastDatesBeforeCreation);
+    _validateHabitFields(
+      habit,
+      allowPastDatesBeforeCreation: allowPastDatesBeforeCreation,
+    );
     // Validate dependencies before upserting
     _validateDependencies(habit);
-    
+
     final index = _cache.indexWhere((h) => h.id == habit.id);
     if (index == -1) {
       _cache = [..._cache, habit];
@@ -88,7 +94,9 @@ class HabitRepository {
     final Set<String> newIds = {};
     for (final habit in habits) {
       if (newIds.contains(habit.id)) {
-        throw HabitValidationException('Duplicate habit ID found: ${habit.id}. Each habit must have a unique ID.');
+        throw HabitValidationException(
+          'Duplicate habit ID found: ${habit.id}. Each habit must have a unique ID.',
+        );
       }
       newIds.add(habit.id);
     }
@@ -97,7 +105,9 @@ class HabitRepository {
     final Set<String> existingIds = _cache.map((h) => h.id).toSet();
     for (final habit in habits) {
       if (existingIds.contains(habit.id)) {
-        throw HabitValidationException('Habit with ID ${habit.id} already exists. Use updateHabit instead.');
+        throw HabitValidationException(
+          'Habit with ID ${habit.id} already exists. Use updateHabit instead.',
+        );
       }
     }
 
@@ -114,17 +124,16 @@ class HabitRepository {
   Future<void> deleteHabit(String habitId, {bool hardDelete = false}) async {
     if (hardDelete) {
       // Remove broken dependencies from all habits when hard deleting
-      _cache = _cache
-          .where((habit) => habit.id != habitId)
-          .map((habit) {
-            // Remove deleted habit ID from dependencyIds
-            if (habit.dependencyIds.contains(habitId)) {
-              final cleanedDeps = habit.dependencyIds.where((id) => id != habitId).toList();
-              return habit.copyWith(dependencyIds: cleanedDeps);
-            }
-            return habit;
-          })
-          .toList();
+      _cache = _cache.where((habit) => habit.id != habitId).map((habit) {
+        // Remove deleted habit ID from dependencyIds
+        if (habit.dependencyIds.contains(habitId)) {
+          final cleanedDeps = habit.dependencyIds
+              .where((id) => id != habitId)
+              .toList();
+          return habit.copyWith(dependencyIds: cleanedDeps);
+        }
+        return habit;
+      }).toList();
     } else {
       _cache = _cache
           .map((habit) => habit.id == habitId ? habit.archive() : habit)
@@ -153,10 +162,14 @@ class HabitRepository {
 
   Future<void> archiveCompletedHabits(DateTime referenceDate) async {
     _cache = _cache
-        .map((habit) =>
-            habit.isCompletedOn(referenceDate.subtract(const Duration(days: 30)))
-                ? habit.archive()
-                : habit)
+        .map(
+          (habit) =>
+              habit.isCompletedOn(
+                referenceDate.subtract(const Duration(days: 30)),
+              )
+              ? habit.archive()
+              : habit,
+        )
         .toList();
     await _persist();
   }
@@ -171,14 +184,19 @@ class HabitRepository {
     final today = DateTime.now();
     return _cache.where((habit) {
       if (!includeArchived && habit.archived) return false;
-      final matchesQuery = query.isEmpty ||
+      final matchesQuery =
+          query.isEmpty ||
           habit.title.toLowerCase().contains(query.toLowerCase()) ||
           (habit.description ?? '').toLowerCase().contains(query.toLowerCase());
       final matchesCategory = category == null || habit.category == category;
-      final matchesTimeBlock = timeBlock == null || habit.timeBlock == timeBlock;
+      final matchesTimeBlock =
+          timeBlock == null || habit.timeBlock == timeBlock;
       final matchesCompletion =
           !onlyCompletedToday || habit.isCompletedOn(today);
-      return matchesQuery && matchesCategory && matchesTimeBlock && matchesCompletion;
+      return matchesQuery &&
+          matchesCategory &&
+          matchesTimeBlock &&
+          matchesCompletion;
     }).toList();
   }
 
@@ -216,7 +234,7 @@ class HabitRepository {
       if (dependencyId == habit.id) {
         continue;
       }
-      
+
       final dependency = byId(dependencyId);
       if (dependency != null) {
         if (_hasCircularDependency(dependency, visited)) {
@@ -240,13 +258,17 @@ class HabitRepository {
 
     // Check for circular dependencies
     if (_hasCircularDependency(habit, <String>{})) {
-      throw HabitValidationException('Circular dependency detected. This would create an infinite loop.');
+      throw HabitValidationException(
+        'Circular dependency detected. This would create an infinite loop.',
+      );
     }
 
     // Check that all dependency IDs exist
     for (final dependencyId in habit.dependencyIds) {
       if (byId(dependencyId) == null) {
-        throw HabitValidationException('Dependency habit not found: $dependencyId');
+        throw HabitValidationException(
+          'Dependency habit not found: $dependencyId',
+        );
       }
     }
   }
@@ -254,7 +276,10 @@ class HabitRepository {
   /// Validate habit basic fields
   /// Throws [HabitValidationException] if validation fails
   /// [allowPastDatesBeforeCreation] if true, skips validation for dates before createdAt
-  void _validateHabitFields(Habit habit, {bool allowPastDatesBeforeCreation = false}) {
+  void _validateHabitFields(
+    Habit habit, {
+    bool allowPastDatesBeforeCreation = false,
+  }) {
     // Title cannot be empty or whitespace
     if (habit.title.trim().isEmpty) {
       throw HabitValidationException('Habit title cannot be empty.');
@@ -262,7 +287,9 @@ class HabitRepository {
 
     // Title length validation (prevent extremely long titles)
     if (habit.title.length > 200) {
-      throw HabitValidationException('Habit title cannot exceed 200 characters.');
+      throw HabitValidationException(
+        'Habit title cannot exceed 200 characters.',
+      );
     }
 
     // Validate targets are non-negative
@@ -293,7 +320,7 @@ class HabitRepository {
         );
         if (normalized.isBefore(normalizedCreatedAt)) {
           throw HabitValidationException(
-            'Completed date cannot be before habit creation date.'
+            'Completed date cannot be before habit creation date.',
           );
         }
       }
@@ -307,12 +334,14 @@ class HabitRepository {
       _cache.where((habit) => !habit.archived).toList(growable: false);
 
   double categoryCompletionRate(HabitCategory category) {
-    final categoryHabits =
-        _cache.where((habit) => habit.category == category).toList();
+    final categoryHabits = _cache
+        .where((habit) => habit.category == category)
+        .toList();
     if (categoryHabits.isEmpty) return 0;
     final today = DateTime.now();
-    final completed =
-        categoryHabits.where((habit) => habit.isCompletedOn(today)).length;
+    final completed = categoryHabits
+        .where((habit) => habit.isCompletedOn(today))
+        .length;
     return completed / categoryHabits.length;
   }
 
@@ -325,20 +354,23 @@ class HabitRepository {
   }
 
   List<Habit> smartSuggestions() {
-    final Set<String> existingTitles =
-        _cache.map((habit) => habit.title.toLowerCase()).toSet();
+    final Set<String> existingTitles = _cache
+        .map((habit) => habit.title.toLowerCase())
+        .toSet();
     final templates = HabitTemplates.buildTemplates();
     final missing = templates.where(
       (habit) => !existingTitles.contains(habit.title.toLowerCase()),
     );
     final categoryNeedingAttention = HabitCategory.values.toList()
-      ..sort((a, b) => categoryCompletionRate(a).compareTo(
-            categoryCompletionRate(b),
-          ));
+      ..sort(
+        (a, b) =>
+            categoryCompletionRate(a).compareTo(categoryCompletionRate(b)),
+      );
 
     return missing
-        .where((habit) =>
-            categoryNeedingAttention.take(2).contains(habit.category))
+        .where(
+          (habit) => categoryNeedingAttention.take(2).contains(habit.category),
+        )
         .take(3)
         .toList();
   }
@@ -368,18 +400,22 @@ class HabitRepository {
 
       // Check for habits array
       if (!decoded.containsKey('habits')) {
-        throw const FormatException('Invalid import format: missing habits array');
+        throw const FormatException(
+          'Invalid import format: missing habits array',
+        );
       }
 
       final habitsJson = decoded['habits'];
       if (habitsJson is! List) {
-        throw const FormatException('Invalid import format: habits must be an array');
+        throw const FormatException(
+          'Invalid import format: habits must be an array',
+        );
       }
 
       // Validate and parse habits
       final List<Habit> importedHabits = [];
       final Set<String> importedIds = {}; // Track IDs to detect duplicates
-      
+
       for (int i = 0; i < habitsJson.length; i++) {
         try {
           final habitJson = habitsJson[i];
@@ -387,23 +423,29 @@ class HabitRepository {
             throw FormatException('Invalid habit format at index $i');
           }
           final habit = Habit.fromJson(Map<String, dynamic>.from(habitJson));
-          
+
           // Validate basic fields
           _validateHabitFields(habit);
-          
+
           // Check for duplicate IDs within imported habits
           if (importedIds.contains(habit.id)) {
-            throw FormatException('Duplicate habit ID found at index $i: ${habit.id}');
+            throw FormatException(
+              'Duplicate habit ID found at index $i: ${habit.id}',
+            );
           }
           importedIds.add(habit.id);
-          
+
           importedHabits.add(habit);
         } catch (e) {
           debugPrint('Error parsing habit at index $i: $e');
           if (e is HabitValidationException) {
-            throw FormatException('Invalid habit data at index $i: ${e.toString()}');
+            throw FormatException(
+              'Invalid habit data at index $i: ${e.toString()}',
+            );
           }
-          throw FormatException('Invalid habit data at index $i: ${e.toString()}');
+          throw FormatException(
+            'Invalid habit data at index $i: ${e.toString()}',
+          );
         }
       }
 
@@ -413,13 +455,13 @@ class HabitRepository {
         ..._cache.map((h) => h.id),
         ...importedIds,
       };
-      
+
       // Create temporary map for dependency checking
       final Map<String, Habit> tempHabitsMap = {
         for (final habit in _cache) habit.id: habit,
         for (final habit in importedHabits) habit.id: habit,
       };
-      
+
       // Helper function to check circular dependency in temp map
       bool hasCircularDependencyInTemp(Habit habit, Set<String> visited) {
         if (habit.dependencyIds.contains(habit.id)) return true;
@@ -427,27 +469,28 @@ class HabitRepository {
         visited.add(habit.id);
         for (final dependencyId in habit.dependencyIds) {
           final dependency = tempHabitsMap[dependencyId];
-          if (dependency != null && hasCircularDependencyInTemp(dependency, visited)) {
+          if (dependency != null &&
+              hasCircularDependencyInTemp(dependency, visited)) {
             return true;
           }
         }
         visited.remove(habit.id);
         return false;
       }
-      
+
       // Check dependencies for each imported habit
       for (final habit in importedHabits) {
         for (final dependencyId in habit.dependencyIds) {
           if (!allIdsAfterImport.contains(dependencyId)) {
             throw HabitValidationException(
-              'Habit "${habit.title}" depends on habit ID "$dependencyId" which does not exist in the import.'
+              'Habit "${habit.title}" depends on habit ID "$dependencyId" which does not exist in the import.',
             );
           }
         }
         // Validate circular dependencies for imported habits
         if (hasCircularDependencyInTemp(habit, <String>{})) {
           throw HabitValidationException(
-            'Circular dependency detected in imported habit "${habit.title}".'
+            'Circular dependency detected in imported habit "${habit.title}".',
           );
         }
       }
@@ -498,8 +541,9 @@ class HabitRepository {
   }
 
   Map<String, dynamic> weeklyReport(DateTime referenceDate) {
-    final startOfWeek =
-        referenceDate.subtract(Duration(days: referenceDate.weekday - 1));
+    final startOfWeek = referenceDate.subtract(
+      Duration(days: referenceDate.weekday - 1),
+    );
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
     int completions = 0;
     final Map<HabitCategory, int> categoryWins = {
@@ -508,7 +552,8 @@ class HabitRepository {
 
     for (final habit in activeHabits) {
       for (final completion in habit.completedDates) {
-        if (!completion.isBefore(startOfWeek) && !completion.isAfter(endOfWeek)) {
+        if (!completion.isBefore(startOfWeek) &&
+            !completion.isAfter(endOfWeek)) {
           completions++;
           categoryWins[habit.category] =
               (categoryWins[habit.category] ?? 0) + 1;
@@ -554,14 +599,16 @@ class HabitRepository {
     // Capture current cache snapshot to ensure consistency
     // This prevents race conditions where _cache changes during save
     final cacheSnapshot = List<Habit>.unmodifiable(_cache);
-    
+
     // Chain this operation after the previous one completes
-    final operation = _persistQueue.then((_) => _persistInternal(cacheSnapshot));
-    
+    final operation = _persistQueue.then(
+      (_) => _persistInternal(cacheSnapshot),
+    );
+
     // Update queue to include error handling
     // Allow subsequent operations even if this one fails
     _persistQueue = operation.catchError((_, _) {});
-    
+
     return operation;
   }
 
@@ -584,7 +631,9 @@ class HabitRepository {
         if (attempts < AppConfig.maxSaveRetries) {
           // Exponential backoff: 100ms, 200ms, 400ms
           await Future.delayed(
-            Duration(milliseconds: AppConfig.baseRetryDelayMs * (1 << attempts)),
+            Duration(
+              milliseconds: AppConfig.baseRetryDelayMs * (1 << attempts),
+            ),
           );
         }
       }

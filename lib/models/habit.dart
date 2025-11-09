@@ -7,7 +7,14 @@ import '../constants/habit_icons.dart';
 const _uuid = Uuid();
 
 /// Distinct categories that power analytics, filters, and custom icons
-enum HabitCategory { health, productivity, learning, mindfulness, wellness, creativity }
+enum HabitCategory {
+  health,
+  productivity,
+  learning,
+  mindfulness,
+  wellness,
+  creativity,
+}
 
 extension HabitCategoryDetails on HabitCategory {
   String get label {
@@ -148,11 +155,7 @@ class HabitReminder {
   });
 
   factory HabitReminder.daily({required TimeOfDay time}) {
-    return HabitReminder(
-      id: _uuid.v4(),
-      hour: time.hour,
-      minute: time.minute,
-    );
+    return HabitReminder(id: _uuid.v4(), hour: time.hour, minute: time.minute);
   }
 
   TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
@@ -201,20 +204,13 @@ class HabitNote {
   final DateTime date;
   final String text;
 
-  HabitNote({
-    String? id,
-    required this.date,
-    required this.text,
-  }) : id = id ?? _uuid.v4();
+  HabitNote({String? id, required this.date, required this.text})
+    : id = id ?? _uuid.v4();
 
   String get dayKey => '${date.year}-${date.month}-${date.day}';
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'date': date.toIso8601String(),
-      'text': text,
-    };
+    return {'id': id, 'date': date.toIso8601String(), 'text': text};
   }
 
   factory HabitNote.fromJson(Map<String, dynamic> json) {
@@ -225,7 +221,7 @@ class HabitNote {
       // Invalid date format - use current date as fallback
       parsedDate = DateTime.now();
     }
-    
+
     return HabitNote(
       id: json['id'],
       date: parsedDate,
@@ -278,12 +274,12 @@ class Habit {
     this.freezeUsesThisWeek = 0,
     this.lastFreezeReset,
     List<String>? tags,
-  })  : completedDates = List.unmodifiable(completedDates ?? []),
-        createdAt = createdAt ?? DateTime.now(),
-        reminders = List.unmodifiable(reminders ?? []),
-        notes = Map.unmodifiable(notes ?? {}),
-        dependencyIds = List.unmodifiable(dependencyIds ?? []),
-        tags = List.unmodifiable(tags ?? const []);
+  }) : completedDates = List.unmodifiable(completedDates ?? []),
+       createdAt = createdAt ?? DateTime.now(),
+       reminders = List.unmodifiable(reminders ?? []),
+       notes = Map.unmodifiable(notes ?? {}),
+       dependencyIds = List.unmodifiable(dependencyIds ?? []),
+       tags = List.unmodifiable(tags ?? const []);
 
   /// Check if habit is completed on a specific date
   bool isCompletedOn(DateTime date) {
@@ -300,12 +296,21 @@ class Habit {
 
   /// Toggle completion status for a specific date
   /// [allowPastDatesBeforeCreation] if true, allows marking dates before habit creation date
-  Habit toggleCompletion(DateTime date, {bool allowPastDatesBeforeCreation = false}) {
-    final List<DateTime> newCompletedDates = List<DateTime>.from(completedDates);
+  Habit toggleCompletion(
+    DateTime date, {
+    bool allowPastDatesBeforeCreation = false,
+  }) {
+    final List<DateTime> newCompletedDates = List<DateTime>.from(
+      completedDates,
+    );
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final now = DateTime.now();
     final normalizedNow = DateTime(now.year, now.month, now.day);
-    final normalizedCreatedAt = DateTime(createdAt.year, createdAt.month, createdAt.day);
+    final normalizedCreatedAt = DateTime(
+      createdAt.year,
+      createdAt.month,
+      createdAt.day,
+    );
 
     // Prevent adding future dates (only allow today or past dates)
     if (normalizedDate.isAfter(normalizedNow)) {
@@ -314,29 +319,33 @@ class Habit {
     }
 
     // Prevent adding dates before habit creation date (unless allowed by setting)
-    if (!allowPastDatesBeforeCreation && normalizedDate.isBefore(normalizedCreatedAt)) {
+    if (!allowPastDatesBeforeCreation &&
+        normalizedDate.isBefore(normalizedCreatedAt)) {
       // Don't allow dates before creation - return unchanged habit
       return this;
     }
 
     // Remove duplicates first (normalize all dates)
-    final normalizedDates = newCompletedDates.map((d) => 
-      DateTime(d.year, d.month, d.day)
-    ).toList();
-    
+    final normalizedDates = newCompletedDates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toList();
+
     // Check if already completed (using normalized comparison)
-    final isAlreadyCompleted = normalizedDates.any((d) => 
-      d.year == normalizedDate.year &&
-      d.month == normalizedDate.month &&
-      d.day == normalizedDate.day
+    final isAlreadyCompleted = normalizedDates.any(
+      (d) =>
+          d.year == normalizedDate.year &&
+          d.month == normalizedDate.month &&
+          d.day == normalizedDate.day,
     );
 
     if (isAlreadyCompleted) {
       // Remove all occurrences of this date (handle duplicates)
-      newCompletedDates.removeWhere((d) =>
-          d.year == normalizedDate.year &&
-          d.month == normalizedDate.month &&
-          d.day == normalizedDate.day);
+      newCompletedDates.removeWhere(
+        (d) =>
+            d.year == normalizedDate.year &&
+            d.month == normalizedDate.month &&
+            d.day == normalizedDate.day,
+      );
     } else {
       // Add normalized date (prevents duplicates)
       newCompletedDates.add(normalizedDate);
@@ -360,7 +369,8 @@ class Habit {
   }
 
   /// Get note for a day if present
-  HabitNote? noteFor(DateTime date) => notes['${date.year}-${date.month}-${date.day}'];
+  HabitNote? noteFor(DateTime date) =>
+      notes['${date.year}-${date.month}-${date.day}'];
 
   /// Current streak (consecutive completed days)
   int getCurrentStreak({DateTime? referenceDate}) {
@@ -375,7 +385,7 @@ class Habit {
         uniqueDates[key] = normalized;
       }
     }
-    
+
     final sortedDates = uniqueDates.values.toList()
       ..sort((a, b) => b.compareTo(a));
 
@@ -411,7 +421,7 @@ class Habit {
   /// Longest streak historically
   int get bestStreak {
     if (completedDates.isEmpty) return 0;
-    
+
     // Remove duplicates and sort
     final uniqueDates = <String, DateTime>{};
     for (final date in completedDates) {
@@ -421,11 +431,12 @@ class Habit {
         uniqueDates[key] = normalized;
       }
     }
-    
-    final sortedDates = uniqueDates.values.toList()..sort((a, b) => a.compareTo(b));
+
+    final sortedDates = uniqueDates.values.toList()
+      ..sort((a, b) => a.compareTo(b));
 
     if (sortedDates.isEmpty) return 0;
-    
+
     int best = 1; // At least 1 day streak
     int current = 1;
 
@@ -433,7 +444,7 @@ class Habit {
       final prev = sortedDates[i - 1];
       final currentDate = sortedDates[i];
       final daysDiff = currentDate.difference(prev).inDays;
-      
+
       if (daysDiff == 1) {
         current++;
       } else {
@@ -451,7 +462,9 @@ class Habit {
     final uniqueDates = <String>{};
     for (final date in completedDates) {
       final normalized = DateTime(date.year, date.month, date.day);
-      uniqueDates.add('${normalized.year}-${normalized.month}-${normalized.day}');
+      uniqueDates.add(
+        '${normalized.year}-${normalized.month}-${normalized.day}',
+      );
     }
     return uniqueDates.length;
   }
@@ -488,7 +501,11 @@ class Habit {
 
   static DateTime _startOfWeek(DateTime date) {
     final weekday = date.weekday; // Monday = 1
-    return DateTime(date.year, date.month, date.day).subtract(Duration(days: weekday - 1));
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: weekday - 1));
   }
 
   Habit copyWith({
@@ -543,7 +560,7 @@ class Habit {
       'id': id,
       'title': title,
       'description': description,
-      'color': color.value,
+      'color': color.toARGB32(),
       'icon': icon.codePoint,
       'completedDates': completedDates.map((d) => d.toIso8601String()).toList(),
       'createdAt': createdAt.toIso8601String(),
@@ -569,13 +586,16 @@ class Habit {
     List<DateTime> parsedCompletedDates = [];
     try {
       final datesJson = json['completedDates'] as List<dynamic>? ?? [];
-      parsedCompletedDates = datesJson.map((d) {
-        try {
-          return DateTime.parse(d);
-        } catch (_) {
-          return null;
-        }
-      }).whereType<DateTime>().toList();
+      parsedCompletedDates = datesJson
+          .map((d) {
+            try {
+              return DateTime.parse(d);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<DateTime>()
+          .toList();
     } catch (_) {
       parsedCompletedDates = [];
     }
@@ -583,8 +603,8 @@ class Habit {
     // Parse createdAt with error handling
     DateTime parsedCreatedAt;
     try {
-      parsedCreatedAt = json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      parsedCreatedAt = json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now();
     } catch (_) {
       parsedCreatedAt = DateTime.now();
@@ -598,14 +618,15 @@ class Habit {
     );
     parsedCompletedDates = parsedCompletedDates.where((date) {
       final normalized = DateTime(date.year, date.month, date.day);
-      return normalized.isAfter(normalizedCreatedAt) || normalized == normalizedCreatedAt;
+      return normalized.isAfter(normalizedCreatedAt) ||
+          normalized == normalizedCreatedAt;
     }).toList();
 
     // Parse archivedAt with error handling
     DateTime? parsedArchivedAt;
     try {
-      parsedArchivedAt = json['archivedAt'] != null 
-          ? DateTime.parse(json['archivedAt']) 
+      parsedArchivedAt = json['archivedAt'] != null
+          ? DateTime.parse(json['archivedAt'])
           : null;
     } catch (_) {
       parsedArchivedAt = null;
@@ -614,8 +635,8 @@ class Habit {
     // Parse lastFreezeReset with error handling
     DateTime? parsedLastFreezeReset;
     try {
-      parsedLastFreezeReset = json['lastFreezeReset'] != null 
-          ? DateTime.parse(json['lastFreezeReset']) 
+      parsedLastFreezeReset = json['lastFreezeReset'] != null
+          ? DateTime.parse(json['lastFreezeReset'])
           : null;
     } catch (_) {
       parsedLastFreezeReset = null;
@@ -626,7 +647,7 @@ class Habit {
     if (parsedWeeklyTarget < 0) {
       parsedWeeklyTarget = 5; // Default fallback
     }
-    
+
     int parsedMonthlyTarget = json['monthlyTarget'] ?? 20;
     if (parsedMonthlyTarget < 0) {
       parsedMonthlyTarget = 20; // Default fallback
@@ -661,13 +682,16 @@ class Habit {
       reminders: (json['reminders'] as List<dynamic>? ?? [])
           .map((r) => HabitReminder.fromJson(Map<String, dynamic>.from(r)))
           .toList(),
-      notes: (json['notes'] as Map<String, dynamic>? ?? {})
-          .map((key, value) => MapEntry(key, HabitNote.fromJson(Map<String, dynamic>.from(value)))),
+      notes: (json['notes'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) =>
+            MapEntry(key, HabitNote.fromJson(Map<String, dynamic>.from(value))),
+      ),
       archived: json['archived'] ?? false,
       archivedAt: parsedArchivedAt,
       weeklyTarget: parsedWeeklyTarget,
       monthlyTarget: parsedMonthlyTarget,
-      dependencyIds: (json['dependencyIds'] as List<dynamic>? ?? []).cast<String>(),
+      dependencyIds: (json['dependencyIds'] as List<dynamic>? ?? [])
+          .cast<String>(),
       freezeUsesThisWeek: parsedFreezeUsesThisWeek,
       lastFreezeReset: parsedLastFreezeReset,
       tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),

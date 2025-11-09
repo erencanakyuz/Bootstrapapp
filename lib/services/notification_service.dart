@@ -9,7 +9,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/habit.dart';
 
 /// Service for scheduling and managing habit reminder notifications.
-/// Fully integrated with mobile support - Windows/Web builds skip 
+/// Fully integrated with mobile support - Windows/Web builds skip
 ///gracefully.
 class NotificationService {
   NotificationService() : _plugin = FlutterLocalNotificationsPlugin();
@@ -38,7 +38,9 @@ class NotificationService {
       tz.initializeTimeZones();
       await _configureLocalTimeZone();
 
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -60,21 +62,22 @@ class NotificationService {
       // Request permissions for iOS
       if (Platform.isIOS) {
         await _plugin
-            .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-            ?.requestPermissions(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >()
+            ?.requestPermissions(alert: true, badge: true, sound: true);
       }
 
       // Request notification permission for Android 13+ (API 33+)
       if (Platform.isAndroid) {
         final androidImplementation = _plugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         if (androidImplementation != null) {
           // Check if permission is already granted
-          final granted = await androidImplementation.requestNotificationsPermission();
+          final granted = await androidImplementation
+              .requestNotificationsPermission();
           if (granted == false) {
             debugPrint('Notification permission denied on Android');
           }
@@ -94,11 +97,16 @@ class NotificationService {
     // Check permission before scheduling (Android 13+)
     if (Platform.isAndroid) {
       final androidImplementation = _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidImplementation != null) {
-        final granted = await androidImplementation.requestNotificationsPermission();
+        final granted = await androidImplementation
+            .requestNotificationsPermission();
         if (granted == false) {
-          debugPrint('Cannot schedule reminder: notification permission not granted');
+          debugPrint(
+            'Cannot schedule reminder: notification permission not granted',
+          );
           return;
         }
       }
@@ -122,17 +130,24 @@ class NotificationService {
       // Prevent infinite loop: if weekdays is empty, use today as fallback
       if (reminder.weekdays.isEmpty) {
         debugPrint('Warning: Reminder has no weekdays, scheduling for today');
-        scheduleDate = now.add(const Duration(minutes: 1)); // Schedule 1 minute from now
+        scheduleDate = now.add(
+          const Duration(minutes: 1),
+        ); // Schedule 1 minute from now
       } else {
         int maxDays = 14; // Safety limit: check max 2 weeks ahead
         int daysChecked = 0;
-        while ((scheduleDate.isBefore(now) || !reminder.weekdays.contains(scheduleDate.weekday)) && daysChecked < maxDays) {
+        while ((scheduleDate.isBefore(now) ||
+                !reminder.weekdays.contains(scheduleDate.weekday)) &&
+            daysChecked < maxDays) {
           scheduleDate = scheduleDate.add(const Duration(days: 1));
           daysChecked++;
         }
         // If still no valid day found after 2 weeks, schedule for next available weekday
-        if (daysChecked >= maxDays && !reminder.weekdays.contains(scheduleDate.weekday)) {
-          debugPrint('Warning: Could not find valid weekday in 2 weeks, scheduling for first available weekday');
+        if (daysChecked >= maxDays &&
+            !reminder.weekdays.contains(scheduleDate.weekday)) {
+          debugPrint(
+            'Warning: Could not find valid weekday in 2 weeks, scheduling for first available weekday',
+          );
           // Find next available weekday
           for (int i = 0; i < 7; i++) {
             final checkDate = scheduleDate.add(Duration(days: i));
@@ -145,12 +160,16 @@ class NotificationService {
       }
 
       // Check if exact alarms are permitted (Android 12+)
-      AndroidScheduleMode scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+      AndroidScheduleMode scheduleMode =
+          AndroidScheduleMode.exactAllowWhileIdle;
       if (Platform.isAndroid) {
         final androidImplementation = _plugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         if (androidImplementation != null) {
-          final canScheduleExactAlarms = await androidImplementation.canScheduleExactNotifications();
+          final canScheduleExactAlarms = await androidImplementation
+              .canScheduleExactNotifications();
           if (canScheduleExactAlarms == false) {
             // Fallback to inexact alarms if exact alarms not permitted
             scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
@@ -190,7 +209,7 @@ class NotificationService {
         androidScheduleMode: scheduleMode,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
-      
+
       // Store scheduled date for tracking
       _scheduledDates[id] = scheduleDate.toLocal();
     } catch (e) {
@@ -218,7 +237,7 @@ class NotificationService {
       // Use same ID generation as scheduleReminder for consistency
       await initialize();
       if (!_isPlatformSupported) continue;
-      
+
       try {
         final uniqueId = '${habit.id}_${reminder.id}';
         final id = uniqueId.hashCode & 0x7fffffff;
@@ -285,7 +304,8 @@ class NotificationService {
     return _scheduledDates[notificationId];
   }
 
-  Future<List<PendingNotificationRequest>> getPendingNotificationsDetailed() async {
+  Future<List<PendingNotificationRequest>>
+  getPendingNotificationsDetailed() async {
     await initialize();
     if (!_isPlatformSupported) return [];
 
@@ -303,7 +323,9 @@ class NotificationService {
 
     try {
       final pending = await _plugin.pendingNotificationRequests();
-      return pending.map((n) => 'ID: ${n.id}, Title: ${n.title ?? ''}').toList();
+      return pending
+          .map((n) => 'ID: ${n.id}, Title: ${n.title ?? ''}')
+          .toList();
     } catch (e) {
       debugPrint('Get pending notifications error: $e');
       return [];

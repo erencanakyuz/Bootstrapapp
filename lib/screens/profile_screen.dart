@@ -28,9 +28,7 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: colors.background,
         body: const Center(child: CircularProgressIndicator()),
       ),
-      error: (error, _) => Scaffold(
-        body: Center(child: Text('Error: $error')),
-      ),
+      error: (error, _) => Scaffold(body: Center(child: Text('Error: $error'))),
       data: (settings) {
         final archived = ref.watch(archivedHabitsProvider);
         return Scaffold(
@@ -52,98 +50,77 @@ class ProfileScreen extends ConsumerWidget {
             bottom: true, // Bottom safe area for navigation bar
             child: ListView(
               padding: const EdgeInsets.all(AppSizes.paddingXXL),
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 48,
-                  backgroundColor: colors.outline.withValues(alpha: 0.1),
-                  child: Text(
-                    settings.name.isNotEmpty ? settings.name[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: colors.textPrimary,
+              children: [
+                Center(
+                  child: CircleAvatar(
+                    radius: 48,
+                    backgroundColor: colors.outline.withValues(alpha: 0.1),
+                    child: Text(
+                      settings.name.isNotEmpty
+                          ? settings.name[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              Center(
-                child: TextButton(
-                  onPressed: () =>
-                      ref.read(profileSettingsProvider.notifier).randomizeAvatar(),
-                  child: const Text('Shuffle avatar'),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-              TextFormField(
-                initialValue: settings.name,
-                decoration: InputDecoration(
-                  labelText: 'Your name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                const SizedBox(height: AppSizes.paddingL),
+                Center(
+                  child: TextButton(
+                    onPressed: () => ref
+                        .read(profileSettingsProvider.notifier)
+                        .randomizeAvatar(),
+                    child: const Text('Shuffle avatar'),
                   ),
                 ),
-                onFieldSubmitted: (value) => ref
-                    .read(profileSettingsProvider.notifier)
-                    .updateName(value.trim()),
-              ),
-              const SizedBox(height: AppSizes.paddingXXL),
-              SwitchListTile(
-                value: settings.notificationsEnabled,
-                onChanged: (value) => ref
-                    .read(profileSettingsProvider.notifier)
-                    .toggleNotifications(value),
-                title: const Text('Notifications'),
-                subtitle: const Text('Receive local reminders'),
-              ),
-              SwitchListTile(
-                value: settings.hapticsEnabled,
-                onChanged: (value) => ref
-                    .read(profileSettingsProvider.notifier)
-                    .toggleHaptics(value),
-                title: const Text('Haptic feedback'),
-                subtitle: const Text('Vibration feedback for theme switching and UI interactions'),
-              ),
-              SwitchListTile(
-                value: settings.allowPastDatesBeforeCreation,
-                onChanged: (value) => ref
-                    .read(profileSettingsProvider.notifier)
-                    .toggleAllowPastDatesBeforeCreation(value),
-                title: const Text('Allow past dates before creation'),
-                subtitle: const Text('Mark habits completed before they were created'),
-              ),
-              const Divider(height: 40),
-              Text(
-                'Data management',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+                const SizedBox(height: AppSizes.paddingXXL),
+                TextFormField(
+                  initialValue: settings.name,
+                  decoration: InputDecoration(
+                    labelText: 'Your name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                    ),
+                  ),
+                  onFieldSubmitted: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .updateName(value.trim()),
                 ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              ListTile(
-                leading: const Icon(Icons.download),
-                title: const Text('Export habits'),
-                subtitle: const Text('Backup as JSON and share anywhere'),
-                onTap: () => _exportHabits(context, ref),
-              ),
-              ListTile(
-                leading: const Icon(Icons.upload),
-                title: const Text('Import habits'),
-                subtitle: const Text('Restore from a previous backup'),
-                onTap: () => _importHabits(ref),
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_forever, color: colors.statusIncomplete),
-                title: const Text('Clear all data'),
-                onTap: () => _confirmClear(context, ref),
-              ),
-              if (kDebugMode) ...[
+                const SizedBox(height: AppSizes.paddingXXL),
+                SwitchListTile(
+                  value: settings.notificationsEnabled,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleNotifications(value),
+                  title: const Text('Notifications'),
+                  subtitle: const Text('Receive local reminders'),
+                ),
+                SwitchListTile(
+                  value: settings.hapticsEnabled,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleHaptics(value),
+                  title: const Text('Haptic feedback'),
+                  subtitle: const Text(
+                    'Vibration feedback for theme switching and UI interactions',
+                  ),
+                ),
+                SwitchListTile(
+                  value: settings.allowPastDatesBeforeCreation,
+                  onChanged: (value) => ref
+                      .read(profileSettingsProvider.notifier)
+                      .toggleAllowPastDatesBeforeCreation(value),
+                  title: const Text('Allow past dates before creation'),
+                  subtitle: const Text(
+                    'Mark habits completed before they were created',
+                  ),
+                ),
                 const Divider(height: 40),
                 Text(
-                  'Developer',
+                  'Data management',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -152,100 +129,139 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSizes.paddingL),
                 ListTile(
-                  leading: const Icon(Icons.notifications_active),
-                  title: const Text('Notification Test Screen'),
-                  subtitle: const Text('Test all notification scenarios'),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      PageTransitions.fadeAndSlide(const NotificationTestScreen()),
-                    );
-                  },
+                  leading: const Icon(Icons.download),
+                  title: const Text('Export habits'),
+                  subtitle: const Text('Backup as JSON and share anywhere'),
+                  onTap: () => _exportHabits(context, ref),
                 ),
-              ],
-              if (archived.isNotEmpty) ...[
+                ListTile(
+                  leading: const Icon(Icons.upload),
+                  title: const Text('Import habits'),
+                  subtitle: const Text('Restore from a previous backup'),
+                  onTap: () => _importHabits(ref),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_forever,
+                    color: colors.statusIncomplete,
+                  ),
+                  title: const Text('Clear all data'),
+                  onTap: () => _confirmClear(context, ref),
+                ),
+                if (kDebugMode) ...[
+                  const Divider(height: 40),
+                  Text(
+                    'Developer',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.paddingL),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_active),
+                    title: const Text('Notification Test Screen'),
+                    subtitle: const Text('Test all notification scenarios'),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageTransitions.fadeAndSlide(
+                          const NotificationTestScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+                if (archived.isNotEmpty) ...[
+                  const Divider(height: 40),
+                  Text(
+                    'Archived habits',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.paddingM),
+                  ...archived.map(
+                    (habit) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color:
+                            colors.elevatedSurface, // Use theme elevatedSurface
+                        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                        border: Border.all(
+                          color: colors.outline.withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                        boxShadow: AppShadows.cardSoft(null),
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: colors.outline.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            habit.icon,
+                            color: colors.textPrimary.withValues(alpha: 0.7),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          habit.title,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        trailing: OutlinedButton(
+                          onPressed: () => ref
+                              .read(habitsProvider.notifier)
+                              .restoreHabit(habit.id),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            side: BorderSide(
+                              color: colors.outline.withValues(alpha: 0.5),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Restore',
+                            style: TextStyle(color: colors.textPrimary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const Divider(height: 40),
-                Text(
-                  'Archived habits',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.paddingM),
-                ...archived.map(
-                  (habit) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colors.elevatedSurface, // Use theme elevatedSurface
-                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                      border: Border.all(
-                        color: colors.outline.withValues(alpha: 0.5),
-                        width: 1,
-                      ),
-                      boxShadow: AppShadows.cardSoft(null),
-                    ),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: colors.outline.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          habit.icon,
-                          color: colors.textPrimary.withValues(alpha: 0.7),
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        habit.title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      trailing: OutlinedButton(
-                        onPressed: () => ref
-                            .read(habitsProvider.notifier)
-                            .restoreHabit(habit.id),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Restore',
-                          style: TextStyle(color: colors.textPrimary),
-                        ),
-                      ),
-                    ),
-                  ),
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('Version'),
+                  subtitle: const Text('1.0.0'),
                 ),
               ],
-              const Divider(height: 40),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('Version'),
-                subtitle: const Text('1.0.0'),
-              ),
-            ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Future<void> _exportHabits(BuildContext context, WidgetRef ref) async {
     final json = await ref.read(habitsProvider.notifier).exportHabits();
@@ -253,10 +269,7 @@ class ProfileScreen extends ConsumerWidget {
     final file = File('${tempDir.path}/bootstrap_habits.json');
     await file.writeAsString(json);
     await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path)],
-        text: 'Habit backup ready.',
-      ),
+      ShareParams(files: [XFile(file.path)], text: 'Habit backup ready.'),
     );
   }
 

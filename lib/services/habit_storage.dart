@@ -52,7 +52,9 @@ class HabitStorage {
     } on FormatException catch (e) {
       debugPrint('Error parsing habits data: $e');
       // Corrupted data - return defaults but log the issue
-      throw StorageException('Corrupted data detected. Loading default habits.');
+      throw StorageException(
+        'Corrupted data detected. Loading default habits.',
+      );
     } catch (e) {
       debugPrint('Error loading habits: $e');
       throw StorageException('Failed to load habits: ${e.toString()}');

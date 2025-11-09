@@ -62,15 +62,18 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   Future<void> updateHabit(Habit habit) async {
     try {
       final repository = ref.read(habitRepositoryProvider);
-      
+
       // Get setting for allowing past dates before creation
       final settingsAsync = ref.read(profileSettingsProvider);
       final allowPastDates = settingsAsync.maybeWhen(
         data: (settings) => settings.allowPastDatesBeforeCreation,
         orElse: () => false,
       );
-      
-      await repository.upsertHabit(habit, allowPastDatesBeforeCreation: allowPastDates);
+
+      await repository.upsertHabit(
+        habit,
+        allowPastDatesBeforeCreation: allowPastDates,
+      );
       await _rescheduleReminders(habit);
     } on HabitValidationException catch (e) {
       // Validation errors are shown in UI but don't change state
@@ -166,8 +169,10 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         orElse: () => false,
       );
 
-      final updatedHabit =
-          habit.toggleCompletion(date, allowPastDatesBeforeCreation: allowPastDates);
+      final updatedHabit = habit.toggleCompletion(
+        date,
+        allowPastDatesBeforeCreation: allowPastDates,
+      );
       await repository.upsertHabit(
         updatedHabit,
         allowPastDatesBeforeCreation: allowPastDates,
@@ -281,7 +286,9 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 }
 
-final habitsProvider = AsyncNotifierProvider<HabitsNotifier, List<Habit>>(HabitsNotifier.new);
+final habitsProvider = AsyncNotifierProvider<HabitsNotifier, List<Habit>>(
+  HabitsNotifier.new,
+);
 
 class HabitFilterState {
   final String query;
@@ -338,8 +345,8 @@ class HabitFilterController extends Notifier<HabitFilterState> {
 
 final habitFilterProvider =
     NotifierProvider<HabitFilterController, HabitFilterState>(
-  HabitFilterController.new,
-);
+      HabitFilterController.new,
+    );
 
 final filteredHabitsProvider = Provider<List<Habit>>((ref) {
   final habitsAsync = ref.watch(habitsProvider);

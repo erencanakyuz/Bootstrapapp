@@ -2,23 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/habit.dart';
 import '../providers/app_settings_providers.dart';
+import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 
-enum CalendarViewMode {
-  monthly,
-  yearly,
-}
+enum CalendarViewMode { monthly, yearly }
 
 class FullCalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
 
-  const FullCalendarScreen({
-    super.key,
-    required this.habits,
-  });
+  const FullCalendarScreen({super.key, required this.habits});
 
   @override
   ConsumerState<FullCalendarScreen> createState() => _FullCalendarScreenState();
@@ -27,6 +23,11 @@ class FullCalendarScreen extends ConsumerStatefulWidget {
 class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
   DateTime _selectedMonth = DateTime.now();
   CalendarViewMode _viewMode = CalendarViewMode.monthly;
+  bool _isFullScreen = false;
+  final TransformationController _monthlyTableController = TransformationController();
+  final TransformationController _yearlyTableController = TransformationController();
+  static const double _minTableScale = 0.3;
+  static const double _maxTableScale = 4.0;
 
   @override
   void initState() {
@@ -59,20 +60,85 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    if (_isFullScreen && _viewMode == CalendarViewMode.monthly) {
+      _alignFullScreenTable();
+    }
+  }
+
+  void _alignFullScreenTable() {
+    if (!_isFullScreen || _viewMode != CalendarViewMode.monthly) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isFullScreen || _viewMode != CalendarViewMode.monthly) return;
+      final size = MediaQuery.of(context).size;
+      if (size.width == 0 || size.height == 0) return;
+
+      final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+      final daysInMonth = lastDay.day;
+      final tableWidth = 200 + daysInMonth * 40.0;
+      final tableHeight = 60.0 + (_getHabits().length * 50.0);
+
+      final padding = MediaQuery.of(context).padding;
+      final availableWidth = size.width - (padding.left + padding.right) - 24;
+      final availableHeight = size.height - (padding.top + padding.bottom) - 24;
+      if (availableWidth <= 0 || availableHeight <= 0) return;
+
+      final scaleX = availableWidth / tableWidth;
+      final scaleY = availableHeight / tableHeight;
+      final scale = (scaleX < scaleY ? scaleX : scaleY).clamp(_minTableScale, _maxTableScale);
+      final scaledWidth = tableWidth * scale;
+      final scaledHeight = tableHeight * scale;
+      final translationX = (availableWidth - scaledWidth) / 2;
+      final translationY = (availableHeight - scaledHeight) / 2;
+
+      _monthlyTableController.value = Matrix4.identity()
+        ..translate(translationX, translationY)
+        ..scale(scale);
+    });
   }
 
   @override
   void dispose() {
+    _monthlyTableController.dispose();
+    _yearlyTableController.dispose();
     // Reset to portrait when leaving full calendar
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     // Reset system UI mode
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-    );
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  void _toggleFullScreen() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final hapticsEnabled = settingsAsync.maybeWhen(
+      data: (settings) => settings.hapticsEnabled,
+      orElse: () => true,
+    );
+    if (hapticsEnabled) {
+      HapticFeedback.mediumImpact();
+    }
+    setState(() {
+      _isFullScreen = !_isFullScreen;
+      if (_isFullScreen) {
+        // Enter immersive mode to hide system navbar
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } else {
+        // Exit immersive mode
+        SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.edgeToEdge,
+          overlays: [SystemUiOverlay.top],
+        );
+        // Reset and re-initialize monthly table when exiting full screen
+        if (_viewMode == CalendarViewMode.monthly) {
+          _monthlyTableController.value = Matrix4.identity();
+        }
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _alignFullScreenTable();
+    });
   }
 
   void _previousPeriod() {
@@ -86,9 +152,22 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     }
     setState(() {
       if (_viewMode == CalendarViewMode.monthly) {
-        _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+        _selectedMonth = DateTime(
+          _selectedMonth.year,
+          _selectedMonth.month - 1,
+        );
+        _monthlyTableController.value = Matrix4.identity();
+        if (_isFullScreen) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _alignFullScreenTable();
+          });
+        }
       } else {
-        _selectedMonth = DateTime(_selectedMonth.year - 1, _selectedMonth.month);
+        _selectedMonth = DateTime(
+          _selectedMonth.year - 1,
+          _selectedMonth.month,
+        );
+        _yearlyTableController.value = Matrix4.identity();
       }
     });
   }
@@ -104,9 +183,22 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     }
     setState(() {
       if (_viewMode == CalendarViewMode.monthly) {
-        _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+        _selectedMonth = DateTime(
+          _selectedMonth.year,
+          _selectedMonth.month + 1,
+        );
+        _monthlyTableController.value = Matrix4.identity();
+        if (_isFullScreen) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _alignFullScreenTable();
+          });
+        }
       } else {
-        _selectedMonth = DateTime(_selectedMonth.year + 1, _selectedMonth.month);
+        _selectedMonth = DateTime(
+          _selectedMonth.year + 1,
+          _selectedMonth.month,
+        );
+        _yearlyTableController.value = Matrix4.identity();
       }
     });
   }
@@ -122,6 +214,13 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     }
     setState(() {
       _selectedMonth = DateTime.now();
+      _monthlyTableController.value = Matrix4.identity();
+      _yearlyTableController.value = Matrix4.identity();
+      if (_viewMode == CalendarViewMode.monthly && _isFullScreen) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _alignFullScreenTable();
+        });
+      }
     });
   }
 
@@ -138,12 +237,40 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       _viewMode = _viewMode == CalendarViewMode.monthly
           ? CalendarViewMode.yearly
           : CalendarViewMode.monthly;
+      // Reset transformation controllers when switching views
+      _monthlyTableController.value = Matrix4.identity();
+      _yearlyTableController.value = Matrix4.identity();
+      if (_viewMode == CalendarViewMode.monthly && _isFullScreen) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _alignFullScreenTable();
+        });
+      }
     });
+  }
+
+  Future<void> _toggleCalendarCell(Habit habit, DateTime date) async {
+    // Haptic feedback
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final settings = settingsAsync.maybeWhen(
+      data: (s) => s,
+      orElse: () => null,
+    );
+
+    if (settings?.hapticsEnabled ?? true) {
+      HapticFeedback.lightImpact();
+    }
+
+    final allowPastDates = settings?.allowPastDatesBeforeCreation ?? false;
+    final updatedHabit = habit.toggleCompletion(
+      date,
+      allowPastDatesBeforeCreation: allowPastDates,
+    );
+    await ref.read(habitsProvider.notifier).updateHabit(updatedHabit);
   }
 
   Set<DateTime> _getAllCompletedDates() {
     final completedDates = <DateTime>{};
-    for (final habit in widget.habits) {
+    for (final habit in _getHabits()) {
       for (final date in habit.completedDates) {
         completedDates.add(DateTime(date.year, date.month, date.day));
       }
@@ -151,7 +278,86 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     return completedDates;
   }
 
-  Map<String, dynamic> _calculateAdvancedStats(Set<DateTime> completedDates, DateTime now) {
+  List<Habit> _getHabits() {
+    // Always show mock habits for testing (8 habits)
+    final now = DateTime.now();
+    final mockHabits = <Habit>[];
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+    ];
+    
+    final mockTitles = [
+      'Morning Meditation',
+      'Daily Exercise',
+      'Read 30 Minutes',
+      'Drink 8 Glasses Water',
+      'Write Journal',
+      'Practice Guitar',
+      'Learn Spanish',
+      'No Social Media',
+    ];
+    
+    final categories = [
+      HabitCategory.mindfulness,
+      HabitCategory.health,
+      HabitCategory.learning,
+      HabitCategory.health,
+      HabitCategory.mindfulness,
+      HabitCategory.creativity,
+      HabitCategory.learning,
+      HabitCategory.productivity,
+    ];
+    
+    final icons = [
+      PhosphorIconsRegular.leaf, // meditation
+      PhosphorIconsRegular.barbell, // exercise
+      PhosphorIconsRegular.book, // reading
+      PhosphorIconsRegular.drop, // water
+      PhosphorIconsRegular.pencil, // journal
+      PhosphorIconsRegular.musicNote, // guitar
+      PhosphorIconsRegular.globe, // language
+      PhosphorIconsRegular.deviceMobile, // social media
+    ];
+    
+    for (int i = 0; i < 8; i++) {
+      // Generate some random completed dates for this month
+      final completedDates = <DateTime>[];
+      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      final random = (i * 7) % daysInMonth; // Pseudo-random based on index
+      for (int j = 0; j < 10; j++) {
+        final day = (random + j * 3) % daysInMonth + 1;
+        if (day <= daysInMonth) {
+          completedDates.add(DateTime(now.year, now.month, day));
+        }
+      }
+      
+      mockHabits.add(
+        Habit(
+          id: 'mock_habit_$i',
+          title: mockTitles[i],
+          color: colors[i % colors.length],
+          icon: icons[i % icons.length],
+          category: categories[i % categories.length],
+          completedDates: completedDates,
+          createdAt: now.subtract(Duration(days: 30 + i)),
+        ),
+      );
+    }
+    
+    return mockHabits;
+  }
+
+  Map<String, dynamic> _calculateAdvancedStats(
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) {
     if (completedDates.isEmpty) {
       return {
         'currentStreak': 0,
@@ -213,12 +419,41 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     final completedDates = _getAllCompletedDates();
     final now = DateTime.now();
 
+    if (_isFullScreen) {
+      return Scaffold(
+        backgroundColor: colors.background,
+        body: Stack(
+          children: [
+            _viewMode == CalendarViewMode.monthly
+                ? _buildFullScreenMonthlyView(colors, completedDates, now)
+                : _buildFullScreenYearlyView(colors, completedDates, now),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 4,
+              right: 4,
+              child: Material(
+                color: colors.elevatedSurface,
+                borderRadius: BorderRadius.circular(8),
+                elevation: 2,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: colors.textPrimary, size: 16),
+                  onPressed: _toggleFullScreen,
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  tooltip: 'Exit full screen',
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: colors.background,
         elevation: 0,
-        toolbarHeight: _viewMode == CalendarViewMode.monthly ? 36 : 40,
+        toolbarHeight: 40,
         leading: IconButton(
           icon: const Icon(Icons.close, size: 18),
           onPressed: () {
@@ -227,410 +462,1080 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
               DeviceOrientation.portraitUp,
               DeviceOrientation.portraitDown,
             ]);
+            final navigator = Navigator.of(context);
             // Small delay to ensure orientation is set before navigation
             Future.delayed(const Duration(milliseconds: 50), () {
-              Navigator.of(context).pop();
+              if (mounted) {
+                navigator.pop();
+              }
             });
           },
           color: colors.textPrimary,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
-        title: null,
+        title: _viewMode == CalendarViewMode.yearly
+            ? _buildYearNavigationCompact(colors, _selectedMonth.year)
+            : _buildMonthNavigationCompact(colors),
         centerTitle: true,
         actions: [
           IconButton(
+            icon: Icon(Icons.fullscreen, size: 20, color: colors.textPrimary),
+            onPressed: _toggleFullScreen,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Full screen',
+          ),
+          const SizedBox(width: 4),
+          IconButton(
             icon: Icon(Icons.info_outline, size: 20, color: colors.textPrimary),
-            onPressed: () => _showStatsDialog(colors, completedDates, now),
+            onPressed: () {
+              if (_viewMode == CalendarViewMode.monthly) {
+                final lastDay =
+                    DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+                final daysInMonth = lastDay.day;
+                final monthCompletedDates = completedDates
+                    .where(
+                      (date) =>
+                          date.year == _selectedMonth.year &&
+                          date.month == _selectedMonth.month,
+                    )
+                    .toSet();
+                _showMomentumSheet(
+                  colors,
+                  monthCompletedDates,
+                  daysInMonth,
+                  now,
+                );
+              } else {
+                final year = _selectedMonth.year;
+                final yearCompletedDates = completedDates
+                    .where((date) => date.year == year)
+                    .toSet();
+                final totalDays = DateTime(year, 12, 31)
+                        .difference(DateTime(year, 1, 1))
+                        .inDays +
+                    1;
+                final completionRate =
+                    totalDays > 0 ? yearCompletedDates.length / totalDays : 0.0;
+                final advancedStats = _calculateAdvancedStats(yearCompletedDates, now);
+                _showYearReviewSheet(
+                  colors,
+                  yearCompletedDates.length,
+                  totalDays,
+                  completionRate,
+                  advancedStats,
+                );
+              }
+            },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-          TextButton.icon(
-            onPressed: _toggleViewMode,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: Icon(
-              _viewMode == CalendarViewMode.monthly
-                  ? Icons.view_module
-                  : Icons.calendar_month,
-              color: colors.textPrimary,
-              size: 16,
-            ),
-            label: Text(
-              _viewMode == CalendarViewMode.monthly ? 'Year' : 'Month',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 78,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: TextButton.icon(
+                onPressed: _toggleViewMode,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: colors.elevatedSurface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: Icon(
+                  _viewMode == CalendarViewMode.monthly
+                      ? Icons.view_module
+                      : Icons.calendar_month,
+                  color: colors.textPrimary,
+                  size: 14,
+                ),
+                label: Text(
+                  _viewMode == CalendarViewMode.monthly ? 'Year' : 'Month',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
-      body: _viewMode == CalendarViewMode.monthly
-          ? _buildMonthlyView(colors, completedDates, now)
-          : _buildYearlyView(colors, completedDates, now),
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        right: true,
+        child: _viewMode == CalendarViewMode.monthly
+            ? _buildMonthlyView(colors, completedDates, now)
+            : Column(
+                children: [
+                  Expanded(
+                    child: _buildYearlyView(colors, completedDates, now),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
-  Widget _buildMonthlyView(AppColors colors, Set<DateTime> completedDates, DateTime now) {
+  Widget _buildMonthlyView(
+    AppColors colors,
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) {
+    final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+    final daysInMonth = lastDay.day;
+    final days = List.generate(daysInMonth, (index) => index + 1);
+    final tableWidth = 200 + daysInMonth * 40.0;
+
+    final monthCompletedDates = completedDates
+        .where(
+          (date) =>
+              date.year == _selectedMonth.year &&
+              date.month == _selectedMonth.month,
+        )
+        .toSet();
+
+    if (_getHabits().isEmpty) {
+      return _buildEmptyState(colors);
+    }
+
+    return Container(
+      color: colors.background,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: _buildLegend(colors),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: _buildMonthlyTable(
+                    colors,
+                    days,
+                    daysInMonth,
+                    monthCompletedDates,
+                    now,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullScreenMonthlyView(
+    AppColors colors,
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) {
     final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
     final daysInMonth = lastDay.day;
     final days = List.generate(daysInMonth, (index) => index + 1);
 
-    if (widget.habits.isEmpty) {
+    final monthCompletedDates = completedDates
+        .where(
+          (date) =>
+              date.year == _selectedMonth.year &&
+              date.month == _selectedMonth.month,
+        )
+        .toSet();
+
+    if (_getHabits().isEmpty) {
       return _buildEmptyState(colors);
     }
 
-    return Container(
-      color: colors.background,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Month navigation header (minimal)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.chevron_left, size: 20, color: colors.textPrimary),
-                        onPressed: _previousPeriod,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      GestureDetector(
-                        onTap: _goToCurrentPeriod,
-                        child: Text(
-                          DateFormat('MMMM yyyy').format(_selectedMonth),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
-                        onPressed: _nextPeriod,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ),
-                // Table
-                Container(
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                  ),
-                  child: Table(
-                    border: TableBorder(
-                      horizontalInside: BorderSide.none,
-                      verticalInside: BorderSide.none,
-                      top: BorderSide.none,
-                      bottom: BorderSide.none,
-                      left: BorderSide.none,
-                      right: BorderSide.none,
-                    ),
-                    columnWidths: {
-                      0: const FixedColumnWidth(180), // Habit names column
-                      for (int i = 1; i <= daysInMonth; i++)
-                        i: const FixedColumnWidth(40), // Day columns
-                    },
-                    children: [
-                      // Header row with day numbers
-                      TableRow(
-                        decoration: BoxDecoration(
-                          color: colors.outline.withValues(alpha: 0.08),
-                        ),
-                        children: [
-                          TableCell(
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              child: Text(
-                                'HABIT',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.textPrimary,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                          ...days.map((day) {
-                            final date = DateTime(_selectedMonth.year, _selectedMonth.month, day);
-                            final isToday = date.year == now.year &&
-                                date.month == now.month &&
-                                date.day == now.day;
-                            return TableCell(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-                                decoration: isToday
-                                    ? BoxDecoration(
-                                        color: colors.outline.withValues(alpha: 0.1),
-                                      )
-                                    : null,
-                                child: Center(
-                                  child: Text(
-                                    day.toString(),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                                      color: isToday ? colors.textPrimary : colors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                      // Habit rows
-                      ...widget.habits.map((habit) {
-                        return TableRow(
-                          children: [
-                            // Habit name cell
-                            TableCell(
-                              verticalAlignment: TableCellVerticalAlignment.middle,
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 3,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: habit.color,
-                                        borderRadius: BorderRadius.circular(1.5),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        habit.title,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.textPrimary,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // Day cells for this habit
-                            ...days.map((day) {
-                              final date = DateTime(_selectedMonth.year, _selectedMonth.month, day);
-                              final isCompleted = habit.isCompletedOn(date);
-                              final isToday = date.year == now.year &&
-                                  date.month == now.month &&
-                                  date.day == now.day;
-                              return TableCell(
-                                child: Container(
-                                  padding: const EdgeInsets.all(3),
-                                  child: Center(
-                                    child: Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: !isCompleted
-                                            ? colors.outline.withValues(alpha: 0.15)
-                                            : null,
-                                        border: isToday
-                                            ? Border.all(
-                                                color: colors.textPrimary,
-                                                width: 2,
-                                              )
-                                            : (!isCompleted
-                                                ? Border.all(
-                                                    color: colors.outline.withValues(alpha: 0.3),
-                                                    width: 1,
-                                                  )
-                                                : null),
-                                      ),
-                                      child: isCompleted
-                                          ? Center(
-                                              child: Text(
-                                                '✕',
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w900,
-                                                  color: habit.color,
-                                                  height: 1.0,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return InteractiveViewer(
+      transformationController: _monthlyTableController,
+      minScale: _minTableScale,
+      maxScale: _maxTableScale,
+      constrained: false,
+      boundaryMargin: EdgeInsets.zero,
+      panEnabled: true,
+      scaleEnabled: true,
+      child: _buildMonthlyTable(
+        colors,
+        days,
+        daysInMonth,
+        monthCompletedDates,
+        now,
       ),
     );
   }
 
-  Widget _buildYearlyView(AppColors colors, Set<DateTime> completedDates, DateTime now) {
-    final year = _selectedMonth.year;
-    final yearCompletedDates = completedDates.where((date) => date.year == year).toSet();
-
-    if (widget.habits.isEmpty) {
-      return _buildEmptyState(colors);
-    }
-
-    return Container(
-      color: colors.background,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Year navigation header (minimal)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.chevron_left, size: 20, color: colors.textPrimary),
-                      onPressed: _previousPeriod,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    GestureDetector(
-                      onTap: _goToCurrentPeriod,
-                      child: Text(
-                        year.toString(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
-                      onPressed: _nextPeriod,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+  Widget _buildMonthNavigationCompact(AppColors colors) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.chevron_left, color: colors.textPrimary, size: 16),
+            onPressed: _previousPeriod,
+            splashRadius: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          ),
+          GestureDetector(
+            onTap: _goToCurrentPeriod,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                DateFormat('MMM yyyy').format(_selectedMonth),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
                 ),
               ),
-              // Year grid - 12 months
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  childAspectRatio: 1.5,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: 12,
-                itemBuilder: (context, index) {
-                  final month = index + 1;
-                  final monthDate = DateTime(year, month, 1);
-                  final monthLastDay = DateTime(year, month + 1, 0);
-                  final monthDays = monthLastDay.day;
-                  final monthCompletedDates = yearCompletedDates.where((date) =>
-                      date.year == year && date.month == month).toSet();
-                  final monthCompletedDays = monthCompletedDates.length;
-                  final monthRate = monthDays > 0 ? (monthCompletedDays / monthDays) : 0.0;
-                  final isCurrentMonth = year == now.year && month == now.month;
-
-                  return _buildMonthCell(colors, monthDate, monthCompletedDays, monthDays, monthRate, isCurrentMonth);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showStatsDialog(AppColors colors, Set<DateTime> completedDates, DateTime now) {
-    if (_viewMode == CalendarViewMode.monthly) {
-      final monthCompletedDates = completedDates.where((date) =>
-          date.year == _selectedMonth.year && date.month == _selectedMonth.month).toSet();
-      final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-      final daysInMonth = lastDay.day;
-      final completedDays = monthCompletedDates.length;
-      final completionRate = daysInMonth > 0 ? (completedDays / daysInMonth) : 0.0;
-      final advancedStats = _calculateAdvancedStats(monthCompletedDates, now);
-      _showStatsDialogContent(colors, completedDays, daysInMonth, completionRate, advancedStats);
-    } else {
-      final year = _selectedMonth.year;
-      final yearCompletedDates = completedDates.where((date) => date.year == year).toSet();
-      final totalDaysInYear = DateTime(year, 12, 31).difference(DateTime(year, 1, 1)).inDays + 1;
-      final completedDays = yearCompletedDates.length;
-      final completionRate = totalDaysInYear > 0 ? (completedDays / totalDaysInYear) : 0.0;
-      final advancedStats = _calculateAdvancedStats(yearCompletedDates, now);
-      _showStatsDialogContent(colors, completedDays, totalDaysInYear, completionRate, advancedStats);
-    }
-  }
-
-  void _showStatsDialogContent(AppColors colors, int completedDays, int totalDays, double completionRate, Map<String, dynamic> advancedStats) {
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colors.elevatedSurface, // Use theme elevatedSurface
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Statistics',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: colors.textPrimary,
-          ),
-        ),
-        content: _buildStatsContent(colors, completedDays, totalDays, completionRate, advancedStats),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Close',
-              style: TextStyle(color: colors.textPrimary),
             ),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right, color: colors.textPrimary, size: 16),
+            onPressed: _nextPeriod,
+            splashRadius: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsContent(AppColors colors, int completed, int total, double rate, Map<String, dynamic> advancedStats) {
+  Widget _buildYearNavigationCompact(AppColors colors, int year) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.chevron_left, color: colors.textPrimary, size: 16),
+            onPressed: _previousPeriod,
+            splashRadius: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          ),
+          GestureDetector(
+            onTap: _goToCurrentPeriod,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                year.toString(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right, color: colors.textPrimary, size: 16),
+            onPressed: _nextPeriod,
+            splashRadius: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYearlyView(
+    AppColors colors,
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) {
+    final year = _selectedMonth.year;
+    final yearCompletedDates =
+        completedDates.where((date) => date.year == year).toSet();
+
+    if (_getHabits().isEmpty) {
+      return _buildEmptyState(colors);
+    }
+
+    final viewPadding = MediaQuery.of(context).viewPadding;
+
+    return Container(
+      color: colors.background,
+      padding: EdgeInsets.fromLTRB(
+        0,
+        0,
+        0,
+        8 + viewPadding.bottom,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: _buildYearlyGridFitted(
+                colors,
+                year,
+                yearCompletedDates,
+                now,
+                constraints.maxWidth,
+                constraints.maxHeight,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFullScreenYearlyView(
+    AppColors colors,
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) {
+    final year = _selectedMonth.year;
+    final yearCompletedDates =
+        completedDates.where((date) => date.year == year).toSet();
+
+    if (_getHabits().isEmpty) {
+      return _buildEmptyState(colors);
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return _buildYearlyGridFitted(
+          colors,
+          year,
+          yearCompletedDates,
+          now,
+          constraints.maxWidth,
+          constraints.maxHeight,
+        );
+      },
+    );
+  }
+
+  Widget _buildYearlyGridFitted(
+    AppColors colors,
+    int year,
+    Set<DateTime> yearCompletedDates,
+    DateTime now,
+    double availableWidth,
+    double availableHeight,
+  ) {
+    // Calculate grid dimensions to fit screen
+    const crossAxisCount = 4;
+    const childAspectRatio = 1.45;
+    const crossAxisSpacing = 8.0;
+    const mainAxisSpacing = 8.0;
+    const padding = 8.0;
+    
+    // Calculate cell size to fit available space
+    final maxCellWidth = (availableWidth - (padding * 2) - (crossAxisSpacing * (crossAxisCount - 1))) / crossAxisCount;
+    final maxCellHeight = (availableHeight - (padding * 2) - (mainAxisSpacing * 2)) / 3;
+    
+    // Use the smaller dimension to maintain aspect ratio
+    final cellWidth = (maxCellWidth < maxCellHeight * childAspectRatio) 
+        ? maxCellWidth 
+        : maxCellHeight * childAspectRatio;
+    final cellHeight = cellWidth / childAspectRatio;
+    
+    final gridWidth = (cellWidth * crossAxisCount) + 
+                      (crossAxisSpacing * (crossAxisCount - 1)) + 
+                      (padding * 2);
+    final gridHeight = (cellHeight * 3) + // 3 rows for 12 items
+                       (mainAxisSpacing * 2) + 
+                       (padding * 2);
+
+    return Center(
+      child: SizedBox(
+        width: gridWidth,
+        height: gridHeight,
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Wrap(
+            spacing: crossAxisSpacing,
+            runSpacing: mainAxisSpacing,
+            children: List.generate(12, (index) {
+              final month = index + 1;
+              final monthDate = DateTime(year, month, 1);
+              final monthLastDay = DateTime(year, month + 1, 0);
+              final monthDays = monthLastDay.day;
+              final monthCompletedDates = yearCompletedDates
+                  .where(
+                    (date) => date.year == year && date.month == month,
+                  )
+                  .toSet();
+              final monthCompletedDays = monthCompletedDates.length;
+              final monthRate =
+                  monthDays > 0 ? (monthCompletedDays / monthDays) : 0.0;
+              final isCurrentMonth = year == now.year && month == now.month;
+
+              return SizedBox(
+                width: cellWidth,
+                height: cellHeight,
+                child: _buildMonthCell(
+                  colors,
+                  monthDate,
+                  monthCompletedDays,
+                  monthDays,
+                  monthRate,
+                  isCurrentMonth,
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMomentumCard(
+    AppColors colors,
+    Set<DateTime> monthCompletedDates,
+    int daysInMonth,
+    DateTime now,
+  ) {
+    final completedDays = monthCompletedDates.length;
+    final completionRate = daysInMonth > 0
+        ? (completedDays / daysInMonth * 100).clamp(0, 100)
+        : 0;
+    final advancedStats = _calculateAdvancedStats(monthCompletedDates, now);
+    final bestDay = advancedStats['bestDay'] as DateTime?;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [colors.gradientPurpleLighterStart, colors.gradientPeachEnd],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Monthly momentum',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary.withValues(alpha: 0.8),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$completedDays',
+                        style: TextStyle(
+                          fontSize: 42,
+                          fontWeight: FontWeight.w800,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '/$daysInMonth days',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${completionRate.toStringAsFixed(1)}% complete',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildStatChip(
+                colors,
+                'Streak',
+                '${advancedStats['currentStreak']} days',
+                Icons.local_fire_department,
+              ),
+              const SizedBox(width: 12),
+              _buildStatChip(
+                colors,
+                'Longest',
+                '${advancedStats['longestStreak']} days',
+                Icons.emoji_events,
+              ),
+              const SizedBox(width: 12),
+              _buildStatChip(
+                colors,
+                'Best day',
+                bestDay != null ? DateFormat('MMM d').format(bestDay) : '—',
+                Icons.favorite_outline,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(
+    AppColors colors,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: colors.textPrimary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colors.textPrimary.withValues(alpha: 0.7),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMomentumSheet(
+    AppColors colors,
+    Set<DateTime> monthCompletedDates,
+    int daysInMonth,
+    DateTime now,
+  ) {
+    final advancedStats = _calculateAdvancedStats(monthCompletedDates, now);
+    final completionRate =
+        daysInMonth > 0 ? monthCompletedDates.length / daysInMonth : 0.0;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.outline.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildMomentumCard(
+                        colors,
+                        monthCompletedDates,
+                        daysInMonth,
+                        now,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildStatsContent(
+                        colors,
+                        monthCompletedDates.length,
+                        daysInMonth,
+                        completionRate,
+                        advancedStats,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLegend(AppColors colors) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 8,
+        children: [
+          _buildLegendItem(
+            colors,
+            colors.textPrimary.withValues(alpha: 0.9),
+            'Completed',
+            filled: true,
+          ),
+          _buildLegendItem(colors, colors.outline, 'Today', dashed: true),
+          _buildLegendItem(
+            colors,
+            colors.outline.withValues(alpha: 0.4),
+            'Scheduled',
+            filled: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(
+    AppColors colors,
+    Color color,
+    String label, {
+    bool filled = false,
+    bool dashed = false,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            color: filled ? color.withValues(alpha: 0.15) : Colors.transparent,
+            border: Border.all(
+              color: color,
+              width: dashed ? 1.5 : 1,
+              style: dashed ? BorderStyle.solid : BorderStyle.solid,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: colors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMonthlyTable(
+    AppColors colors,
+    List<int> days,
+    int daysInMonth,
+    Set<DateTime> monthCompletedDates,
+    DateTime now,
+  ) {
+    final tableWidth = 200 + daysInMonth * 40.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
+      child: SizedBox(
+        width: tableWidth,
+        child: Table(
+          border: TableBorder.all(color: Colors.transparent, width: 0),
+          columnWidths: {
+            0: const FixedColumnWidth(200),
+            for (int i = 1; i <= daysInMonth; i++) i: const FixedColumnWidth(40),
+          },
+          children: [
+            TableRow(
+              decoration: BoxDecoration(
+                color: colors.outline.withValues(alpha: 0.08),
+              ),
+              children: [
+                TableCell(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'HABIT',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+                ...days.map((day) {
+                  final date = DateTime(
+                    _selectedMonth.year,
+                    _selectedMonth.month,
+                    day,
+                  );
+                  final isToday = date.year == now.year &&
+                      date.month == now.month &&
+                      date.day == now.day;
+                  final isCompleted = monthCompletedDates.contains(date);
+                  return TableCell(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isToday
+                            ? colors.outline.withValues(alpha: 0.1)
+                            : isCompleted
+                                ? colors.textPrimary.withValues(alpha: 0.04)
+                                : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          day.toString(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight:
+                                isToday ? FontWeight.w800 : FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            ..._getHabits().map((habit) {
+              return TableRow(
+                children: [
+                  TableCell(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: habit.color,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  habit.title,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  habit.category.label.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.textSecondary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ...days.map((day) {
+                    final date = DateTime(
+                      _selectedMonth.year,
+                      _selectedMonth.month,
+                      day,
+                    );
+                    final isCompleted = habit.isCompletedOn(date);
+                    final isToday = date.year == now.year &&
+                        date.month == now.month &&
+                        date.day == now.day;
+                    return TableCell(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 2,
+                        ),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isToday
+                                  ? colors.textPrimary.withValues(alpha: 0.5)
+                                  : colors.outline.withValues(alpha: 0.2),
+                              width: isToday ? 1.2 : 0.8,
+                            ),
+                            color: isCompleted
+                                ? habit.color.withValues(alpha: 0.08)
+                                : Colors.transparent,
+                          ),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: InkWell(
+                              onTap: () => _toggleCalendarCell(habit, date),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Center(
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: isCompleted ? 1 : 0,
+                                  child: Text(
+                                    '✕',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: habit.color,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  
+  Widget _buildYearHero(
+    AppColors colors,
+    int completedDays,
+    int totalDays,
+    double completionRate,
+    Map<String, dynamic> advancedStats,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Year in review',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: colors.textSecondary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$completedDays days completed',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                '${(completionRate * 100).toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildStatChip(
+                colors,
+                'Daily streak',
+                '${advancedStats['currentStreak']} now',
+                Icons.trending_up,
+              ),
+              const SizedBox(width: 12),
+              _buildStatChip(
+                colors,
+                'Best run',
+                '${advancedStats['longestStreak']} days',
+                Icons.workspace_premium_outlined,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showYearReviewSheet(
+    AppColors colors,
+    int completedDays,
+    int totalDays,
+    double completionRate,
+    Map<String, dynamic> advancedStats,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.outline.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildYearHero(
+                        colors,
+                        completedDays,
+                        totalDays,
+                        completionRate,
+                        advancedStats,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildStatsContent(
+                        colors,
+                        completedDays,
+                        totalDays,
+                        completionRate,
+                        advancedStats,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsContent(
+    AppColors colors,
+    int completed,
+    int total,
+    double rate,
+    Map<String, dynamic> advancedStats,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -639,17 +1544,42 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(colors, 'Completed', completed.toString(), Icons.check_circle),
-              _buildStatItem(colors, 'Total', total.toString(), Icons.calendar_today),
-              _buildStatItem(colors, 'Rate', '${(rate * 100).toStringAsFixed(1)}%', Icons.trending_up),
+              _buildStatItem(
+                colors,
+                'Completed',
+                completed.toString(),
+                Icons.check_circle,
+              ),
+              _buildStatItem(
+                colors,
+                'Total',
+                total.toString(),
+                Icons.calendar_today,
+              ),
+              _buildStatItem(
+                colors,
+                'Rate',
+                '${(rate * 100).toStringAsFixed(1)}%',
+                Icons.trending_up,
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(colors, 'Streak', '${advancedStats['currentStreak']}', Icons.local_fire_department),
-              _buildStatItem(colors, 'Best', '${advancedStats['longestStreak']}', Icons.emoji_events),
+              _buildStatItem(
+                colors,
+                'Streak',
+                '${advancedStats['currentStreak']}',
+                Icons.local_fire_department,
+              ),
+              _buildStatItem(
+                colors,
+                'Best',
+                '${advancedStats['longestStreak']}',
+                Icons.emoji_events,
+              ),
             ],
           ),
         ],
@@ -657,7 +1587,12 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     );
   }
 
-  Widget _buildStatItem(AppColors colors, String label, String value, IconData icon) {
+  Widget _buildStatItem(
+    AppColors colors,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Flexible(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -730,9 +1665,16 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     );
   }
 
-  Widget _buildMonthCell(AppColors colors, DateTime monthDate, int completedDays, int totalDays, double rate, bool isCurrentMonth) {
+  Widget _buildMonthCell(
+    AppColors colors,
+    DateTime monthDate,
+    int completedDays,
+    int totalDays,
+    double rate,
+    bool isCurrentMonth,
+  ) {
     final monthName = DateFormat('MMM').format(monthDate);
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -757,12 +1699,17 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isCurrentMonth ? colors.textPrimary : colors.textPrimary,
+                  color: isCurrentMonth
+                      ? colors.textPrimary
+                      : colors.textPrimary,
                 ),
               ),
               if (isCurrentMonth)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.outline.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
@@ -817,4 +1764,3 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     );
   }
 }
-

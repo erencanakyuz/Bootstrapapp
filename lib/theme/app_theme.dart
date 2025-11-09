@@ -89,10 +89,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color gradientPurpleStart;
   final Color gradientPurpleEnd;
   final Color gradientPurpleLighterStart;
-    final Color gradientPurpleLighterEnd;
-    final Color gradientBlueAudioStart;
-    final Color gradientBlueAudioEnd;
-    final Color chipOutline;
+  final Color gradientPurpleLighterEnd;
+  final Color gradientBlueAudioStart;
+  final Color gradientBlueAudioEnd;
+  final Color chipOutline;
 
   @override
   AppColors copyWith({
@@ -145,7 +145,8 @@ class AppColors extends ThemeExtension<AppColors> {
       statusProgress: statusProgress ?? this.statusProgress,
       statusIncomplete: statusIncomplete ?? this.statusIncomplete,
       brandAccentPurple: brandAccentPurple ?? this.brandAccentPurple,
-      brandAccentPurpleSoft: brandAccentPurpleSoft ?? this.brandAccentPurpleSoft,
+      brandAccentPurpleSoft:
+          brandAccentPurpleSoft ?? this.brandAccentPurpleSoft,
       brandAccentPeach: brandAccentPeach ?? this.brandAccentPeach,
       brandAccentPeachSoft: brandAccentPeachSoft ?? this.brandAccentPeachSoft,
       brandMutedIcon: brandMutedIcon ?? this.brandMutedIcon,
@@ -153,9 +154,12 @@ class AppColors extends ThemeExtension<AppColors> {
       gradientPeachEnd: gradientPeachEnd ?? this.gradientPeachEnd,
       gradientPurpleStart: gradientPurpleStart ?? this.gradientPurpleStart,
       gradientPurpleEnd: gradientPurpleEnd ?? this.gradientPurpleEnd,
-      gradientPurpleLighterStart: gradientPurpleLighterStart ?? this.gradientPurpleLighterStart,
-      gradientPurpleLighterEnd: gradientPurpleLighterEnd ?? this.gradientPurpleLighterEnd,
-      gradientBlueAudioStart: gradientBlueAudioStart ?? this.gradientBlueAudioStart,
+      gradientPurpleLighterStart:
+          gradientPurpleLighterStart ?? this.gradientPurpleLighterStart,
+      gradientPurpleLighterEnd:
+          gradientPurpleLighterEnd ?? this.gradientPurpleLighterEnd,
+      gradientBlueAudioStart:
+          gradientBlueAudioStart ?? this.gradientBlueAudioStart,
       gradientBlueAudioEnd: gradientBlueAudioEnd ?? this.gradientBlueAudioEnd,
       chipOutline: chipOutline ?? this.chipOutline,
     );
@@ -190,18 +194,42 @@ class AppColors extends ThemeExtension<AppColors> {
       statusProgress: lerpColor(statusProgress, other.statusProgress),
       statusIncomplete: lerpColor(statusIncomplete, other.statusIncomplete),
       brandAccentPurple: lerpColor(brandAccentPurple, other.brandAccentPurple),
-      brandAccentPurpleSoft: lerpColor(brandAccentPurpleSoft, other.brandAccentPurpleSoft),
+      brandAccentPurpleSoft: lerpColor(
+        brandAccentPurpleSoft,
+        other.brandAccentPurpleSoft,
+      ),
       brandAccentPeach: lerpColor(brandAccentPeach, other.brandAccentPeach),
-      brandAccentPeachSoft: lerpColor(brandAccentPeachSoft, other.brandAccentPeachSoft),
+      brandAccentPeachSoft: lerpColor(
+        brandAccentPeachSoft,
+        other.brandAccentPeachSoft,
+      ),
       brandMutedIcon: lerpColor(brandMutedIcon, other.brandMutedIcon),
-      gradientPeachStart: lerpColor(gradientPeachStart, other.gradientPeachStart),
+      gradientPeachStart: lerpColor(
+        gradientPeachStart,
+        other.gradientPeachStart,
+      ),
       gradientPeachEnd: lerpColor(gradientPeachEnd, other.gradientPeachEnd),
-      gradientPurpleStart: lerpColor(gradientPurpleStart, other.gradientPurpleStart),
+      gradientPurpleStart: lerpColor(
+        gradientPurpleStart,
+        other.gradientPurpleStart,
+      ),
       gradientPurpleEnd: lerpColor(gradientPurpleEnd, other.gradientPurpleEnd),
-      gradientPurpleLighterStart: lerpColor(gradientPurpleLighterStart, other.gradientPurpleLighterStart),
-      gradientPurpleLighterEnd: lerpColor(gradientPurpleLighterEnd, other.gradientPurpleLighterEnd),
-      gradientBlueAudioStart: lerpColor(gradientBlueAudioStart, other.gradientBlueAudioStart),
-      gradientBlueAudioEnd: lerpColor(gradientBlueAudioEnd, other.gradientBlueAudioEnd),
+      gradientPurpleLighterStart: lerpColor(
+        gradientPurpleLighterStart,
+        other.gradientPurpleLighterStart,
+      ),
+      gradientPurpleLighterEnd: lerpColor(
+        gradientPurpleLighterEnd,
+        other.gradientPurpleLighterEnd,
+      ),
+      gradientBlueAudioStart: lerpColor(
+        gradientBlueAudioStart,
+        other.gradientBlueAudioStart,
+      ),
+      gradientBlueAudioEnd: lerpColor(
+        gradientBlueAudioEnd,
+        other.gradientBlueAudioEnd,
+      ),
       chipOutline: lerpColor(chipOutline, other.chipOutline),
     );
   }
@@ -227,7 +255,9 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
     statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose
     // RefactorUi.md specific gradients - Muted palette
-    brandAccentPurple: Color(0xFF9B8FA8), // Muted dusty lavender (replacing bright purple)
+    brandAccentPurple: Color(
+      0xFF9B8FA8,
+    ), // Muted dusty lavender (replacing bright purple)
     brandAccentPurpleSoft: Color(0xFFB5A8C2), // Muted soft lavender
     brandAccentPeach: Color(0xFFF8C9A2),
     brandAccentPeachSoft: Color(0xFFFDE5C9),
@@ -289,150 +319,150 @@ class AppTextStyles {
 
   // Serif Display (Fraunces) - For headings
   TextStyle get displayHero => GoogleFonts.fraunces(
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        height: 1.1,
-        color: _colors.textPrimary,
-      );
+    fontSize: 34,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.6,
+    height: 1.1,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get displayLarge => GoogleFonts.fraunces(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-        height: 1.15,
-        color: _colors.textPrimary,
-      );
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.4,
+    height: 1.15,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get headline1 => GoogleFonts.fraunces(
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        height: 1.1,
-        color: _colors.textPrimary,
-      );
+    fontSize: 34,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.6,
+    height: 1.1,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get headline2 => GoogleFonts.fraunces(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-        height: 1.15,
-        color: _colors.textPrimary,
-      );
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.4,
+    height: 1.15,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get headline3 => GoogleFonts.fraunces(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.2,
-        color: _colors.textPrimary,
-      );
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
+    height: 1.2,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get titlePage => GoogleFonts.fraunces(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.2,
-        color: _colors.textPrimary,
-      );
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
+    height: 1.2,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get titleSection => GoogleFonts.fraunces(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.1,
-        height: 1.2,
-        color: _colors.textPrimary,
-      );
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.1,
+    height: 1.2,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get titleCard => GoogleFonts.fraunces(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.1,
-        height: 1.25,
-        color: _colors.textPrimary,
-      );
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.1,
+    height: 1.25,
+    color: _colors.textPrimary,
+  );
 
   // Sans Body (Inter) - For body text
   TextStyle get body => GoogleFonts.inter(
-        fontSize: 15,
-        height: 1.4,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: _colors.textSecondary,
-      );
+    fontSize: 15,
+    height: 1.4,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.0,
+    color: _colors.textSecondary,
+  );
 
   TextStyle get bodyPrimary => GoogleFonts.inter(
-        fontSize: 15,
-        height: 1.4,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: _colors.textSecondary,
-      );
+    fontSize: 15,
+    height: 1.4,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.0,
+    color: _colors.textSecondary,
+  );
 
   TextStyle get bodySecondary => GoogleFonts.inter(
-        fontSize: 13,
-        height: 1.4,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: _colors.textSecondary,
-      );
+    fontSize: 13,
+    height: 1.4,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.0,
+    color: _colors.textSecondary,
+  );
 
   TextStyle get bodyBold => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        height: 1.4,
-        letterSpacing: 0.0,
-        color: _colors.textPrimary,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    letterSpacing: 0.0,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get caption => GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.1,
-        height: 1.2,
-        color: _colors.textSecondary,
-      );
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.1,
+    height: 1.2,
+    color: _colors.textSecondary,
+  );
 
   TextStyle get captionUppercase => GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.25,
-        height: 1.2,
-        color: _colors.textSecondary,
-      );
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.25,
+    height: 1.2,
+    color: _colors.textSecondary,
+  );
 
   // Sans UI (Inter with rounded feel) - For buttons
   TextStyle get buttonLabel => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-        height: 1.2,
-        color: _colors.textPrimary,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+    height: 1.2,
+    color: _colors.textPrimary,
+  );
 
   TextStyle get buttonLabelGhost => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-        height: 1.2,
-        color: _colors.textSecondary,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+    height: 1.2,
+    color: _colors.textSecondary,
+  );
 
   TextStyle get button => GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-        color: Colors.white,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+    color: Colors.white,
+  );
 
   // Numeric Badge (Fraunces) - For large numbers
   TextStyle get numericBadge => GoogleFonts.fraunces(
-        fontSize: 52,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -2.0,
-        height: 1.0,
-        color: _colors.elevatedSurface,
-      );
+    fontSize: 52,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -2.0,
+    height: 1.0,
+    color: _colors.elevatedSurface,
+  );
 }
 
 ThemeData buildAppTheme(AppPalette palette) {
@@ -447,8 +477,8 @@ ThemeData buildAppTheme(AppPalette palette) {
 
   final SystemUiOverlayStyle systemOverlayStyle =
       colors.background.computeLuminance() > 0.45
-          ? SystemUiOverlayStyle.dark
-          : SystemUiOverlayStyle.light;
+      ? SystemUiOverlayStyle.dark
+      : SystemUiOverlayStyle.light;
 
   return base.copyWith(
     extensions: <ThemeExtension<dynamic>>[colors],

@@ -17,7 +17,7 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  
+
   // Lock to portrait by default - prevent automatic rotation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -33,7 +33,7 @@ class BootstrapApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingCompletedProvider);
-    
+
     // Always use modern (light) theme - dark theme reserved for future use
     final theme = buildAppTheme(AppPalette.modern);
     final colors = colorsFor(AppPalette.modern);
@@ -46,9 +46,7 @@ class BootstrapApp extends ConsumerWidget {
         home: Scaffold(
           backgroundColor: colors.background,
           body: Center(
-            child: CircularProgressIndicator(
-              color: colors.textPrimary,
-            ),
+            child: CircularProgressIndicator(color: colors.textPrimary),
           ),
         ),
       ),
@@ -56,17 +54,13 @@ class BootstrapApp extends ConsumerWidget {
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
         theme: theme,
-        home: Scaffold(
-          body: Center(child: Text('Error: $error')),
-        ),
+        home: Scaffold(body: Center(child: Text('Error: $error'))),
       ),
       data: (completed) => MaterialApp(
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
         theme: theme,
-        home: completed
-            ? const MainScreen()
-            : const OnboardingScreen(),
+        home: completed ? const MainScreen() : const OnboardingScreen(),
       ),
     );
   }
