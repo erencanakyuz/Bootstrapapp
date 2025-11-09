@@ -9,7 +9,6 @@ import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../utils/responsive.dart';
 import '../widgets/modern_button.dart';
-import '../widgets/add_habit_modal.dart';
 import '../utils/page_transitions.dart';
 import 'profile_screen.dart';
 import 'habit_detail_screen.dart';
@@ -222,26 +221,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'calendar_add_habit',
-        onPressed: () async {
-          if (!context.mounted) return;
-          final newHabit = await showModalBottomSheet<Habit>(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const AddHabitModal(),
-          );
-
-          if (!context.mounted) return;
-          if (newHabit != null) {
-            widget.onUpdateHabit(newHabit);
-          }
-        },
-        backgroundColor: colors.textPrimary,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Goal'),
       ),
     );
   }
