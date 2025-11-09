@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -35,7 +36,16 @@ class ProfileScreen extends ConsumerWidget {
         return Scaffold(
           backgroundColor: colors.background,
           appBar: AppBar(
-            title: const Text('Profile & Settings'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              'Profile & Settings',
+              style: GoogleFonts.fraunces(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppSizes.paddingXXL),
@@ -161,17 +171,61 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSizes.paddingM),
                 ...archived.map(
-                  (habit) => ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: habit.color.withValues(alpha: 0.2),
-                      child: Icon(habit.icon, color: habit.color),
+                  (habit) => Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFCF9),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                      border: Border.all(
+                        color: colors.outline.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                      boxShadow: AppShadows.cardSoft(null),
                     ),
-                    title: Text(habit.title),
-                    trailing: TextButton(
-                      onPressed: () => ref
-                          .read(habitsProvider.notifier)
-                          .restoreHabit(habit.id),
-                      child: const Text('Restore'),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: colors.outline.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          habit.icon,
+                          color: colors.textPrimary.withValues(alpha: 0.7),
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        habit.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      trailing: OutlinedButton(
+                        onPressed: () => ref
+                            .read(habitsProvider.notifier)
+                            .restoreHabit(habit.id),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Restore',
+                          style: TextStyle(color: colors.textPrimary),
+                        ),
+                      ),
                     ),
                   ),
                 ),

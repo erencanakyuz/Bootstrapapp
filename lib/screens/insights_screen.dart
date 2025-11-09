@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
@@ -66,7 +67,7 @@ class InsightsScreen extends StatelessWidget {
         title: 'Current Streak',
         value: '$_currentStreak',
         icon: Icons.local_fire_department,
-        color: Colors.orange,
+        color: colors.textPrimary,
         subtitle: 'Days in a row',
       ),
       StatsCard(
@@ -80,7 +81,7 @@ class InsightsScreen extends StatelessWidget {
         title: 'Success Rate',
         value: '${_completionRate.toStringAsFixed(0)}%',
         icon: Icons.trending_up,
-        color: colors.primary,
+        color: colors.textPrimary,
         subtitle: 'This week',
       ),
     ];
@@ -96,9 +97,9 @@ class InsightsScreen extends StatelessWidget {
             elevation: 0,
             title: Text(
               'Insights',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.fraunces(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
               ),
             ),
@@ -112,9 +113,9 @@ class InsightsScreen extends StatelessWidget {
             sliver: SliverToBoxAdapter(
               child: Text(
                 'Your Progress',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
               ),
@@ -150,7 +151,7 @@ class InsightsScreen extends StatelessWidget {
                   icon: Icons.emoji_events,
                   title: 'Achievements',
                   subtitle: 'View your earned badges and milestones',
-                  iconColor: Colors.amber,
+                  iconColor: colors.textPrimary,
                   onTap: () {
                     Navigator.of(context).push(
                       PageTransitions.fadeAndSlide(const AchievementsScreen()),
@@ -184,9 +185,9 @@ class InsightsScreen extends StatelessWidget {
             sliver: SliverToBoxAdapter(
               child: Text(
                 'Habit Performance',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                style: GoogleFonts.fraunces(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
               ),
@@ -233,16 +234,13 @@ class InsightsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSizes.paddingXL),
         decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-          border: Border.all(color: colors.outline),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          color: const Color(0xFFFFFCF9),
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.5),
+            width: 1,
+          ),
+          boxShadow: AppShadows.cardSoft(null),
         ),
         child: Row(
           children: [
@@ -250,8 +248,12 @@ class InsightsScreen extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                border: Border.all(
+                  color: colors.outline.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
               child: Icon(icon, color: iconColor, size: 28),
             ),
@@ -262,9 +264,9 @@ class InsightsScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
                     ),
                   ),
@@ -300,9 +302,13 @@ class InsightsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSizes.paddingL),
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Row(
         children: [
@@ -310,10 +316,14 @@ class InsightsScreen extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: habit.color.withValues(alpha: 0.15),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppSizes.radiusM),
+              border: Border.all(
+                color: colors.outline.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
-            child: Icon(habit.icon, color: habit.color),
+            child: Icon(habit.icon, color: colors.textPrimary.withValues(alpha: 0.7), size: 28),
           ),
           const SizedBox(width: AppSizes.paddingL),
           Expanded(
@@ -334,7 +344,7 @@ class InsightsScreen extends StatelessWidget {
                     Icon(
                       Icons.local_fire_department,
                       size: 14,
-                      color: streak > 0 ? Colors.orange : colors.textTertiary,
+                      color: streak > 0 ? colors.textPrimary : colors.textTertiary,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -362,7 +372,7 @@ class InsightsScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: habit.color,
+              color: colors.textPrimary,
             ),
           ),
         ],
@@ -383,26 +393,21 @@ class InsightsScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXXL),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.primary.withValues(alpha: 0.1),
-            colors.accentBlue.withValues(alpha: 0.1),
-          ],
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF9),
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: AppShadows.cardSoft(null),
         ),
-        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.2),
-        ),
-      ),
       child: Column(
         children: [
           Icon(
             Icons.format_quote,
             size: 32,
-            color: colors.primary.withValues(alpha: 0.5),
+            color: colors.textPrimary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: AppSizes.paddingL),
           Text(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../constants/app_constants.dart';
 
 /// Circular icon button with shadow and ripple effect
 class ModernIconButton extends StatelessWidget {
@@ -23,23 +25,21 @@ class ModernIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    
     return Container(
       height: size,
       width: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? colors.surface,
         shape: BoxShape.circle,
         border: borderColor != null
             ? Border.all(color: borderColor!, width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
+            : Border.all(
+                color: colors.outline.withValues(alpha: 0.5),
+                width: 1,
+              ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Stack(
         children: [
@@ -49,7 +49,7 @@ class ModernIconButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(size / 2),
               onTap: onPressed,
               child: Center(
-                child: Icon(icon, size: 24, color: iconColor ?? Colors.black87),
+                child: Icon(icon, size: 24, color: iconColor ?? colors.textPrimary),
               ),
             ),
           ),
@@ -60,8 +60,8 @@ class ModernIconButton extends StatelessWidget {
               child: Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
+                decoration: BoxDecoration(
+                  color: colors.statusIncomplete,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -95,7 +95,7 @@ class ModernButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = Theme.of(context).extension<AppColors>()!;
 
     return SizedBox(
       width: width,
@@ -103,16 +103,16 @@ class ModernButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? theme.colorScheme.primary,
+          backgroundColor: backgroundColor ?? colors.textPrimary,
           foregroundColor: textColor ?? Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          elevation: 2,
-          shadowColor: Colors.black.withValues(alpha: 0.1),
+          elevation: 0,
+          shadowColor: Colors.transparent,
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(

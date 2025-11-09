@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../constants/app_constants.dart';
@@ -28,10 +29,19 @@ class AchievementsScreen extends ConsumerWidget {
         return Scaffold(
           backgroundColor: colors.background,
           appBar: AppBar(
-            title: const Text('Achievements'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              'Achievements',
+              style: GoogleFonts.fraunces(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.ios_share),
+                icon: Icon(Icons.ios_share, color: colors.textPrimary),
                 onPressed: () => _share(unlocked),
               ),
             ],
@@ -122,11 +132,15 @@ class _AchievementTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingXL),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        boxShadow: AppShadows.small(Colors.black),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

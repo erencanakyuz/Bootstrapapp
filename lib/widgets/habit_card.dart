@@ -130,6 +130,7 @@ class HabitCard extends StatelessWidget {
                           child: _buildCompletionCheckbox(
                             isCompletedToday,
                             colors,
+                            habit.color,
                             isLarge: false, // Smaller checkbox
                           ),
                         ),
@@ -213,7 +214,7 @@ class HabitCard extends StatelessWidget {
                                   minHeight: 6,
                                   backgroundColor: Colors.transparent,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    isCompletedToday ? colors.brandAccentPurple : colors.textPrimary,
+                                    isCompletedToday ? habit.color : colors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -223,12 +224,12 @@ class HabitCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: isCompletedToday 
-                                    ? colors.brandAccentPurple.withValues(alpha: 0.15)
+                                    ? habit.color.withValues(alpha: 0.15)
                                     : colors.outline.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isCompletedToday 
-                                      ? colors.brandAccentPurple.withValues(alpha: 0.3)
+                                      ? habit.color.withValues(alpha: 0.3)
                                       : colors.outline.withValues(alpha: 0.2),
                                   width: 1,
                                 ),
@@ -236,7 +237,7 @@ class HabitCard extends StatelessWidget {
                               child: Text(
                                 '$weeklyCompletions/7',
                                 style: textStyles.bodyBold.copyWith(
-                                  color: isCompletedToday ? colors.brandAccentPurple : colors.textSecondary,
+                                  color: isCompletedToday ? habit.color : colors.textSecondary,
                                   fontSize: 12,
                                 ),
                               ),
@@ -284,8 +285,8 @@ class HabitCard extends StatelessWidget {
   }
 
   // RefactorUi.md toggleCheckbox: size 24, borderRadius 8, borderWidth 1.5
-  // borderColorOff: chipOutline (#D7C9BA), borderColorOn: brandAccentPurple (#A371F2)
-  Widget _buildCompletionCheckbox(bool isCompleted, AppColors colors, {bool isLarge = false}) {
+  // borderColorOff: chipOutline (#D7C9BA), borderColorOn: habit.color
+  Widget _buildCompletionCheckbox(bool isCompleted, AppColors colors, Color habitColor, {bool isLarge = false}) {
     final size = isLarge ? 32.0 : 24.0;
     final iconSize = isLarge ? 20.0 : 16.0;
     
@@ -294,16 +295,16 @@ class HabitCard extends StatelessWidget {
       curve: AppAnimations.spring,
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: isCompleted ? colors.brandAccentPurple : Colors.transparent,
-        borderRadius: BorderRadius.circular(8), // sm = 8
-        border: Border.all(
-          color: isCompleted
-              ? colors.brandAccentPurple // borderColorOn
-              : colors.chipOutline, // borderColorOff
-          width: isLarge ? 2.0 : 1.5,
-        ),
-      ),
+            decoration: BoxDecoration(
+              color: isCompleted ? habitColor : Colors.transparent,
+              borderRadius: BorderRadius.circular(8), // sm = 8
+              border: Border.all(
+                color: isCompleted
+                    ? habitColor // borderColorOn
+                    : colors.chipOutline, // borderColorOff
+                width: isLarge ? 2.0 : 1.5,
+              ),
+            ),
       child: isCompleted
           ? Icon(
               PhosphorIconsFill.check,
