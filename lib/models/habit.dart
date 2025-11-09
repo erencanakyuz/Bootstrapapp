@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../constants/habit_icons.dart';
 
@@ -81,13 +82,13 @@ extension HabitTimeBlockDetails on HabitTimeBlock {
   IconData get icon {
     switch (this) {
       case HabitTimeBlock.morning:
-        return Icons.wb_sunny_rounded;
+        return PhosphorIconsRegular.sunHorizon;
       case HabitTimeBlock.afternoon:
-        return Icons.waterfall_chart_rounded;
+        return PhosphorIconsRegular.sun;
       case HabitTimeBlock.evening:
-        return Icons.nightlight_round;
+        return PhosphorIconsRegular.moon;
       case HabitTimeBlock.anytime:
-        return Icons.all_inclusive_rounded;
+        return PhosphorIconsRegular.clock;
     }
   }
 }
@@ -683,7 +684,7 @@ class HabitTemplates {
         title: 'Sleep 8 hours',
         description: 'Lights out by 10:30pm to earn your recovery badge',
         color: const Color(0xFF3D8BFF),
-        icon: Icons.bedtime,
+        icon: PhosphorIconsRegular.moon,
         category: HabitCategory.health,
         timeBlock: HabitTimeBlock.evening,
         difficulty: HabitDifficulty.medium,
@@ -693,7 +694,7 @@ class HabitTemplates {
         title: 'Meditation 15m',
         description: 'Deep breathing and mindfulness reset',
         color: const Color(0xFF9C27B0),
-        icon: Icons.self_improvement,
+        icon: PhosphorIconsRegular.leaf,
         category: HabitCategory.mindfulness,
         timeBlock: HabitTimeBlock.morning,
         difficulty: HabitDifficulty.easy,
@@ -703,7 +704,7 @@ class HabitTemplates {
         title: 'Deep Work Block',
         description: '90 minutes distraction-free creation',
         color: const Color(0xFF22C55E),
-        icon: Icons.bolt,
+        icon: PhosphorIconsRegular.briefcase,
         category: HabitCategory.productivity,
         timeBlock: HabitTimeBlock.afternoon,
         difficulty: HabitDifficulty.hard,
@@ -713,7 +714,7 @@ class HabitTemplates {
         title: 'Hydration Hero',
         description: '3 full bottles before lunch',
         color: const Color(0xFF0EA5E9),
-        icon: Icons.water_drop,
+        icon: PhosphorIconsRegular.drop,
         category: HabitCategory.health,
         timeBlock: HabitTimeBlock.morning,
         difficulty: HabitDifficulty.easy,
@@ -723,7 +724,7 @@ class HabitTemplates {
         title: 'Read 20 pages',
         description: 'Fuel your thinking with a focused reading sprint',
         color: const Color(0xFFF0B429),
-        icon: Icons.menu_book,
+        icon: PhosphorIconsRegular.book,
         category: HabitCategory.learning,
         timeBlock: HabitTimeBlock.evening,
         difficulty: HabitDifficulty.medium,
@@ -733,7 +734,7 @@ class HabitTemplates {
         title: 'Creative Sketch',
         description: 'Ship one creative output daily',
         color: const Color(0xFFF472B6),
-        icon: Icons.brush,
+        icon: PhosphorIconsRegular.pencil,
         category: HabitCategory.creativity,
         timeBlock: HabitTimeBlock.anytime,
         difficulty: HabitDifficulty.medium,

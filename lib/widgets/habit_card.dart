@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
@@ -25,10 +27,17 @@ class HabitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final streak = habit.getCurrentStreak();
     final today = DateTime.now();
     final isCompletedToday = habit.isCompletedOn(today);
-    final completionRate = habit.completionRate(days: 14);
+    
+    // Calculate weekly completions (this week)
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    int weeklyCompletions = 0;
+    for (int i = 0; i < 7; i++) {
+      final date = weekStart.add(Duration(days: i));
+      if (habit.isCompletedOn(date)) weeklyCompletions++;
+    }
 
     // RefactorUi.md promiseCard tokens
     // Professional shadow and border for beige theme
@@ -73,160 +82,196 @@ class HabitCard extends StatelessWidget {
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header row with icon, title, and checkbox
+                    // Top row: Title + Checkbox (right)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon container - RefactorUi.md promiseCard style
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: colors.primary.withValues(alpha: 0.1), // Subtle purple tint
-                            borderRadius: BorderRadius.circular(12), // md = 12
-                          ),
-                          child: Icon(
-                            habit.icon,
-                            color: colors.textPrimary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: AppSizes.paddingS),
+                        // Title + Category
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Category label - RefactorUi.md captionUppercase
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Text(
-                                  habit.category.label.toUpperCase(),
-                                  style: textStyles.captionUppercase.copyWith(
-                                    color: colors.textPrimary.withValues(alpha: 0.7),
-                                  ),
+                              // Category/Tür
+                              Text(
+                                habit.category.label.toUpperCase(),
+                                style: textStyles.captionUppercase.copyWith(
+                                  color: colors.textPrimary.withValues(alpha: 0.65),
+                                  fontSize: 9,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
-                              // Title - RefactorUi.md titleCard
+                              const SizedBox(height: 4),
+                              // Title/İsim - Fraunces for elegant headings
                               Text(
                                 habit.title,
-                                style: textStyles.titleCard,
-                                maxLines: 1,
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.25,
+                                  letterSpacing: -0.1,
+                                  color: colors.textPrimary,
+                                ),
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              // Description - RefactorUi.md bodySecondary
-                              if (habit.description != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  habit.description!,
-                                  style: textStyles.bodySecondary,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        // Completion checkbox - RefactorUi.md toggleCheckbox
+                        const SizedBox(width: 10),
+                        // Checkbox - Right side
                         GestureDetector(
                           onTap: onCompletionToggle,
                           child: _buildCompletionCheckbox(
                             isCompletedToday,
                             colors,
+                            isLarge: false, // Smaller checkbox
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSizes.paddingS),
-                    // Metadata row - RefactorUi.md promiseCard tagCategory style
-                    Wrap(
-                      spacing: 8, // xs = 8
-                      runSpacing: 6,
+                    const SizedBox(height: 10),
+                    // Icon row - Below title
+                    Row(
                       children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent, // No background - elegant and clean
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: colors.outline.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            habit.icon,
+                            color: colors.textPrimary.withValues(alpha: 0.7),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Description/Açıklama
+                        if (habit.description != null && habit.description!.isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              habit.description!,
+                              style: textStyles.bodySecondary.copyWith(
+                                fontSize: 12,
+                                height: 1.35,
+                                color: colors.textSecondary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Bottom row: Time block tag + Weekly progress
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Time block tag (Tür)
                         _buildTagChip(
                           colors,
                           textStyles,
                           habit.timeBlock.icon,
                           habit.timeBlock.label,
-                          colors.elevatedSurface, // brandSurfaceAlt (#FFFCF8) - hafif sarımsı ton
+                          colors.elevatedSurface,
                         ),
-                        _buildTagChip(
-                          colors,
-                          textStyles,
-                          null,
-                          habit.difficulty.label,
-                          colors.elevatedSurface, // brandSurfaceAlt (#FFFCF8)
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSizes.paddingS),
-                    // Progress bar
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8), // sm = 8
-                      child: LinearProgressIndicator(
-                        value: completionRate,
-                        minHeight: 6,
-                        backgroundColor:
-                            colors.outline.withValues(alpha: 0.2),
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
-                      ),
-                    ),
-                    const SizedBox(height: AppSizes.paddingS),
-                    // Stats row - RefactorUi.md metaRowStyle caption
-                    Row(
-                      children: [
-                        _buildStatItem(
-                          colors,
-                          textStyles,
-                          Icons.local_fire_department_rounded,
-                          'Streak',
-                          '$streak d',
-                          streak > 0 ? colors.accentAmber : colors.textPrimary.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 20), // lg = 20
-                        _buildStatItem(
-                          colors,
-                          textStyles,
-                          Icons.emoji_events_rounded,
-                          'Best',
-                          '${habit.bestStreak} d',
-                          colors.textPrimary.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(width: 20),
-                        _buildStatItem(
-                          colors,
-                          textStyles,
-                          Icons.check_circle_rounded,
-                          'Total',
-                          '${habit.totalCompletions}',
-                          colors.textPrimary.withValues(alpha: 0.8),
+                        const Spacer(),
+                        // Weekly progress - Compact inline
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'This week',
+                              style: textStyles.caption.copyWith(
+                                color: colors.textSecondary,
+                                fontSize: 10,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 60,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(3),
+                                color: colors.outline.withValues(alpha: 0.25),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(3),
+                                child: LinearProgressIndicator(
+                                  value: weeklyCompletions / 7,
+                                  minHeight: 6,
+                                  backgroundColor: Colors.transparent,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isCompletedToday ? colors.brandAccentPurple : colors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isCompletedToday 
+                                    ? colors.brandAccentPurple.withValues(alpha: 0.15)
+                                    : colors.outline.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isCompletedToday 
+                                      ? colors.brandAccentPurple.withValues(alpha: 0.3)
+                                      : colors.outline.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                '$weeklyCompletions/7',
+                                style: textStyles.bodyBold.copyWith(
+                                  color: isCompletedToday ? colors.brandAccentPurple : colors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // NEW Badge - RefactorUi.md badgeNew (bottom right)
+              // NEW Badge - Top left (where checkbox used to be)
               if (showNewBadge)
                 Positioned(
-                  bottom: 12,
-                  right: 12,
+                  top: 12,
+                  left: 12,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: colors.textPrimary, // badgeNewBackground
                       borderRadius: BorderRadius.circular(999),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.textPrimary.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Text(
                       'NEW',
                       style: textStyles.captionUppercase.copyWith(
                         color: Colors.white, // badgeNewText
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -240,12 +285,15 @@ class HabitCard extends StatelessWidget {
 
   // RefactorUi.md toggleCheckbox: size 24, borderRadius 8, borderWidth 1.5
   // borderColorOff: chipOutline (#D7C9BA), borderColorOn: brandAccentPurple (#A371F2)
-  Widget _buildCompletionCheckbox(bool isCompleted, AppColors colors) {
+  Widget _buildCompletionCheckbox(bool isCompleted, AppColors colors, {bool isLarge = false}) {
+    final size = isLarge ? 32.0 : 24.0;
+    final iconSize = isLarge ? 20.0 : 16.0;
+    
     return AnimatedContainer(
       duration: AppAnimations.normal,
       curve: AppAnimations.spring,
-      width: 24,
-      height: 24,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: isCompleted ? colors.brandAccentPurple : Colors.transparent,
         borderRadius: BorderRadius.circular(8), // sm = 8
@@ -253,18 +301,19 @@ class HabitCard extends StatelessWidget {
           color: isCompleted
               ? colors.brandAccentPurple // borderColorOn
               : colors.chipOutline, // borderColorOff
-          width: 1.5,
+          width: isLarge ? 2.0 : 1.5,
         ),
       ),
       child: isCompleted
-          ? const Icon(
-              Icons.check_rounded,
+          ? Icon(
+              PhosphorIconsFill.check,
               color: Colors.white,
-              size: 16,
+              size: iconSize,
             )
           : null,
     );
   }
+
 
   // RefactorUi.md tagCategory: borderRadius pill, backgroundColor with alpha
   Widget _buildTagChip(
@@ -275,7 +324,7 @@ class HabitCard extends StatelessWidget {
     Color backgroundColor,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999), // pill
@@ -286,15 +335,16 @@ class HabitCard extends StatelessWidget {
           if (icon != null) ...[
             Icon(
               icon,
-              size: 12,
+              size: 11,
               color: colors.textPrimary.withValues(alpha: 0.8),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
           ],
           Text(
             label,
             style: textStyles.caption.copyWith(
               color: colors.textPrimary.withValues(alpha: 0.8),
+              fontSize: 10,
             ),
           ),
         ],
@@ -302,43 +352,4 @@ class HabitCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-    AppColors colors,
-    AppTextStyles textStyles,
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 14,
-          color: color,
-        ),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: textStyles.caption.copyWith(
-                color: color.withValues(alpha: 0.7),
-              ),
-            ),
-            Text(
-              value,
-              style: textStyles.bodySecondary.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
