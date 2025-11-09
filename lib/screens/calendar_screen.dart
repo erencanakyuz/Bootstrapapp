@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/habit.dart';
 import '../providers/app_settings_providers.dart';
@@ -10,7 +9,6 @@ import '../constants/app_constants.dart';
 import '../utils/responsive.dart';
 import '../widgets/modern_button.dart';
 import '../utils/page_transitions.dart';
-import 'profile_screen.dart';
 import 'habit_detail_screen.dart';
 import 'full_calendar_screen.dart';
 
@@ -135,54 +133,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'BOOTSTRAP YOUR LIFE',
-          style: GoogleFonts.fraunces(
-            fontSize: 16,
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.w800,
-            color: colors.textPrimary,
-          ),
-        ),
+        title: const SizedBox.shrink(),
         centerTitle: true,
-        actions: [
-          ModernIconButton(
-            icon: Icons.calendar_view_month,
-            onPressed: () {
-              final settingsAsync = ref.read(profileSettingsProvider);
-              final hapticsEnabled = settingsAsync.maybeWhen(
-                data: (settings) => settings.hapticsEnabled,
-                orElse: () => true,
-              );
-              if (hapticsEnabled) {
-                HapticFeedback.lightImpact();
-              }
-              Navigator.of(context).push(
-                PageTransitions.fadeAndSlide(
-                  FullCalendarScreen(habits: widget.habits),
-                ),
-              );
-            },
-            backgroundColor:
-                colors.elevatedSurface, // Use theme elevatedSurface
-            iconColor: colors.textPrimary,
-            size: 40,
-          ),
-          const SizedBox(width: 8),
-          ModernIconButton(
-            icon: Icons.settings_outlined,
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(PageTransitions.fadeAndSlide(const ProfileScreen()));
-            },
-            backgroundColor:
-                colors.elevatedSurface, // Use theme elevatedSurface
-            iconColor: colors.textPrimary,
-            size: 40,
-          ),
-          const SizedBox(width: 12),
-        ],
       ),
       body: SafeArea(
         top: true,
@@ -190,6 +142,55 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         child: Column(
           children: [
             _buildWeekSelector(colors, textStyles, horizontalPadding),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final settingsAsync = ref.read(profileSettingsProvider);
+                    final hapticsEnabled = settingsAsync.maybeWhen(
+                      data: (settings) => settings.hapticsEnabled,
+                      orElse: () => true,
+                    );
+                    if (hapticsEnabled) {
+                      HapticFeedback.lightImpact();
+                    }
+                    Navigator.of(context).push(
+                      PageTransitions.fadeAndSlide(
+                        FullCalendarScreen(habits: widget.habits),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.calendar_view_month,
+                    size: 18,
+                    color: colors.surface,
+                  ),
+                  label: Text(
+                    'Table View',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colors.surface,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.textPrimary,
+                    foregroundColor: colors.surface,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
