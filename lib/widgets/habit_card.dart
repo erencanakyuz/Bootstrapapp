@@ -212,11 +212,11 @@ class HabitCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // NEW Badge - RefactorUi.md badgeNew
+              // NEW Badge - RefactorUi.md badgeNew (bottom right)
               if (showNewBadge)
                 Positioned(
-                  top: 12,
-                  left: 12,
+                  bottom: 12,
+                  right: 12,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
