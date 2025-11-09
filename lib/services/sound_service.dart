@@ -61,7 +61,11 @@ class SoundService {
       try {
         await _player.play(AssetSource('sounds/success.mp3'));
       } catch (e) {
-        // Silently fail
+        try {
+          await SystemSound.play(SystemSoundType.click);
+        } catch (_) {
+          // Silently fail
+        }
       }
     }
   }

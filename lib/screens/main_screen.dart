@@ -58,19 +58,25 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final habitsAsync = ref.watch(habitsProvider);
+    final todayHabits = ref.watch(filteredHabitsProvider);
 
     return habitsAsync.when(
       loading: () => _buildLoadingState(colors),
       error: (error, stack) => _buildErrorState(colors, error),
-      data: (habits) => _buildContent(colors, habits),
+      data: (habits) => _buildContent(colors, habits, todayHabits),
     );
   }
 
-  Widget _buildContent(AppColors colors, List<Habit> habits) {
+  Widget _buildContent(
+    AppColors colors,
+    List<Habit> habits,
+    List<Habit> todayHabits,
+  ) {
     final screens = [
       _KeepAliveWrapper(
         child: HomeScreen(
           habits: habits,
+          todayHabits: todayHabits,
           onAddHabit: _handleAddHabit,
           onUpdateHabit: _handleUpdateHabit,
           onDeleteHabit: _handleDeleteHabit,
