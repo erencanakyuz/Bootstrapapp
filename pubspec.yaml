@@ -49,3 +49,14 @@ flutter:
     - assets/illustrations/
     - assets/icons/categories/
     - assets/lottie/
+  fonts:
+    # Fraunces - Serif Display Font (Headings)
+    - family: Fraunces
+      fonts:
+        # Variable font (tüm weight'leri tek dosyada)
+        - asset: assets/fonts/Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf
+    # Inter - Sans Body Font (Body Text)
+    - family: Inter
+      fonts:
+        # Variable font (tüm weight'leri tek dosyada)
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
