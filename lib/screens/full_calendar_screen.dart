@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/habit.dart';
 import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
@@ -82,8 +81,9 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
 
       final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
       final daysInMonth = lastDay.day;
-      final tableWidth = 200 + daysInMonth * 40.0;
-      final tableHeight = 60.0 + (_getHabits().length * 50.0);
+      final tableWidth = _calculateTableWidth(daysInMonth);
+      final tableHeight =
+          _tableHeaderHeight + (_getHabits().length * _habitRowHeight);
 
       final padding = MediaQuery.of(context).padding;
       final availableWidth = size.width - (padding.left + padding.right) - 24;
@@ -98,9 +98,13 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       final translationX = (availableWidth - scaledWidth) / 2;
       final translationY = (availableHeight - scaledHeight) / 2;
 
-      _monthlyTableController.value = Matrix4.identity()
-        ..translate(translationX, translationY)
-        ..scale(scale);
+      final matrix = Matrix4.identity();
+      matrix.setEntry(0, 0, scale);
+      matrix.setEntry(1, 1, scale);
+      matrix.setEntry(2, 2, 1);
+      matrix.setEntry(0, 3, translationX);
+      matrix.setEntry(1, 3, translationY);
+      _monthlyTableController.value = matrix;
     });
   }
 
@@ -286,81 +290,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     return completedDates;
   }
 
-  List<Habit> _getHabits() {
-    // Always show mock habits for testing (8 habits)
-    final now = DateTime.now();
-    final mockHabits = <Habit>[];
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
-    ];
-    
-    final mockTitles = [
-      'Morning Meditation',
-      'Daily Exercise',
-      'Read 30 Minutes',
-      'Drink 8 Glasses Water',
-      'Write Journal',
-      'Practice Guitar',
-      'Learn Spanish',
-      'No Social Media',
-    ];
-    
-    final categories = [
-      HabitCategory.mindfulness,
-      HabitCategory.health,
-      HabitCategory.learning,
-      HabitCategory.health,
-      HabitCategory.mindfulness,
-      HabitCategory.creativity,
-      HabitCategory.learning,
-      HabitCategory.productivity,
-    ];
-    
-    final icons = [
-      PhosphorIconsRegular.leaf, // meditation
-      PhosphorIconsRegular.barbell, // exercise
-      PhosphorIconsRegular.book, // reading
-      PhosphorIconsRegular.drop, // water
-      PhosphorIconsRegular.pencil, // journal
-      PhosphorIconsRegular.musicNote, // guitar
-      PhosphorIconsRegular.globe, // language
-      PhosphorIconsRegular.deviceMobile, // social media
-    ];
-    
-    for (int i = 0; i < 8; i++) {
-      // Generate some random completed dates for this month
-      final completedDates = <DateTime>[];
-      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-      final random = (i * 7) % daysInMonth; // Pseudo-random based on index
-      for (int j = 0; j < 10; j++) {
-        final day = (random + j * 3) % daysInMonth + 1;
-        if (day <= daysInMonth) {
-          completedDates.add(DateTime(now.year, now.month, day));
-        }
-      }
-      
-      mockHabits.add(
-        Habit(
-          id: 'mock_habit_$i',
-          title: mockTitles[i],
-          color: colors[i % colors.length],
-          icon: icons[i % icons.length],
-          category: categories[i % categories.length],
-          completedDates: completedDates,
-          createdAt: now.subtract(Duration(days: 30 + i)),
-        ),
-      );
-    }
-    
-    return mockHabits;
-  }
+  List<Habit> _getHabits() => widget.habits;
 
   Map<String, dynamic> _calculateAdvancedStats(
     Set<DateTime> completedDates,
@@ -601,7 +531,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
     final daysInMonth = lastDay.day;
     final days = List.generate(daysInMonth, (index) => index + 1);
-    final tableWidth = 200 + daysInMonth * 40.0;
+    final tableWidth = _calculateTableWidth(daysInMonth);
+    final habitCount = _getHabits().length;
 
     final monthCompletedDates = completedDates
         .where(
@@ -611,7 +542,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         )
         .toSet();
 
-    if (_getHabits().isEmpty) {
+    if (habitCount == 0) {
       return _buildEmptyState(colors);
     }
 
@@ -626,21 +557,18 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.contain,
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  width: tableWidth,
-                  child: _buildMonthlyTable(
-                    colors,
-                    days,
-                    daysInMonth,
-                    monthCompletedDates,
-                    now,
-                  ),
-                ),
+            child: _buildMonthlyTableViewport(
+              context,
+              _buildMonthlyTable(
+                colors,
+                days,
+                daysInMonth,
+                monthCompletedDates,
+                now,
+                tableWidth,
               ),
+              tableWidth,
+              habitCount,
             ),
           ),
         ],
@@ -669,6 +597,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
       return _buildEmptyState(colors);
     }
 
+    final tableWidth = _calculateTableWidth(daysInMonth);
+
     return InteractiveViewer(
       transformationController: _monthlyTableController,
       minScale: _minTableScale,
@@ -683,7 +613,66 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
         daysInMonth,
         monthCompletedDates,
         now,
+        tableWidth,
       ),
+    );
+  }
+
+  Widget _buildMonthlyTableViewport(
+    BuildContext context,
+    Widget table,
+    double tableWidth,
+    int habitCount,
+  ) {
+    final referenceHeight = _referenceTableHeight;
+    final actualHeight = _tableHeaderHeight + habitCount * _habitRowHeight;
+    final hasVerticalOverflow = actualHeight > referenceHeight;
+
+    Widget verticalContent;
+    if (hasVerticalOverflow) {
+      verticalContent = Scrollbar(
+        thumbVisibility: true,
+        child: SizedBox(
+          height: referenceHeight,
+          child: SingleChildScrollView(
+            child: table,
+          ),
+        ),
+      );
+    } else {
+      verticalContent = SizedBox(
+        height: referenceHeight,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: table,
+        ),
+      );
+    }
+
+    final availableWidth = MediaQuery.of(context).size.width;
+    if (tableWidth <= availableWidth) {
+      return Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          width: tableWidth,
+          child: verticalContent,
+        ),
+      );
+    }
+
+    final horizontalScroll = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: tableWidth,
+        child: verticalContent,
+      ),
+    );
+
+    return Scrollbar(
+      thumbVisibility: true,
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.horizontal,
+      child: horizontalScroll,
     );
   }
 
@@ -1180,7 +1169,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
             color: filled ? color.withValues(alpha: 0.15) : Colors.transparent,
             border: Border.all(
               color: color,
-              width: dashed ? 1.5 : 1,
+              width: dashed ? 2.0 : 1.5,
               style: dashed ? BorderStyle.solid : BorderStyle.solid,
             ),
           ),
@@ -1204,9 +1193,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     int daysInMonth,
     Set<DateTime> monthCompletedDates,
     DateTime now,
+    double tableWidth,
   ) {
-    final tableWidth = 200 + daysInMonth * 40.0;
-
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -1353,9 +1341,9 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: isToday
-                                  ? colors.textPrimary.withValues(alpha: 0.5)
-                                  : colors.outline.withValues(alpha: 0.2),
-                              width: isToday ? 1.2 : 0.8,
+                                  ? colors.textPrimary.withValues(alpha: 0.7)
+                                  : colors.outline.withValues(alpha: 0.5),
+                              width: isToday ? 2.0 : 1.5,
                             ),
                             color: isCompleted
                                 ? habit.color.withValues(alpha: 0.08)
@@ -1373,7 +1361,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
                                   child: Text(
                                     '✕',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w800,
                                       color: habit.color,
                                       height: 1.0,

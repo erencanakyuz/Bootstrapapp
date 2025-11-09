@@ -107,7 +107,18 @@ class _AddHabitModalState extends State<AddHabitModal> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSizes.paddingXXL),
+            const SizedBox(height: AppSizes.paddingM),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded),
+                color: colors.textPrimary,
+                splashRadius: 20,
+                tooltip: 'Close',
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+            ),
+            const SizedBox(height: AppSizes.paddingL),
             Text(
               widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
               style: TextStyle(

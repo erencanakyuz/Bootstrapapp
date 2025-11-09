@@ -94,8 +94,34 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _showQuickLoaderOverlay() async {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.08),
+      builder: (_) => const _QuickLoaderDialog(),
+    );
+    await Future.delayed(const Duration(milliseconds: 220));
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  Future<void> _openHabitDetail(Habit habit) async {
+    HapticFeedback.lightImpact();
+    await _showQuickLoaderOverlay();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      PageTransitions.slideFromRight(
+        HabitDetailScreen(habitId: habit.id),
+      ),
+    );
+  }
+
   Future<void> _showAddHabitModal({Habit? habitToEdit}) async {
     HapticFeedback.lightImpact();
+    await _showQuickLoaderOverlay();
+    if (!mounted) return;
     final result = await showModalBottomSheet<Habit>(
       context: context,
       isScrollControlled: true,
@@ -741,13 +767,6 @@ class _HomeScreenState extends State<HomeScreen>
     return '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
   }
 
-  void _openHabitDetail(Habit habit) {
-    HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
-    );
-  }
-
   void _handlePlaySample() {
     HapticFeedback.selectionClick();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -948,6 +967,33 @@ class _HomeScreenState extends State<HomeScreen>
                 color: colors.surface,
               ), // Use theme surface
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickLoaderDialog extends StatelessWidget {
+  const _QuickLoaderDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>();
+    return Center(
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: colors?.surface ?? Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppShadows.cardSoft(colors?.textPrimary),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: CircularProgressIndicator(
+          strokeWidth: 3,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            colors?.textPrimary ?? Colors.black87,
           ),
         ),
       ),
