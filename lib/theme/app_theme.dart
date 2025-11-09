@@ -210,12 +210,12 @@ class AppColors extends ThemeExtension<AppColors> {
 const Map<AppPalette, AppColors> _paletteRegistry = {
   AppPalette.modern: AppColors(
     // RefactorUi.md FutureStyleUI Design System - Main palette (Light)
-    primary: Color(0xFFA371F2), // brandAccentPurple
-    primaryDark: Color(0xFF8B5FD9),
-    primarySoft: Color(0xFFE5D4FF), // gradientPurpleLighterStart
-    accentGreen: Color(0xFF4BAE88), // success
-    accentBlue: Color(0xFF5F8BE5), // info
-    accentAmber: Color(0xFFF8C9A2), // brandAccentPeach
+    primary: Color(0xFF6B7D5A), // Muted military/olive green (replacing purple)
+    primaryDark: Color(0xFF5A6B4A), // Darker muted green
+    primarySoft: Color(0xFFE8E5E0), // Muted cream-beige soft
+    accentGreen: Color(0xFF6B7D5A), // Muted military/olive green
+    accentBlue: Color(0xFF6B8FA3), // Muted blue-gray
+    accentAmber: Color(0xFFC9A882), // Muted warm beige-orange
     background: Color(0xFFF9F3F0), // Light beige - user requested
     surface: Color(0xFFFFFFFF), // brandCardBackground
     elevatedSurface: Color(0xFFFFFCF8), // brandSurfaceAlt
@@ -223,9 +223,9 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     textPrimary: Color(0xFF292624), // brandTextPrimary
     textSecondary: Color(0xFF6D6256), // brandTextSecondary
     textTertiary: Color(0xFFB7A89A), // brandMutedIcon
-    statusComplete: Color(0xFF4BAE88), // success
-    statusProgress: Color(0xFFF8C9A2), // brandAccentPeach
-    statusIncomplete: Color(0xFFE15A5A), // danger
+    statusComplete: Color(0xFF6B7D5A), // Muted military/olive green
+    statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
+    statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose
     // RefactorUi.md specific gradients
     brandAccentPurple: Color(0xFFA371F2),
     brandAccentPurpleSoft: Color(0xFFC39BF8),

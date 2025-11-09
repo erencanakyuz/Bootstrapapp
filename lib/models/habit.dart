@@ -122,11 +122,11 @@ extension HabitDifficultyDetails on HabitDifficulty {
   Color get badgeColor {
     switch (this) {
       case HabitDifficulty.easy:
-        return const Color(0xFF34D399);
+        return const Color(0xFF6B7D5A); // Military/olive green
       case HabitDifficulty.medium:
-        return const Color(0xFFFBBF24);
+        return const Color(0xFFC9A882); // Muted warm beige-orange
       case HabitDifficulty.hard:
-        return const Color(0xFFFB7185);
+        return const Color(0xFFB87D7D); // Muted dusty rose
     }
   }
 }
@@ -683,7 +683,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Sleep 8 hours',
         description: 'Lights out by 10:30pm to earn your recovery badge',
-        color: const Color(0xFF3D8BFF),
+        color: const Color(0xFF6B8FA3), // Muted blue-gray
         icon: PhosphorIconsRegular.moon,
         category: HabitCategory.health,
         timeBlock: HabitTimeBlock.evening,
@@ -693,7 +693,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Meditation 15m',
         description: 'Deep breathing and mindfulness reset',
-        color: const Color(0xFF9C27B0),
+        color: const Color(0xFF9B8FA8), // Muted dusty lavender
         icon: PhosphorIconsRegular.leaf,
         category: HabitCategory.mindfulness,
         timeBlock: HabitTimeBlock.morning,
@@ -703,7 +703,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Deep Work Block',
         description: '90 minutes distraction-free creation',
-        color: const Color(0xFF22C55E),
+        color: const Color(0xFF6B7D5A), // Military/olive green
         icon: PhosphorIconsRegular.briefcase,
         category: HabitCategory.productivity,
         timeBlock: HabitTimeBlock.afternoon,
@@ -713,7 +713,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Hydration Hero',
         description: '3 full bottles before lunch',
-        color: const Color(0xFF0EA5E9),
+        color: const Color(0xFF7A9B9B), // Muted dusty teal
         icon: PhosphorIconsRegular.drop,
         category: HabitCategory.health,
         timeBlock: HabitTimeBlock.morning,
@@ -723,7 +723,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Read 20 pages',
         description: 'Fuel your thinking with a focused reading sprint',
-        color: const Color(0xFFF0B429),
+        color: const Color(0xFFC9A882), // Muted warm beige-orange
         icon: PhosphorIconsRegular.book,
         category: HabitCategory.learning,
         timeBlock: HabitTimeBlock.evening,
@@ -733,7 +733,7 @@ class HabitTemplates {
         id: _uuid.v4(),
         title: 'Creative Sketch',
         description: 'Ship one creative output daily',
-        color: const Color(0xFFF472B6),
+        color: const Color(0xFFC99FA3), // Muted dusty pink
         icon: PhosphorIconsRegular.pencil,
         category: HabitCategory.creativity,
         timeBlock: HabitTimeBlock.anytime,

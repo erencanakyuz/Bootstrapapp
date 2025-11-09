@@ -33,14 +33,14 @@ class _AddHabitModalState extends State<AddHabitModal> {
   List<HabitReminder> _reminders = [];
 
   final List<Color> _colors = const [
-    Color(0xFF3D8BFF),
-    Color(0xFF22C55E),
-    Color(0xFFEF4444),
-    Color(0xFFF0B429),
-    Color(0xFF9C27B0),
-    Color(0xFF00A699),
-    Color(0xFFFF6B6B),
-    Color(0xFF607D8B),
+    Color(0xFF6B8FA3), // Muted blue-gray
+    Color(0xFF6B7D5A), // Military/olive green
+    Color(0xFFB87D7D), // Muted dusty rose
+    Color(0xFFC9A882), // Muted warm beige-orange
+    Color(0xFF9B8FA8), // Muted dusty lavender (instead of bright purple)
+    Color(0xFF7A9B9B), // Muted dusty teal
+    Color(0xFFC99FA3), // Muted dusty pink
+    Color(0xFF8B9BA8), // Muted slate blue-gray
   ];
 
   @override
@@ -149,7 +149,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                       width: 18,
                       height: 18,
                       colorFilter: ColorFilter.mode(
-                        isSelected ? colors.primary : colors.textSecondary,
+                        isSelected ? colors.textPrimary : colors.textSecondary,
                         BlendMode.srcIn,
                       ),
                     ),
@@ -231,7 +231,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                     .map(
                       (reminder) => ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.alarm, color: colors.primary),
+                        leading: Icon(Icons.alarm, color: colors.textPrimary),
                         title: Text(
                           _formatTimeOfDay(
                             TimeOfDay(hour: reminder.hour, minute: reminder.minute),

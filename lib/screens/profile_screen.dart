@@ -53,13 +53,13 @@ class ProfileScreen extends ConsumerWidget {
               Center(
                 child: CircleAvatar(
                   radius: 48,
-                  backgroundColor: colors.primary.withValues(alpha: 0.1),
+                  backgroundColor: colors.outline.withValues(alpha: 0.1),
                   child: Text(
                     settings.name.isNotEmpty ? settings.name[0].toUpperCase() : '?',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: colors.primary,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
