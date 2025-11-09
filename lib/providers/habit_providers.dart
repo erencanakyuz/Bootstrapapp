@@ -193,12 +193,26 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
     }
   }
 
-  Future<void> importHabits(String jsonString, {bool merge = true}) async {
+  Future<Map<String, dynamic>?> importHabits(
+    String jsonString, {
+    bool merge = true,
+  }) async {
     try {
       final repository = ref.read(habitRepositoryProvider);
-      await repository.importHabits(jsonString, merge: merge);
+      final importedSettings = await repository.importHabits(
+        jsonString,
+        merge: merge,
+      );
+      
+      // Reschedule all reminders for imported habits
+      final habits = repository.current;
+      for (final habit in habits) {
+        await _rescheduleReminders(habit);
+      }
+      
       // Update state after import
       state = AsyncData(repository.current);
+      return importedSettings;
     } on FormatException catch (e) {
       state = AsyncError(e, StackTrace.current);
       await Future.delayed(AppAnimations.errorDisplay);
@@ -222,7 +236,31 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
 
   Future<String> exportHabits({bool includeArchived = true}) async {
     final repository = ref.read(habitRepositoryProvider);
-    return repository.exportHabits(includeArchived: includeArchived);
+    
+    // Get current settings
+    final settingsAsync = ref.read(profileSettingsProvider);
+    Map<String, dynamic>? settings;
+    settingsAsync.maybeWhen(
+      data: (profileSettings) {
+        settings = {
+          'name': profileSettings.name,
+          'notificationsEnabled': profileSettings.notificationsEnabled,
+          'hapticsEnabled': profileSettings.hapticsEnabled,
+          'soundsEnabled': profileSettings.soundsEnabled,
+          'confettiEnabled': profileSettings.confettiEnabled,
+          'animationsEnabled': profileSettings.animationsEnabled,
+          'avatarSeed': profileSettings.avatarSeed,
+          'allowPastDatesBeforeCreation':
+              profileSettings.allowPastDatesBeforeCreation,
+        };
+      },
+      orElse: () {},
+    );
+    
+    return repository.exportHabits(
+      includeArchived: includeArchived,
+      settings: settings,
+    );
   }
 
   Future<void> applyFreezeDay(String habitId) async {

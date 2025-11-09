@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/habit.dart';
@@ -7,6 +8,7 @@ import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../services/calendar_share_service.dart';
 
 enum CalendarViewMode { monthly, yearly }
 
@@ -25,6 +27,9 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
   bool _isFullScreen = false;
   final TransformationController _monthlyTableController = TransformationController();
   final TransformationController _yearlyTableController = TransformationController();
+  final GlobalKey _shareRepaintBoundaryKey = GlobalKey();
+  final CalendarShareService _shareService = CalendarShareService();
+  bool _isSharing = false;
   static const double _minTableScale = 0.3;
   static const double _maxTableScale = 4.0;
   double get _referenceTableHeight =>
@@ -423,6 +428,20 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: 'Full screen',
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(
+              _isSharing ? Icons.hourglass_empty : Icons.share,
+              size: 20,
+              color: colors.textPrimary,
+            ),
+            onPressed: _isSharing
+                ? null
+                : () => _showShareDialog(colors, completedDates, now),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Share calendar',
           ),
           const SizedBox(width: 4),
           IconButton(
@@ -1672,6 +1691,168 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
     );
   }
 
+  /// Show share dialog with options
+  Future<void> _showShareDialog(
+    AppColors colors,
+    Set<DateTime> completedDates,
+    DateTime now,
+  ) async {
+    if (_viewMode != CalendarViewMode.monthly) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Only monthly view can be shared'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _ShareCalendarDialog(colors: colors),
+    );
+
+    if (result == null) return;
+
+    setState(() => _isSharing = true);
+
+    try {
+      // Build shareable calendar widget
+      final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+      final daysInMonth = lastDay.day;
+      final days = List.generate(daysInMonth, (index) => index + 1);
+      final monthCompletedDates = completedDates.where(
+        (date) => date.year == _selectedMonth.year && date.month == _selectedMonth.month,
+      ).toSet();
+
+      final tableWidget = _buildMonthlyTable(
+        colors,
+        days,
+        daysInMonth,
+        monthCompletedDates,
+        now,
+        _calculateTableWidth(daysInMonth),
+      );
+
+      // Build shareable widget in a separate overlay
+      final shareableWidget = _shareService.buildShareableWidget(
+        calendarWidget: tableWidget,
+        month: _selectedMonth,
+        habits: widget.habits,
+        completedDates: completedDates,
+        repaintBoundaryKey: _shareRepaintBoundaryKey,
+        includeStats: result['includeStats'] ?? true,
+        includeWatermark: result['includeWatermark'] ?? true,
+        customMessage: result['customMessage'],
+      );
+
+      final overlay = Overlay.of(context, rootOverlay: true);
+      
+      OverlayEntry? overlayEntry;
+      try {
+        final mediaQueryData = MediaQuery.of(context);
+        overlayEntry = OverlayEntry(
+          builder: (_) => Positioned(
+            left: -10000, // Off-screen but still rendered
+            top: -10000,
+            child: IgnorePointer(
+              ignoring: true,
+              child: MediaQuery(
+                data: mediaQueryData,
+                child: Material(
+                  color: Colors.transparent,
+                  child: shareableWidget,
+                ),
+              ),
+            ),
+          ),
+        );
+        overlay.insert(overlayEntry);
+
+        // Force a rebuild to ensure widget is rendered
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        await _waitForShareRender();
+
+        final success = await _shareService.shareCalendarImage(
+          repaintBoundaryKey: _shareRepaintBoundaryKey,
+          month: _selectedMonth,
+          habits: widget.habits,
+          completedDates: completedDates,
+        );
+
+        if (!mounted) return;
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Calendar shared successfully!'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Failed to share calendar'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } finally {
+        overlayEntry?.remove();
+      }
+    } catch (e) {
+      debugPrint('Error sharing calendar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
+  }
+
+  Future<void> _waitForShareRender() async {
+    // Wait for widget to be built
+    await Future.delayed(Duration.zero);
+    
+    // Wait for the next frame to ensure widget is rendered
+    await WidgetsBinding.instance.endOfFrame;
+    
+    // Wait additional frames to ensure RepaintBoundary is painted
+    for (int i = 0; i < 3; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    
+    // Verify RepaintBoundary is ready and painted
+    final boundary = _shareRepaintBoundaryKey.currentContext?.findRenderObject()
+        as RenderRepaintBoundary?;
+    
+    if (boundary != null) {
+      // Wait until boundary is painted (max 10 attempts = 500ms)
+      int attempts = 0;
+      while (boundary.debugNeedsPaint && attempts < 10) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        await WidgetsBinding.instance.endOfFrame;
+        attempts++;
+      }
+      
+      // Final check - if still needs paint, log warning but proceed
+      if (boundary.debugNeedsPaint) {
+        debugPrint('Warning: RepaintBoundary still needs paint after waiting');
+      }
+    } else {
+      debugPrint('Warning: RepaintBoundary not found in widget tree');
+    }
+  }
+
   Widget _buildMonthCell(
     AppColors colors,
     DateTime monthDate,
@@ -1768,6 +1949,94 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Share calendar dialog widget
+class _ShareCalendarDialog extends StatefulWidget {
+  final AppColors colors;
+
+  const _ShareCalendarDialog({required this.colors});
+
+  @override
+  State<_ShareCalendarDialog> createState() => _ShareCalendarDialogState();
+}
+
+class _ShareCalendarDialogState extends State<_ShareCalendarDialog> {
+  bool _includeStats = true;
+  bool _includeWatermark = true;
+  final TextEditingController _messageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Share Calendar'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Customize your calendar share',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            CheckboxListTile(
+              value: _includeStats,
+              onChanged: (value) => setState(() => _includeStats = value ?? true),
+              title: const Text('Include statistics'),
+              subtitle: const Text('Completion rate, streaks, etc.'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              value: _includeWatermark,
+              onChanged: (value) =>
+                  setState(() => _includeWatermark = value ?? true),
+              title: const Text('Include app watermark'),
+              subtitle: const Text('Show Bootstrap Your Life branding'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _messageController,
+              decoration: const InputDecoration(
+                labelText: 'Custom message (optional)',
+                hintText: 'Add a personal note...',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(
+              context,
+              {
+                'includeStats': _includeStats,
+                'includeWatermark': _includeWatermark,
+                'customMessage': _messageController.text.trim().isEmpty
+                    ? null
+                    : _messageController.text.trim(),
+              },
+            );
+          },
+          child: const Text('Share'),
+        ),
+      ],
     );
   }
 }
