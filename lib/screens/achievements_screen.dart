@@ -48,9 +48,8 @@ class AchievementsScreen extends ConsumerWidget {
           ),
           body: ListView.separated(
             padding: const EdgeInsets.all(AppSizes.paddingXXL),
-            itemBuilder: (context, index) => _AchievementTile(
-              data: achievements[index],
-            ),
+            itemBuilder: (context, index) =>
+                _AchievementTile(data: achievements[index]),
             separatorBuilder: (context, index) =>
                 const SizedBox(height: AppSizes.paddingL),
             itemCount: achievements.length,
@@ -64,8 +63,10 @@ class AchievementsScreen extends ConsumerWidget {
     final bestStreak = habits.isEmpty
         ? 0
         : habits.map((h) => h.bestStreak).reduce((a, b) => a > b ? a : b);
-    final totalCompletions =
-        habits.fold<int>(0, (sum, habit) => sum + habit.totalCompletions);
+    final totalCompletions = habits.fold<int>(
+      0,
+      (sum, habit) => sum + habit.totalCompletions,
+    );
 
     return [
       _AchievementData(
@@ -100,7 +101,9 @@ class AchievementsScreen extends ConsumerWidget {
   }
 
   void _share(int unlocked) {
-    SharePlus.instance.share(ShareParams(text: 'I unlocked $unlocked Bootstrap achievements today!'));
+    SharePlus.instance.share(
+      ShareParams(text: 'I unlocked $unlocked Bootstrap achievements today!'),
+    );
   }
 }
 
@@ -149,7 +152,9 @@ class _AchievementTile extends StatelessWidget {
             children: [
               Icon(
                 data.icon,
-                color: data.isUnlocked ? colors.accentAmber : colors.textTertiary,
+                color: data.isUnlocked
+                    ? colors.accentAmber
+                    : colors.textTertiary,
               ),
               const SizedBox(width: AppSizes.paddingM),
               Text(
@@ -168,10 +173,7 @@ class _AchievementTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.paddingS),
-          Text(
-            data.description,
-            style: TextStyle(color: colors.textSecondary),
-          ),
+          Text(data.description, style: TextStyle(color: colors.textSecondary)),
           const SizedBox(height: AppSizes.paddingM),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppSizes.radiusCircle),

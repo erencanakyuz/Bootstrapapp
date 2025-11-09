@@ -25,9 +25,7 @@ class HabitDetailScreen extends ConsumerWidget {
         backgroundColor: colors.background,
         body: const Center(child: CircularProgressIndicator()),
       ),
-      error: (error, _) => Scaffold(
-        body: Center(child: Text('Error: $error')),
-      ),
+      error: (error, _) => Scaffold(body: Center(child: Text('Error: $error'))),
       data: (habits) {
         // Safe habit lookup - handle case where habit was deleted
         final matchingHabits = habits.where((h) => h.id == habitId);
@@ -35,14 +33,16 @@ class HabitDetailScreen extends ConsumerWidget {
           // Habit not found (deleted or invalid ID) - show error screen
           return Scaffold(
             backgroundColor: colors.background,
-            appBar: AppBar(
-              title: const Text('Habit Not Found'),
-            ),
+            appBar: AppBar(title: const Text('Habit Not Found')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inbox_outlined, color: colors.textSecondary, size: 64),
+                  Icon(
+                    Icons.inbox_outlined,
+                    color: colors.textSecondary,
+                    size: 64,
+                  ),
                   const SizedBox(height: AppSizes.paddingXL),
                   Text(
                     'This habit no longer exists',
@@ -67,7 +67,7 @@ class HabitDetailScreen extends ConsumerWidget {
             ),
           );
         }
-        
+
         final habit = matchingHabits.first;
         final last30Days = _generateLastDays(30);
         final streak = habit.getCurrentStreak();
@@ -99,13 +99,18 @@ class HabitDetailScreen extends ConsumerWidget {
                 onPressed: () => _editHabit(context, ref, habit),
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline, color: colors.statusIncomplete),
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: colors.statusIncomplete,
+                ),
                 onPressed: () => _deleteHabit(context, ref, habit),
               ),
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.paddingXXL,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -116,7 +121,8 @@ class HabitDetailScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                     decoration: BoxDecoration(
-                      color: colors.elevatedSurface, // Same as habit card - use theme elevatedSurface
+                      color: colors
+                          .elevatedSurface, // Same as habit card - use theme elevatedSurface
                       borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       border: Border.all(
                         color: colors.outline.withValues(alpha: 0.5),
@@ -164,7 +170,9 @@ class HabitDetailScreen extends ConsumerWidget {
                                 '${habit.category.label.toUpperCase()} • ${habit.timeBlock.label}',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: colors.textPrimary.withValues(alpha: 0.65),
+                                  color: colors.textPrimary.withValues(
+                                    alpha: 0.65,
+                                  ),
                                   letterSpacing: 0.3,
                                 ),
                               ),
@@ -226,7 +234,8 @@ class HabitDetailScreen extends ConsumerWidget {
                                 radius: 3,
                                 color: habit.color,
                                 strokeWidth: 2,
-                                strokeColor: colors.surface, // Use theme surface
+                                strokeColor:
+                                    colors.surface, // Use theme surface
                               );
                             },
                           ),
@@ -286,9 +295,10 @@ class HabitDetailScreen extends ConsumerWidget {
 
   List<DateTime> _generateLastDays(int count) {
     final now = DateTime.now();
-    return List.generate(count, (index) => now.subtract(Duration(days: index)))
-        .reversed
-        .toList();
+    return List.generate(
+      count,
+      (index) => now.subtract(Duration(days: index)),
+    ).reversed.toList();
   }
 
   List<FlSpot> _buildLineChartPoints(Habit habit) {
@@ -306,11 +316,7 @@ class HabitDetailScreen extends ConsumerWidget {
     return points;
   }
 
-  Widget _buildHeatmap(
-    List<DateTime> days,
-    Habit habit,
-    AppColors colors,
-  ) {
+  Widget _buildHeatmap(List<DateTime> days, Habit habit, AppColors colors) {
     return Wrap(
       spacing: 6,
       runSpacing: 6,
@@ -418,6 +424,7 @@ class HabitDetailScreen extends ConsumerWidget {
       ),
     );
   }
+
   Future<void> _addNote(
     BuildContext context,
     WidgetRef ref,
@@ -453,10 +460,9 @@ class HabitDetailScreen extends ConsumerWidget {
 
     if (result != null && result.isNotEmpty) {
       final note = HabitNote(date: DateTime.now(), text: result);
-      await ref.read(habitsProvider.notifier).upsertNote(
-            habitId: habit.id,
-            note: note,
-          );
+      await ref
+          .read(habitsProvider.notifier)
+          .upsertNote(habitId: habit.id, note: note);
     }
   }
 
@@ -551,7 +557,11 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: colors.textPrimary.withValues(alpha: 0.7), size: 18),
+          Icon(
+            icon,
+            color: colors.textPrimary.withValues(alpha: 0.7),
+            size: 18,
+          ),
           const SizedBox(height: 8),
           Text(
             value,

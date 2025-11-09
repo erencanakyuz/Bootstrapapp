@@ -18,10 +18,12 @@ class NotificationTestScreen extends ConsumerStatefulWidget {
   const NotificationTestScreen({super.key});
 
   @override
-  ConsumerState<NotificationTestScreen> createState() => _NotificationTestScreenState();
+  ConsumerState<NotificationTestScreen> createState() =>
+      _NotificationTestScreenState();
 }
 
-class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen> with WidgetsBindingObserver {
+class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
+    with WidgetsBindingObserver {
   final NotificationService _notificationService = NotificationService();
   List<PendingNotificationRequest> _pendingNotifications = [];
   String? _lastResult;
@@ -58,7 +60,8 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Pause timer when app is in background to save resources
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _refreshTimer?.cancel();
     } else if (state == AppLifecycleState.resumed && _refreshTimer == null) {
       _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -75,13 +78,17 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
   }
 
   Future<void> _loadPendingNotifications() async {
-    final pending = await _notificationService.getPendingNotificationsDetailed();
+    final pending = await _notificationService
+        .getPendingNotificationsDetailed();
     setState(() {
       _pendingNotifications = pending;
     });
   }
 
-  Future<void> _testCase(String description, Future<void> Function() test) async {
+  Future<void> _testCase(
+    String description,
+    Future<void> Function() test,
+  ) async {
     setState(() {
       _isLoading = true;
       _lastResult = null;
@@ -110,7 +117,8 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     // Best practice: Show immediate notification for testing
     await _notificationService.showTestNotification(
       title: '🧪 Test Notification',
-      body: 'This notification appeared immediately! If you see this, notifications work correctly.',
+      body:
+          'This notification appeared immediately! If you see this, notifications work correctly.',
       color: const Color(0xFF6B7D5A), // Muted military/olive green
     );
   }
@@ -138,7 +146,10 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       ],
     );
 
-    await _notificationService.scheduleReminder(testHabit, testHabit.reminders.first);
+    await _notificationService.scheduleReminder(
+      testHabit,
+      testHabit.reminders.first,
+    );
   }
 
   Future<void> _testScheduleEmptyWeekdays() async {
@@ -164,7 +175,10 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       ],
     );
 
-    await _notificationService.scheduleReminder(testHabit, testHabit.reminders.first);
+    await _notificationService.scheduleReminder(
+      testHabit,
+      testHabit.reminders.first,
+    );
   }
 
   Future<void> _testScheduleNoValidWeekday() async {
@@ -198,7 +212,10 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       ],
     );
 
-    await _notificationService.scheduleReminder(testHabit, testHabit.reminders.first);
+    await _notificationService.scheduleReminder(
+      testHabit,
+      testHabit.reminders.first,
+    );
   }
 
   Future<void> _testScheduleMultipleReminders() async {
@@ -259,7 +276,10 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       ],
     );
 
-    await _notificationService.scheduleReminder(testHabit, testHabit.reminders.first);
+    await _notificationService.scheduleReminder(
+      testHabit,
+      testHabit.reminders.first,
+    );
     await Future.delayed(const Duration(milliseconds: 500));
     await _notificationService.cancelHabitReminders(testHabit);
   }
@@ -269,7 +289,8 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
   }
 
   Future<void> _testGetPendingNotifications() async {
-    final pending = await _notificationService.getPendingNotificationsDetailed();
+    final pending = await _notificationService
+        .getPendingNotificationsDetailed();
     setState(() {
       _pendingNotifications = pending;
       _lastResult = 'Found ${pending.length} pending notifications';
@@ -346,7 +367,9 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
               decoration: BoxDecoration(
                 color: colors.accentAmber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                border: Border.all(color: colors.accentAmber.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: colors.accentAmber.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -365,7 +388,11 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
 
             // Platform info
             Text(
-              'Platform: ${Platform.isAndroid ? "Android" : Platform.isIOS ? "iOS" : "Other"}',
+              'Platform: ${Platform.isAndroid
+                  ? "Android"
+                  : Platform.isIOS
+                  ? "iOS"
+                  : "Other"}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -392,25 +419,32 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
             else
               ..._pendingNotifications.map((n) {
                 // Get scheduled date from service
-                final scheduledDate = _notificationService.getScheduledDate(n.id);
+                final scheduledDate = _notificationService.getScheduledDate(
+                  n.id,
+                );
                 final now = DateTime.now();
-                final isPast = scheduledDate != null && scheduledDate.isBefore(now);
+                final isPast =
+                    scheduledDate != null && scheduledDate.isBefore(now);
                 final timeUntil = scheduledDate?.difference(now);
-                
+
                 String countdownText = 'Unknown';
                 Color countdownColor = colors.textTertiary;
-                
+
                 if (timeUntil != null) {
                   if (isPast) {
-                    countdownText = '⚠️ Should have appeared ${_formatDuration(now.difference(scheduledDate))} ago';
+                    countdownText =
+                        '⚠️ Should have appeared ${_formatDuration(now.difference(scheduledDate))} ago';
                     countdownColor = colors.accentAmber;
                   } else {
                     if (timeUntil.inDays > 0) {
-                      countdownText = '⏰ ${timeUntil.inDays} gün ${timeUntil.inHours % 24} saat sonra';
+                      countdownText =
+                          '⏰ ${timeUntil.inDays} gün ${timeUntil.inHours % 24} saat sonra';
                     } else if (timeUntil.inHours > 0) {
-                      countdownText = '⏰ ${timeUntil.inHours} saat ${timeUntil.inMinutes % 60} dakika sonra';
+                      countdownText =
+                          '⏰ ${timeUntil.inHours} saat ${timeUntil.inMinutes % 60} dakika sonra';
                     } else if (timeUntil.inMinutes > 0) {
-                      countdownText = '⏰ ${timeUntil.inMinutes} dakika ${timeUntil.inSeconds % 60} saniye sonra';
+                      countdownText =
+                          '⏰ ${timeUntil.inMinutes} dakika ${timeUntil.inSeconds % 60} saniye sonra';
                     } else {
                       countdownText = '⏰ ${timeUntil.inSeconds} saniye sonra';
                       countdownColor = colors.accentGreen;
@@ -419,7 +453,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                 } else {
                   countdownText = '📅 Zamanlanmış (recurring)';
                 }
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: AppSizes.paddingXS),
                   padding: const EdgeInsets.all(AppSizes.paddingS),
@@ -452,7 +486,9 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                             ),
                             decoration: BoxDecoration(
                               color: colors.textPrimary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusS,
+                              ),
                             ),
                             child: Text(
                               'ID: ${n.id}',
@@ -479,7 +515,9 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                       Row(
                         children: [
                           Icon(
-                            isPast ? Icons.warning_amber_rounded : Icons.schedule,
+                            isPast
+                                ? Icons.warning_amber_rounded
+                                : Icons.schedule,
                             size: 14,
                             color: countdownColor,
                           ),
@@ -551,19 +589,28 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
               colors,
               '3. Schedule Empty Weekdays',
               'Tests fallback when reminder has no weekdays (should schedule for today)',
-              () => _testCase('Schedule Empty Weekdays', _testScheduleEmptyWeekdays),
+              () => _testCase(
+                'Schedule Empty Weekdays',
+                _testScheduleEmptyWeekdays,
+              ),
             ),
             _buildTestButton(
               colors,
               '4. Schedule No Valid Weekday',
               'Tests fallback when no valid weekday found in 2 weeks',
-              () => _testCase('Schedule No Valid Weekday', _testScheduleNoValidWeekday),
+              () => _testCase(
+                'Schedule No Valid Weekday',
+                _testScheduleNoValidWeekday,
+              ),
             ),
             _buildTestButton(
               colors,
               '5. Schedule Multiple Reminders',
               'Tests scheduling multiple reminders for same habit',
-              () => _testCase('Schedule Multiple', _testScheduleMultipleReminders),
+              () => _testCase(
+                'Schedule Multiple',
+                _testScheduleMultipleReminders,
+              ),
             ),
             _buildTestButton(
               colors,
@@ -611,11 +658,31 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                     ),
                   ),
                   const SizedBox(height: AppSizes.paddingS),
-                  _buildInfoItem(colors, 'Android 13+ Permission', 'Test notification permission request on Android 13+'),
-                  _buildInfoItem(colors, 'iOS Permission', 'Test notification permission request on iOS'),
-                  _buildInfoItem(colors, 'Exact Alarms (Android 12+)', 'Test exact alarms permission and fallback to inexact'),
-                  _buildInfoItem(colors, 'Timezone Configuration', 'Test timezone detection and configuration'),
-                  _buildInfoItem(colors, 'Notification Tap', 'Test notification tap handling (TODO in code)'),
+                  _buildInfoItem(
+                    colors,
+                    'Android 13+ Permission',
+                    'Test notification permission request on Android 13+',
+                  ),
+                  _buildInfoItem(
+                    colors,
+                    'iOS Permission',
+                    'Test notification permission request on iOS',
+                  ),
+                  _buildInfoItem(
+                    colors,
+                    'Exact Alarms (Android 12+)',
+                    'Test exact alarms permission and fallback to inexact',
+                  ),
+                  _buildInfoItem(
+                    colors,
+                    'Timezone Configuration',
+                    'Test timezone detection and configuration',
+                  ),
+                  _buildInfoItem(
+                    colors,
+                    'Notification Tap',
+                    'Test notification tap handling (TODO in code)',
+                  ),
                 ],
               ),
             ),
@@ -659,10 +726,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppSizes.paddingXS),
             Text(
@@ -700,10 +764,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                 ),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 11, color: colors.textSecondary),
                 ),
               ],
             ),
@@ -713,4 +774,3 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     );
   }
 }
-

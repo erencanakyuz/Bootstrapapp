@@ -63,10 +63,13 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _fabAnimationController =
-        AnimationController(vsync: this, duration: AppAnimations.normal);
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 2));
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: AppAnimations.normal,
+    );
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
   }
 
   @override
@@ -153,15 +156,9 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
         const SizedBox(height: 18),
-        Text(
-          'Future Journal',
-          style: textStyles.captionUppercase,
-        ),
+        Text('Future Journal', style: textStyles.captionUppercase),
         const SizedBox(height: 8),
-        Text(
-          'Future Moments',
-          style: textStyles.titleSection,
-        ),
+        Text('Future Moments', style: textStyles.titleSection),
         const SizedBox(height: 8),
         Text(
           'Weekly notes to inspire your everyday journey.',
@@ -185,18 +182,15 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              colors.gradientPeachStart,
-              colors.gradientPeachEnd,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-          boxShadow: AppShadows.cardSoft(null),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
         ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -234,15 +228,14 @@ class _HomeScreenState extends State<HomeScreen>
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: colors.surface.withValues(alpha: 0.4), // Use theme surface
+              backgroundColor: colors.surface.withValues(
+                alpha: 0.4,
+              ), // Use theme surface
               valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            message,
-            style: textStyles.bodyBold,
-          ),
+          Text(message, style: textStyles.bodyBold),
           const SizedBox(height: 18),
           Row(
             children: [
@@ -299,7 +292,6 @@ class _HomeScreenState extends State<HomeScreen>
     return const SizedBox.shrink();
   }
 
-
   Widget _buildGuidedCTA(AppColors colors, AppTextStyles textStyles) {
     return InkWell(
       onTap: () => _showAddHabitModal(),
@@ -324,10 +316,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Your One Perfect Day',
-                    style: textStyles.titleCard,
-                  ),
+                  Text('Your One Perfect Day', style: textStyles.titleCard),
                   const SizedBox(height: 4),
                   Text(
                     'Update your rituals to match your future self.',
@@ -337,10 +326,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const SizedBox(width: 12),
-            Icon(
-              Icons.arrow_outward_rounded,
-              color: colors.textPrimary,
-            ),
+            Icon(Icons.arrow_outward_rounded, color: colors.textPrimary),
           ],
         ),
       ),
@@ -359,10 +345,7 @@ class _HomeScreenState extends State<HomeScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Today\'s flow', style: textStyles.titleSection),
-            Text(
-              '${widget.habits.length} habits',
-              style: textStyles.caption,
-            ),
+            Text('${widget.habits.length} habits', style: textStyles.caption),
           ],
         ),
         const SizedBox(height: 12),
@@ -416,60 +399,45 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  SliverList _buildHabitListSliver(
-    AppColors colors,
-    AppTextStyles textStyles,
-  ) {
+  SliverList _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final habit = widget.habits[index];
-          final isNew = _isNewHabit(habit);
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: index == widget.habits.length - 1 ? 0 : 16,
-            ),
-            child: HabitCard(
-              habit: habit,
-              showNewBadge: isNew,
-              onTap: () => _openHabitDetail(habit),
-              onCompletionToggle: () => _toggleHabitCompletion(habit),
-              onLongPress: () => _showHabitOptions(habit),
-            ),
-          );
-        },
-        childCount: widget.habits.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final habit = widget.habits[index];
+        final isNew = _isNewHabit(habit);
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: index == widget.habits.length - 1 ? 0 : 16,
+          ),
+          child: HabitCard(
+            habit: habit,
+            showNewBadge: isNew,
+            onTap: () => _openHabitDetail(habit),
+            onCompletionToggle: () => _toggleHabitCompletion(habit),
+            onLongPress: () => _showHabitOptions(habit),
+          ),
+        );
+      }, childCount: widget.habits.length),
     );
   }
 
-  Widget _buildAudioReflectionCard(
-    AppColors colors,
-    AppTextStyles textStyles,
-  ) {
+  Widget _buildAudioReflectionCard(AppColors colors, AppTextStyles textStyles) {
     return Container(
       padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: colors.elevatedSurface, // Use theme elevatedSurface
-          borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-          border: Border.all(
-            color: colors.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: AppShadows.cardSoft(null),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface, // Use theme elevatedSurface
+        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.3),
+          width: 1,
         ),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Voice journal',
-            style: textStyles.captionUppercase,
-          ),
+          Text('Voice journal', style: textStyles.captionUppercase),
           const SizedBox(height: 6),
-          Text(
-            'Listen to your future self',
-            style: textStyles.titleCard,
-          ),
+          Text('Listen to your future self', style: textStyles.titleCard),
           const SizedBox(height: 18),
           _buildWaveformBars(colors),
           const SizedBox(height: 18),
@@ -486,9 +454,12 @@ class _HomeScreenState extends State<HomeScreen>
                       child: LinearProgressIndicator(
                         value: 0.35,
                         minHeight: 6,
-                        backgroundColor: colors.surface.withValues(alpha: 0.3), // Use theme surface
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(colors.textPrimary),
+                        backgroundColor: colors.surface.withValues(
+                          alpha: 0.3,
+                        ), // Use theme surface
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colors.textPrimary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -497,8 +468,9 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Text(
                           '00:42',
-                          style: textStyles.caption
-                              .copyWith(color: colors.textPrimary),
+                          style: textStyles.caption.copyWith(
+                            color: colors.textPrimary,
+                          ),
                         ),
                         Text(
                           '02:00',
@@ -556,9 +528,7 @@ class _HomeScreenState extends State<HomeScreen>
           shape: BoxShape.circle,
           boxShadow: AppShadows.cardStrong(null),
         ),
-        child: Icon(
-          Icons.play_arrow_rounded,
-        ),
+        child: Icon(Icons.play_arrow_rounded),
       ),
     );
   }
@@ -580,21 +550,11 @@ class _HomeScreenState extends State<HomeScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: colors.textPrimary,
-          ),
+          Icon(icon, size: 18, color: colors.textPrimary),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: textStyles.titleCard.copyWith(fontSize: 20),
-          ),
+          Text(value, style: textStyles.titleCard.copyWith(fontSize: 20)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: textStyles.caption,
-          ),
+          Text(label, style: textStyles.caption),
         ],
       ),
     );
@@ -650,9 +610,7 @@ class _HomeScreenState extends State<HomeScreen>
         return Container(
           decoration: BoxDecoration(
             color: colors.elevatedSurface, // Use theme elevatedSurface
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(32),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -675,8 +633,10 @@ class _HomeScreenState extends State<HomeScreen>
                 },
               ),
               ListTile(
-                leading:
-                    Icon(Icons.delete_rounded, color: colors.statusIncomplete),
+                leading: Icon(
+                  Icons.delete_rounded,
+                  color: colors.statusIncomplete,
+                ),
                 title: const Text('Delete Habit'),
                 onTap: () {
                   Navigator.pop(context);
@@ -715,8 +675,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   String _getMotivationalMessage() {
-    final completedToday =
-        widget.habits.where((h) => h.isCompletedOn(DateTime.now())).length;
+    final completedToday = widget.habits
+        .where((h) => h.isCompletedOn(DateTime.now()))
+        .length;
     final total = widget.habits.length;
     final progress = total > 0 ? completedToday / total : 0.0;
 
@@ -734,17 +695,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   bool _isNewHabit(Habit habit) {
-    final daysSinceCreation =
-        DateTime.now().difference(habit.createdAt).inDays;
+    final daysSinceCreation = DateTime.now().difference(habit.createdAt).inDays;
     return daysSinceCreation <= 1; // Only show for 1 day
   }
 
-
-
   Map<HabitTimeBlock, int> _getTimeBlockCounts() {
-    final counts = {
-      for (final block in HabitTimeBlock.values) block: 0,
-    };
+    final counts = {for (final block in HabitTimeBlock.values) block: 0};
     for (final habit in widget.habits) {
       counts[habit.timeBlock] = counts[habit.timeBlock]! + 1;
     }
@@ -762,9 +718,7 @@ class _HomeScreenState extends State<HomeScreen>
   void _openHabitDetail(Habit habit) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
-      PageTransitions.slideFromRight(
-        HabitDetailScreen(habitId: habit.id),
-      ),
+      PageTransitions.slideFromRight(HabitDetailScreen(habitId: habit.id)),
     );
   }
 
@@ -784,8 +738,9 @@ class _HomeScreenState extends State<HomeScreen>
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     final today = DateTime.now();
-    final completedToday =
-        widget.habits.where((h) => h.isCompletedOn(today)).length;
+    final completedToday = widget.habits
+        .where((h) => h.isCompletedOn(today))
+        .length;
     final horizontalPadding = context.horizontalGutter;
 
     final slivers = <Widget>[
@@ -796,18 +751,12 @@ class _HomeScreenState extends State<HomeScreen>
           horizontalPadding,
           20,
         ),
-        sliver: SliverToBoxAdapter(
-          child: _buildHeader(colors, textStyles),
-        ),
+        sliver: SliverToBoxAdapter(child: _buildHeader(colors, textStyles)),
       ),
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
-          child: _buildHeroProgressCard(
-            completedToday,
-            colors,
-            textStyles,
-          ),
+          child: _buildHeroProgressCard(completedToday, colors, textStyles),
         ),
       ),
     ];
@@ -815,15 +764,23 @@ class _HomeScreenState extends State<HomeScreen>
     if (widget.habits.isEmpty) {
       slivers.addAll([
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 32, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            32,
+            horizontalPadding,
+            0,
+          ),
           sliver: SliverToBoxAdapter(
             child: _buildEmptyState(colors, textStyles),
           ),
         ),
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 24, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            24,
+            horizontalPadding,
+            0,
+          ),
           sliver: SliverToBoxAdapter(
             child: _buildGuidedCTA(colors, textStyles),
           ),
@@ -843,27 +800,43 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 24, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            24,
+            horizontalPadding,
+            0,
+          ),
           sliver: SliverToBoxAdapter(
             child: _buildGuidedCTA(colors, textStyles),
           ),
         ),
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 28, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            28,
+            horizontalPadding,
+            0,
+          ),
           sliver: SliverToBoxAdapter(
             child: _buildDailyFocusSection(colors, textStyles),
           ),
         ),
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            20,
+            horizontalPadding,
+            0,
+          ),
           sliver: _buildHabitListSliver(colors, textStyles),
         ),
         SliverPadding(
-          padding:
-              EdgeInsets.fromLTRB(horizontalPadding, 32, horizontalPadding, 0),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            32,
+            horizontalPadding,
+            0,
+          ),
           sliver: SliverToBoxAdapter(
             child: _buildAudioReflectionCard(colors, textStyles),
           ),
@@ -883,39 +856,39 @@ class _HomeScreenState extends State<HomeScreen>
         top: true,
         bottom: false, // Bottom navigation handled by MainScreen
         child: RefreshIndicator(
-        color: colors.textPrimary,
-        onRefresh: () async {
-          HapticFeedback.lightImpact();
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: Stack(
-          children: [
-            CustomScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
+          color: colors.textPrimary,
+          onRefresh: () async {
+            HapticFeedback.lightImpact();
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: Stack(
+            children: [
+              CustomScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: slivers,
               ),
-              slivers: slivers,
-            ),
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                particleDrag: 0.05,
-                emissionFrequency: 0.05,
-                numberOfParticles: 30,
-                gravity: 0.3,
-                shouldLoop: false,
-                colors: [
-                  Color(0xFFD4C4B0), // Muted beige
-                  Color(0xFFC9B8A3), // Muted cream
-                  Color(0xFFB8A892), // Muted tan
-                ],
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  particleDrag: 0.05,
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 30,
+                  gravity: 0.3,
+                  shouldLoop: false,
+                  colors: [
+                    Color(0xFFD4C4B0), // Muted beige
+                    Color(0xFFC9B8A3), // Muted cream
+                    Color(0xFFB8A892), // Muted tan
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: ScaleTransition(
@@ -939,10 +912,15 @@ class _HomeScreenState extends State<HomeScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
             ),
-            icon: Icon(Icons.add_rounded, color: colors.surface), // Use theme surface
+            icon: Icon(
+              Icons.add_rounded,
+              color: colors.surface,
+            ), // Use theme surface
             label: Text(
               'New Habit',
-              style: textStyles.buttonLabel.copyWith(color: colors.surface), // Use theme surface
+              style: textStyles.buttonLabel.copyWith(
+                color: colors.surface,
+              ), // Use theme surface
             ),
           ),
         ),
@@ -950,4 +928,3 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 }
-

@@ -33,7 +33,8 @@ class ProfileSettings {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       avatarSeed: avatarSeed ?? this.avatarSeed,
-      allowPastDatesBeforeCreation: allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
+      allowPastDatesBeforeCreation:
+          allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
     );
   }
 }
@@ -82,7 +83,9 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final service = ref.read(appSettingsServiceProvider);
     final randomSeed = DateTime.now().millisecondsSinceEpoch % 1000;
     await service.setAvatarSeed(randomSeed);
-    state = state.whenData((settings) => settings.copyWith(avatarSeed: randomSeed));
+    state = state.whenData(
+      (settings) => settings.copyWith(avatarSeed: randomSeed),
+    );
   }
 
   Future<void> toggleAllowPastDatesBeforeCreation(bool enabled) async {
@@ -96,8 +99,8 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
 
 final profileSettingsProvider =
     AsyncNotifierProvider<ProfileSettingsNotifier, ProfileSettings>(
-  ProfileSettingsNotifier.new,
-);
+      ProfileSettingsNotifier.new,
+    );
 
 final onboardingCompletedProvider = FutureProvider<bool>((ref) async {
   final service = ref.watch(appSettingsServiceProvider);

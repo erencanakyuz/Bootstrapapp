@@ -41,10 +41,13 @@ class InsightsScreen extends StatelessWidget {
 
   double get _completionRate {
     if (habits.isEmpty) return 0;
-    final daysActive = habits.map((h) {
-      final daysSinceCreation = DateTime.now().difference(h.createdAt).inDays + 1;
-      return daysSinceCreation;
-    }).reduce((a, b) => a + b);
+    final daysActive = habits
+        .map((h) {
+          final daysSinceCreation =
+              DateTime.now().difference(h.createdAt).inDays + 1;
+          return daysSinceCreation;
+        })
+        .reduce((a, b) => a + b);
 
     if (daysActive == 0) return 0;
     return (_totalCompletions / (habits.length * 7)) * 100; // Weekly rate
@@ -92,133 +95,135 @@ class InsightsScreen extends StatelessWidget {
         top: true,
         bottom: false, // Bottom navigation handled by MainScreen
         child: CustomScrollView(
-        slivers: [
-          // App bar
-          SliverAppBar(
-            floating: true,
-            backgroundColor: colors.background,
-            elevation: 0,
-            title: Text(
-              'Insights',
-              style: GoogleFonts.fraunces(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: colors.textPrimary,
+          slivers: [
+            // App bar
+            SliverAppBar(
+              floating: true,
+              backgroundColor: colors.background,
+              elevation: 0,
+              title: Text(
+                'Insights',
+                style: GoogleFonts.fraunces(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
               ),
             ),
-          ),
 
-          SliverPadding(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: AppSizes.paddingL,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Text(
-                'Your Progress',
-                style: GoogleFonts.fraunces(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: AppSizes.paddingL,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'Your Progress',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: statsColumns,
-                crossAxisSpacing: AppSizes.paddingL,
-                mainAxisSpacing: AppSizes.paddingL,
-                childAspectRatio: statsColumns >= 3 ? 1.5 : 1.15,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => statsCards[index],
-                childCount: statsCards.length,
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              AppSizes.paddingXXL,
-              horizontalPadding,
-              AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildActionCard(
-                  context,
-                  colors,
-                  icon: Icons.emoji_events,
-                  title: 'Achievements',
-                  subtitle: 'View your earned badges and milestones',
-                  iconColor: colors.textPrimary,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      PageTransitions.fadeAndSlide(const AchievementsScreen()),
-                    );
-                  },
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: statsColumns,
+                  crossAxisSpacing: AppSizes.paddingL,
+                  mainAxisSpacing: AppSizes.paddingL,
+                  childAspectRatio: statsColumns >= 3 ? 1.5 : 1.15,
                 ),
-                const SizedBox(height: AppSizes.paddingL),
-                _buildActionCard(
-                  context,
-                  colors,
-                  icon: Icons.analytics,
-                  title: 'Analytics Dashboard',
-                  subtitle: 'Deep dive into your habit statistics',
-                  iconColor: colors.accentBlue,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      PageTransitions.fadeAndSlide(const AnalyticsDashboardScreen()),
-                    );
-                  },
-                ),
-              ]),
-            ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              AppSizes.paddingXXL,
-              horizontalPadding,
-              AppSizes.paddingL,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Text(
-                'Habit Performance',
-                style: GoogleFonts.fraunces(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => statsCards[index],
+                  childCount: statsCards.length,
                 ),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) =>
-                    _buildHabitPerformanceCard(habits[index], colors),
-                childCount: habits.length,
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                AppSizes.paddingXXL,
+                horizontalPadding,
+                AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildActionCard(
+                    context,
+                    colors,
+                    icon: Icons.emoji_events,
+                    title: 'Achievements',
+                    subtitle: 'View your earned badges and milestones',
+                    iconColor: colors.textPrimary,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageTransitions.fadeAndSlide(
+                          const AchievementsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSizes.paddingL),
+                  _buildActionCard(
+                    context,
+                    colors,
+                    icon: Icons.analytics,
+                    title: 'Analytics Dashboard',
+                    subtitle: 'Deep dive into your habit statistics',
+                    iconColor: colors.accentBlue,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageTransitions.fadeAndSlide(
+                          const AnalyticsDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ]),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              AppSizes.paddingXXXL,
-              horizontalPadding,
-              AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                AppSizes.paddingXXL,
+                horizontalPadding,
+                AppSizes.paddingL,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'Habit Performance',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
             ),
-            sliver: SliverToBoxAdapter(
-              child: _buildMotivationalCard(colors),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) =>
+                      _buildHabitPerformanceCard(habits[index], colors),
+                  childCount: habits.length,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                AppSizes.paddingXXXL,
+                horizontalPadding,
+                AppSizes.paddingXXXL + MediaQuery.of(context).padding.bottom,
+              ),
+              sliver: SliverToBoxAdapter(child: _buildMotivationalCard(colors)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -277,19 +282,12 @@ class InsightsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: colors.textTertiary,
-              size: 18,
-            ),
+            Icon(Icons.arrow_forward_ios, color: colors.textTertiary, size: 18),
           ],
         ),
       ),
@@ -327,7 +325,11 @@ class InsightsScreen extends StatelessWidget {
                 width: 1,
               ),
             ),
-            child: Icon(habit.icon, color: colors.textPrimary.withValues(alpha: 0.7), size: 28),
+            child: Icon(
+              habit.icon,
+              color: colors.textPrimary.withValues(alpha: 0.7),
+              size: 28,
+            ),
           ),
           const SizedBox(width: AppSizes.paddingL),
           Expanded(
@@ -348,7 +350,9 @@ class InsightsScreen extends StatelessWidget {
                     Icon(
                       Icons.local_fire_department,
                       size: 14,
-                      color: streak > 0 ? colors.textPrimary : colors.textTertiary,
+                      color: streak > 0
+                          ? colors.textPrimary
+                          : colors.textTertiary,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -397,15 +401,15 @@ class InsightsScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXXL),
-        decoration: BoxDecoration(
-          color: colors.elevatedSurface, // Use theme elevatedSurface
-          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-          border: Border.all(
-            color: colors.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: AppShadows.cardSoft(null),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface, // Use theme elevatedSurface
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.3),
+          width: 1,
         ),
+        boxShadow: AppShadows.cardSoft(null),
+      ),
       child: Column(
         children: [
           Icon(

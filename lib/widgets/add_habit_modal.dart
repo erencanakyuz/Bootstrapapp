@@ -82,7 +82,9 @@ class _AddHabitModalState extends State<AddHabitModal> {
     final colors = Theme.of(context).extension<AppColors>()!;
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: colors.background,
         borderRadius: const BorderRadius.vertical(
@@ -189,8 +191,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
                 return ChoiceChip(
                   label: Text(difficulty.label),
                   selected: isSelected,
-                  selectedColor:
-                      difficulty.badgeColor.withValues(alpha: 0.15),
+                  selectedColor: difficulty.badgeColor.withValues(alpha: 0.15),
                   onSelected: (selected) {
                     if (!selected) return;
                     setState(() => _selectedDifficulty = difficulty);
@@ -206,7 +207,8 @@ class _AddHabitModalState extends State<AddHabitModal> {
               value: _weeklyTarget.toDouble(),
               min: 1,
               max: 7,
-              onChanged: (value) => setState(() => _weeklyTarget = value.toInt()),
+              onChanged: (value) =>
+                  setState(() => _weeklyTarget = value.toInt()),
             ),
             _buildSlider(
               label: 'Monthly target: $_monthlyTarget check-ins',
@@ -234,14 +236,16 @@ class _AddHabitModalState extends State<AddHabitModal> {
                         leading: Icon(Icons.alarm, color: colors.textPrimary),
                         title: Text(
                           _formatTimeOfDay(
-                            TimeOfDay(hour: reminder.hour, minute: reminder.minute),
+                            TimeOfDay(
+                              hour: reminder.hour,
+                              minute: reminder.minute,
+                            ),
                           ),
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.close),
-                          onPressed: () => setState(
-                            () => _reminders.remove(reminder),
-                          ),
+                          onPressed: () =>
+                              setState(() => _reminders.remove(reminder)),
                         ),
                       ),
                     )
@@ -261,8 +265,9 @@ class _AddHabitModalState extends State<AddHabitModal> {
             _buildColorSelector(colors),
             const SizedBox(height: AppSizes.paddingXXXL),
             ModernButton(
-              text:
-                  widget.habitToEdit != null ? 'Save Changes' : 'Create Habit',
+              text: widget.habitToEdit != null
+                  ? 'Save Changes'
+                  : 'Create Habit',
               onPressed: _saveHabit,
               icon: Icons.check,
               width: double.infinity,
@@ -336,8 +341,9 @@ class _AddHabitModalState extends State<AddHabitModal> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color:
-                  isSelected ? _selectedColor.withValues(alpha: 0.2) : colors.surface,
+              color: isSelected
+                  ? _selectedColor.withValues(alpha: 0.2)
+                  : colors.surface,
               border: Border.all(
                 color: isSelected ? _selectedColor : colors.outline,
                 width: isSelected ? 2 : 1,
@@ -408,7 +414,8 @@ class _AddHabitModalState extends State<AddHabitModal> {
       return;
     }
 
-    final habit = widget.habitToEdit?.copyWith(
+    final habit =
+        widget.habitToEdit?.copyWith(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null

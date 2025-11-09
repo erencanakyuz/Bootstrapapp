@@ -33,18 +33,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   void dispose() {
     super.dispose();
   }
-  
+
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
-    
+
     // Haptic feedback immediately for better UX
     HapticFeedback.selectionClick();
-    
+
     // Update state immediately for instant visual feedback
     setState(() {
       _currentIndex = index;
     });
-    
+
     // Let each screen manage its own orientation
     // Calendar screen will set portrait in its initState/didChangeDependencies
     // FullCalendarScreen manages landscape independently
@@ -78,19 +78,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           onDeleteHabit: _handleDeleteHabit,
         ),
       ),
-      _KeepAliveWrapper(
-        child: InsightsScreen(habits: habits),
-      ),
-      _KeepAliveWrapper(
-        child: ProfileScreen(),
-      ),
+      _KeepAliveWrapper(child: InsightsScreen(habits: habits)),
+      _KeepAliveWrapper(child: ProfileScreen()),
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: _buildBottomNavigation(colors),
     );
   }
@@ -98,7 +91,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   /// Bottom Navigation - Reference image style: white bar with rounded top corners
   Widget _buildBottomNavigation(AppColors colors) {
     final textStyles = AppTextStyles(colors);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colors.surface, // Use theme surface color
@@ -107,7 +100,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.05), // Use theme textPrimary
+            color: colors.textPrimary.withValues(
+              alpha: 0.05,
+            ), // Use theme textPrimary
             blurRadius: 10,
             offset: const Offset(0, -2), // Shadow on top edge
           ),
@@ -170,7 +165,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onTabSelected(index),
-        borderRadius: BorderRadius.circular(22), // Half of 44 for perfect circle
+        borderRadius: BorderRadius.circular(
+          22,
+        ), // Half of 44 for perfect circle
         splashColor: colors.textPrimary.withValues(alpha: 0.1),
         highlightColor: colors.textPrimary.withValues(alpha: 0.05),
         child: Container(
@@ -178,15 +175,17 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           height: 44,
           decoration: isActive
               ? BoxDecoration(
-                  color: colors.textPrimary, // Use theme textPrimary instead of black
+                  color: colors
+                      .textPrimary, // Use theme textPrimary instead of black
                   shape: BoxShape.circle,
                 )
               : null,
           child: Icon(
             icon,
             size: isActive ? 20 : 24,
-            color: isActive 
-                ? colors.surface // White icon on dark circle
+            color: isActive
+                ? colors
+                      .surface // White icon on dark circle
                 : colors.textSecondary, // Use theme textSecondary
           ),
         ),
@@ -208,7 +207,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     } else {
       errorMessage = 'An unexpected error occurred. Please try again.';
     }
-    
+
     return Scaffold(
       backgroundColor: colors.background,
       body: Center(

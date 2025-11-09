@@ -88,43 +88,49 @@ class AppShadows {
 
   // cardSoft: blurRadius 24, offsetY 10, color shadowSoft (rgba(0,0,0,0.07))
   static List<BoxShadow> cardSoft(Color? baseColor) => [
-        BoxShadow(
-          color: baseColor?.withValues(alpha: 0.07) ?? Colors.black.withValues(alpha: 0.07),
-          blurRadius: 24,
-          spreadRadius: 0,
-          offset: const Offset(0, 10),
-        ),
-      ];
+    BoxShadow(
+      color:
+          baseColor?.withValues(alpha: 0.07) ??
+          Colors.black.withValues(alpha: 0.07),
+      blurRadius: 24,
+      spreadRadius: 0,
+      offset: const Offset(0, 10),
+    ),
+  ];
 
   // cardStrong: blurRadius 32, offsetY 18, color shadowStrong (rgba(0,0,0,0.12))
   static List<BoxShadow> cardStrong(Color? baseColor) => [
-        BoxShadow(
-          color: baseColor?.withValues(alpha: 0.12) ?? Colors.black.withValues(alpha: 0.12),
-          blurRadius: 32,
-          spreadRadius: 0,
-          offset: const Offset(0, 18),
-        ),
-      ];
+    BoxShadow(
+      color:
+          baseColor?.withValues(alpha: 0.12) ??
+          Colors.black.withValues(alpha: 0.12),
+      blurRadius: 32,
+      spreadRadius: 0,
+      offset: const Offset(0, 18),
+    ),
+  ];
 
   // floatingButton: blurRadius 32, offsetY 12, color shadowStrong
   static List<BoxShadow> floatingButton(Color? baseColor) => [
-        BoxShadow(
-          color: baseColor?.withValues(alpha: 0.12) ?? Colors.black.withValues(alpha: 0.12),
-          blurRadius: 32,
-          spreadRadius: 0,
-          offset: const Offset(0, 12),
-        ),
-      ];
+    BoxShadow(
+      color:
+          baseColor?.withValues(alpha: 0.12) ??
+          Colors.black.withValues(alpha: 0.12),
+      blurRadius: 32,
+      spreadRadius: 0,
+      offset: const Offset(0, 12),
+    ),
+  ];
 
   // Legacy support
   static List<BoxShadow> small(Color baseColor) => cardSoft(baseColor);
   static List<BoxShadow> medium(Color baseColor) => cardStrong(baseColor);
   static List<BoxShadow> large(Color baseColor) => cardStrong(baseColor);
   static List<BoxShadow> colored(Color color, {double alpha = 0.20}) => [
-        BoxShadow(
-          color: color.withValues(alpha: alpha),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-      ];
+    BoxShadow(
+      color: color.withValues(alpha: alpha),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
+    ),
+  ];
 }
