@@ -39,8 +39,22 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   Future<void> addHabit(Habit habit) async {
     try {
       final repository = ref.read(habitRepositoryProvider);
-      await repository.upsertHabit(habit);
-      await _rescheduleReminders(habit);
+      
+      // Update reminder weekdays to match habit's active weekdays
+      // This ensures reminders only fire on days when the habit is active
+      final updatedReminders = habit.reminders.map((reminder) {
+        return reminder.copyWith(
+          weekdays: List<int>.from(habit.activeWeekdays),
+        );
+      }).toList();
+      
+      // Create habit with synchronized reminder weekdays
+      final habitWithUpdatedReminders = habit.copyWith(
+        reminders: updatedReminders,
+      );
+      
+      await repository.upsertHabit(habitWithUpdatedReminders);
+      await _rescheduleReminders(habitWithUpdatedReminders);
     } on HabitValidationException catch (e) {
       // Validation errors are shown in UI but don't change state
       state = AsyncError(e, StackTrace.current);
@@ -70,11 +84,24 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         orElse: () => false,
       );
 
+      // Update reminder weekdays to match habit's active weekdays
+      // This ensures reminders only fire on days when the habit is active
+      final updatedReminders = habit.reminders.map((reminder) {
+        return reminder.copyWith(
+          weekdays: List<int>.from(habit.activeWeekdays),
+        );
+      }).toList();
+      
+      // Create habit with synchronized reminder weekdays
+      final habitWithUpdatedReminders = habit.copyWith(
+        reminders: updatedReminders,
+      );
+
       await repository.upsertHabit(
-        habit,
+        habitWithUpdatedReminders,
         allowPastDatesBeforeCreation: allowPastDates,
       );
-      await _rescheduleReminders(habit);
+      await _rescheduleReminders(habitWithUpdatedReminders);
     } on HabitValidationException catch (e) {
       // Validation errors are shown in UI but don't change state
       state = AsyncError(e, StackTrace.current);
@@ -318,6 +345,8 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   Future<void> _rescheduleReminders(Habit habit) async {
     final notifier = ref.read(notificationServiceProvider);
     await notifier.cancelHabitReminders(habit);
+    
+    // Schedule reminders (weekdays are already synchronized in addHabit/updateHabit)
     for (final reminder in habit.reminders.where((r) => r.enabled)) {
       await notifier.scheduleReminder(habit, reminder);
     }

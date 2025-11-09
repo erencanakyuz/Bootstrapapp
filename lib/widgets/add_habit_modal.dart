@@ -680,6 +680,8 @@ class _AddHabitModalState extends State<AddHabitModal> {
             id: _uuid.v4(),
             hour: timeOfDay.hour,
             minute: timeOfDay.minute,
+            // Set reminder weekdays to match habit's active weekdays
+            weekdays: List<int>.from(_activeWeekdays),
           ),
         );
       });

@@ -1334,10 +1334,24 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                       _selectedMonth.month,
                       day,
                     );
+                    final isActive = habit.isActiveOnDate(date);
                     final isCompleted = habit.isCompletedOn(date);
                     final isToday = date.year == now.year &&
                         date.month == now.month &&
                         date.day == now.day;
+                    // Check if habit was missed: active but not completed, date is in the past,
+                    // and date is not before habit creation date (don't show warnings for days before habit existed)
+                    final normalizedDate = DateTime(date.year, date.month, date.day);
+                    final normalizedToday = DateTime(now.year, now.month, now.day);
+                    final normalizedCreatedAt = DateTime(
+                      habit.createdAt.year,
+                      habit.createdAt.month,
+                      habit.createdAt.day,
+                    );
+                    final isMissed = isActive && 
+                        !isCompleted && 
+                        normalizedDate.isBefore(normalizedToday) &&
+                        !normalizedDate.isBefore(normalizedCreatedAt);
                     return TableCell(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -1364,18 +1378,28 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                               onTap: () => _toggleCalendarCell(habit, date),
                               borderRadius: BorderRadius.circular(6),
                               child: Center(
-                                child: AnimatedOpacity(
+                                child: AnimatedSwitcher(
                                   duration: const Duration(milliseconds: 200),
-                                  opacity: isCompleted ? 1 : 0,
-                                  child: Text(
-                                    '✕',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                      color: habit.color,
-                                      height: 1.0,
-                                    ),
-                                  ),
+                                  child: isCompleted
+                                      ? Text(
+                                          '✕',
+                                          key: const ValueKey('completed'),
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
+                                            color: habit.color,
+                                            height: 1.0,
+                                          ),
+                                        )
+                                      : isMissed
+                                          ? CustomPaint(
+                                              size: const Size(16, 16),
+                                              painter: _TriangleWarningPainter(
+                                                color: colors.statusIncomplete,
+                                              ),
+                                              key: const ValueKey('warning'),
+                                            )
+                                          : const SizedBox.shrink(key: ValueKey('empty')),
                                 ),
                               ),
                             ),
@@ -1753,11 +1777,14 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         customMessage: result['customMessage'],
       );
 
+      // Store context values before async operations
+      // Check mounted before using context after async gap
+      if (!mounted) return;
       final overlay = Overlay.of(context, rootOverlay: true);
+      final mediaQueryData = MediaQuery.of(context);
       
       OverlayEntry? overlayEntry;
       try {
-        final mediaQueryData = MediaQuery.of(context);
         // 16:9 aspect ratio for share (1920x1080)
         const double shareWidth = 1920.0;
         const double shareHeight = 1080.0;
@@ -1967,6 +1994,54 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         ],
       ),
     );
+  }
+}
+
+/// Custom painter for triangle warning icon (shared with calendar_screen)
+class _TriangleWarningPainter extends CustomPainter {
+  final Color color;
+
+  _TriangleWarningPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    // Draw upward-pointing triangle (warning symbol)
+    path.moveTo(size.width / 2, 0); // Top point
+    path.lineTo(0, size.height); // Bottom left
+    path.lineTo(size.width, size.height); // Bottom right
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    // Draw exclamation mark inside triangle
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: '!',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size.width - textPainter.width) / 2,
+        (size.height - textPainter.height) / 2 - size.height * 0.05,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TriangleWarningPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 

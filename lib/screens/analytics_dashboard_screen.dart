@@ -379,11 +379,11 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     HabitAnalytics analytics,
   ) {
     final trendPoints = analytics.weeklyTrend;
-    final hasData = trendPoints.any((point) => point.value > 0);
+    final hasData = trendPoints.any((point) => (point['value'] as num) > 0);
     final dates = analytics.weeklyDates;
     final spots = List<FlSpot>.generate(
       trendPoints.length,
-      (index) => FlSpot(index.toDouble(), trendPoints[index].value),
+      (index) => FlSpot(index.toDouble(), (trendPoints[index]['value'] as num).toDouble()),
     );
     final maxY = math.max(analytics.maxWeeklyValue, 1) + 1;
 
@@ -666,7 +666,11 @@ class HabitAnalytics {
 
   Map<HabitCategory, double> get categoryTotals => _categoryTotals;
 
-  List<_TrendPoint> get weeklyTrend => _weeklyTrend;
+  // Return public type instead of private _TrendPoint
+  List<Map<String, dynamic>> get weeklyTrend => _weeklyTrend.map((point) => {
+    'date': point.date,
+    'value': point.value,
+  }).toList();
 
   List<DateTime> get weeklyDates =>
       _weeklyTrend.map((point) => point.date).toList(growable: false);

@@ -21,6 +21,7 @@ abstract class NotificationBackend {
     NotificationDetails notificationDetails, {
     DateTimeComponents? matchDateTimeComponents,
     AndroidScheduleMode androidScheduleMode,
+    String? payload,
   });
 
   Future<void> show(
@@ -70,6 +71,7 @@ class FlutterLocalNotificationsBackend implements NotificationBackend {
     NotificationDetails notificationDetails, {
     DateTimeComponents? matchDateTimeComponents,
     AndroidScheduleMode androidScheduleMode = AndroidScheduleMode.exactAllowWhileIdle,
+    String? payload,
   }) {
     return _plugin.zonedSchedule(
       id,
@@ -79,6 +81,7 @@ class FlutterLocalNotificationsBackend implements NotificationBackend {
       notificationDetails,
       matchDateTimeComponents: matchDateTimeComponents,
       androidScheduleMode: androidScheduleMode,
+      payload: payload,
     );
   }
 

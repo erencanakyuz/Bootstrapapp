@@ -236,7 +236,7 @@ class FakeNotificationBackend implements NotificationBackend {
   bool iosPermissionRequested = false;
   bool initialized = false;
   List<PendingNotificationRequest> pending = [];
-  final List<_ZonedScheduleCall> zonedCalls = [];
+  final List<ZonedScheduleCall> zonedCalls = [];
   final List<int> cancelledIds = [];
   int showCalls = 0;
 
@@ -302,28 +302,31 @@ class FakeNotificationBackend implements NotificationBackend {
     DateTimeComponents? matchDateTimeComponents,
     AndroidScheduleMode androidScheduleMode =
         AndroidScheduleMode.exactAllowWhileIdle,
+    String? payload,
   }) async {
     zonedCalls.add(
-      _ZonedScheduleCall(
+      ZonedScheduleCall(
         id: id,
         title: title,
         body: body,
         scheduledDate: scheduledDate,
         matchComponents: matchDateTimeComponents,
         androidScheduleMode: androidScheduleMode,
+        payload: payload,
       ),
     );
   }
 }
 
-class _ZonedScheduleCall {
-  _ZonedScheduleCall({
+class ZonedScheduleCall {
+  ZonedScheduleCall({
     required this.id,
     required this.title,
     required this.body,
     required this.scheduledDate,
     required this.matchComponents,
     required this.androidScheduleMode,
+    this.payload,
   });
 
   final int id;
@@ -332,6 +335,7 @@ class _ZonedScheduleCall {
   final tz.TZDateTime scheduledDate;
   final DateTimeComponents? matchComponents;
   final AndroidScheduleMode androidScheduleMode;
+  final String? payload;
 }
 
 class FakeDateTimeProvider extends DateTimeProvider {
