@@ -742,7 +742,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isNewHabit(Habit habit) {
     final daysSinceCreation =
         DateTime.now().difference(habit.createdAt).inDays;
-    return daysSinceCreation <= 3;
+    return daysSinceCreation <= 1; // Only show for 1 day
   }
 
 
