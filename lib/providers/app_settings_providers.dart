@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/app_settings_service.dart';
 import '../services/sound_service.dart';
+import 'habit_providers.dart';
+import 'notification_provider.dart';
 
 final appSettingsServiceProvider = Provider<AppSettingsService>((ref) {
   return AppSettingsService();
@@ -16,6 +18,7 @@ class ProfileSettings {
   final bool animationsEnabled;
   final int avatarSeed;
   final bool allowPastDatesBeforeCreation;
+  final bool performanceOverlayEnabled;
 
   const ProfileSettings({
     required this.name,
@@ -26,6 +29,7 @@ class ProfileSettings {
     required this.animationsEnabled,
     required this.avatarSeed,
     required this.allowPastDatesBeforeCreation,
+    required this.performanceOverlayEnabled,
   });
 
   ProfileSettings copyWith({
@@ -37,6 +41,7 @@ class ProfileSettings {
     bool? animationsEnabled,
     int? avatarSeed,
     bool? allowPastDatesBeforeCreation,
+    bool? performanceOverlayEnabled,
   }) {
     return ProfileSettings(
       name: name ?? this.name,
@@ -48,6 +53,8 @@ class ProfileSettings {
       avatarSeed: avatarSeed ?? this.avatarSeed,
       allowPastDatesBeforeCreation:
           allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
+      performanceOverlayEnabled:
+          performanceOverlayEnabled ?? this.performanceOverlayEnabled,
     );
   }
 }
@@ -64,6 +71,7 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final animations = await service.animationsEnabled();
     final avatar = await service.avatarSeed();
     final allowPastDates = await service.allowPastDatesBeforeCreation();
+    final performanceOverlay = await service.performanceOverlayEnabled();
     
     // Initialize sound service with current settings
     final soundService = ref.read(soundServiceProvider);
@@ -78,6 +86,7 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
       animationsEnabled: animations,
       avatarSeed: avatar,
       allowPastDatesBeforeCreation: allowPastDates,
+      performanceOverlayEnabled: performanceOverlay,
     );
   }
 
@@ -90,6 +99,28 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
   Future<void> toggleNotifications(bool enabled) async {
     final service = ref.read(appSettingsServiceProvider);
     await service.setNotificationsEnabled(enabled);
+    
+    final notificationService = ref.read(notificationServiceProvider);
+    final habitRepository = ref.read(habitRepositoryProvider);
+    
+    if (enabled) {
+      // Re-enable notifications: reschedule all enabled reminders
+      final habits = habitRepository.current;
+      for (final habit in habits) {
+        for (final reminder in habit.reminders.where((r) => r.enabled)) {
+          await notificationService.scheduleReminder(
+            habit,
+            reminder,
+            appNotificationsEnabled: true,
+          );
+        }
+      }
+    } else {
+      // Disable notifications: cancel all scheduled notifications
+      // Note: Reminders remain enabled in habit data, they're just not scheduled
+      await notificationService.cancelAll();
+    }
+    
     state = state.whenData(
       (settings) => settings.copyWith(notificationsEnabled: enabled),
     );
@@ -143,6 +174,14 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     await service.setAllowPastDatesBeforeCreation(enabled);
     state = state.whenData(
       (settings) => settings.copyWith(allowPastDatesBeforeCreation: enabled),
+    );
+  }
+
+  Future<void> togglePerformanceOverlay(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setPerformanceOverlayEnabled(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(performanceOverlayEnabled: enabled),
     );
   }
 }

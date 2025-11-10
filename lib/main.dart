@@ -36,15 +36,23 @@ class BootstrapApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingCompletedProvider);
+    final settingsAsync = ref.watch(profileSettingsProvider);
 
     // Always use modern (light) theme - dark theme reserved for future use
     final theme = buildAppTheme(AppPalette.modern);
     final colors = colorsFor(AppPalette.modern);
+    
+    // Get performance overlay setting
+    final showPerformanceOverlay = settingsAsync.maybeWhen(
+      data: (settings) => settings.performanceOverlayEnabled,
+      orElse: () => false,
+    );
 
     return onboardingState.when(
       loading: () => MaterialApp(
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
+        showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
         home: Scaffold(
           backgroundColor: colors.background,
@@ -56,6 +64,7 @@ class BootstrapApp extends ConsumerWidget {
       error: (error, _) => MaterialApp(
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
+        showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
         home: Scaffold(body: Center(child: Text('Error: $error'))),
       ),
@@ -63,6 +72,7 @@ class BootstrapApp extends ConsumerWidget {
         navigatorKey: navigatorKey,
         title: 'Bootstrap Your Life',
         debugShowCheckedModeBanner: false,
+        showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
         home: completed ? const MainScreen() : const OnboardingScreen(),
       ),

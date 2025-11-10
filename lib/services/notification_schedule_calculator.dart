@@ -28,8 +28,20 @@ class NotificationScheduleCalculator {
   tz.TZDateTime resolveNextSchedule(
     HabitReminder reminder, {
     tz.TZDateTime? from,
+    Duration? overrideDelay,
   }) {
     final now = from ?? _clock.nowTz();
+    
+    // If overrideDelay is provided (for testing), use it directly
+    if (overrideDelay != null) {
+      final result = now.add(overrideDelay);
+      // Ensure result is in the future
+      if (result.isBefore(now)) {
+        // If somehow in the past, add a small buffer
+        return now.add(const Duration(seconds: 1));
+      }
+      return result;
+    }
 
     if (reminder.weekdays.isEmpty) {
       return now.add(emptyWeekdayFallback);
@@ -44,8 +56,12 @@ class NotificationScheduleCalculator {
       reminder.minute,
     );
 
+    // If the time today has passed, move to next valid weekday
+    // But if it's within the same minute, keep it for today
+    final isPastToday = candidate.isBefore(now.subtract(const Duration(minutes: 1)));
+    
     int daysChecked = 0;
-    while ((candidate.isBefore(now) ||
+    while ((isPastToday ||
             !reminder.weekdays.contains(candidate.weekday)) &&
         daysChecked < maxLookAheadDays) {
       candidate = candidate.add(const Duration(days: 1));

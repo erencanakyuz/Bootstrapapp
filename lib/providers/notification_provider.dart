@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../main.dart';
 import '../screens/habit_detail_screen.dart';
 import '../services/notification_service.dart';
+import '../utils/notification_permissions.dart';
 import '../utils/page_transitions.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
@@ -23,4 +24,9 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   );
   unawaited(service.initialize());
   return service;
+});
+
+final notificationPermissionStatusProvider =
+    FutureProvider<NotificationPermissionState>((ref) async {
+  return NotificationPermissions.status();
 });

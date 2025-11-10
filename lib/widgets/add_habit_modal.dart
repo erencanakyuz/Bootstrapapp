@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/app_constants.dart';
 import '../constants/habit_icons.dart';
 import '../models/habit.dart';
+import '../providers/app_settings_providers.dart';
+import '../providers/notification_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/notification_permissions.dart';
 import 'modern_button.dart';
 
 const _uuid = Uuid();
 
-class AddHabitModal extends StatefulWidget {
+class AddHabitModal extends ConsumerStatefulWidget {
   final Habit? habitToEdit;
 
   const AddHabitModal({super.key, this.habitToEdit});
 
   @override
-  State<AddHabitModal> createState() => _AddHabitModalState();
+  ConsumerState<AddHabitModal> createState() => _AddHabitModalState();
 }
 
-class _AddHabitModalState extends State<AddHabitModal> {
+class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -46,6 +50,14 @@ class _AddHabitModalState extends State<AddHabitModal> {
     Color(0xFFC99FA3), // Muted dusty pink
     Color(0xFF8B9BA8), // Muted slate blue-gray
   ];
+
+  ProfileSettings? get _currentProfileSettings {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    return settingsAsync.maybeWhen(
+      data: (settings) => settings,
+      orElse: () => null,
+    );
+  }
 
   @override
   void initState() {
@@ -104,6 +116,38 @@ class _AddHabitModalState extends State<AddHabitModal> {
     } else if (_errorMessage == errorText) {
       setState(() => _errorMessage = null);
     }
+  }
+
+  Future<bool> _ensureNotificationsAllowedForReminders() async {
+    final settings = _currentProfileSettings;
+    if (settings != null && !settings.notificationsEnabled) {
+      if (!mounted) return false;
+      await NotificationPermissionDialog.showAppLevelDisabled(context);
+      return false;
+    }
+
+    final status = await NotificationPermissions.status();
+    if (status == NotificationPermissionState.granted) {
+      return true;
+    }
+
+    if (status == NotificationPermissionState.denied) {
+      final granted = await NotificationPermissions.request();
+      ref.invalidate(notificationPermissionStatusProvider);
+      if (granted) return true;
+    }
+
+    if (!mounted) return true;
+    await NotificationPermissionDialog.showSystemLevelDisabled(
+      context,
+      onOpenSettings: () async {
+        await NotificationPermissions.openSystemSettings();
+        ref.invalidate(notificationPermissionStatusProvider);
+      },
+      laterLabel: 'Continue',
+      openSettingsLabel: 'Open Settings',
+    );
+    return true;
   }
   
   void _validateTargets() {
@@ -669,10 +713,14 @@ class _AddHabitModalState extends State<AddHabitModal> {
   }
 
   Future<void> _addReminder() async {
+    final allowed = await _ensureNotificationsAllowedForReminders();
+    if (!allowed || !mounted) return;
+
     final timeOfDay = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
+    if (!mounted) return;
     if (timeOfDay != null) {
       setState(() {
         _reminders.add(
@@ -688,7 +736,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
     }
   }
 
-  void _saveHabit() {
+  void _saveHabit() async {
     // Clear previous errors
     setState(() => _errorMessage = null);
     
@@ -730,6 +778,13 @@ class _AddHabitModalState extends State<AddHabitModal> {
       return;
     }
 
+    if (_reminders.isNotEmpty) {
+      final allowed = await _ensureNotificationsAllowedForReminders();
+      if (!allowed) {
+        return;
+      }
+    }
+
     final habit =
         widget.habitToEdit?.copyWith(
           title: _titleController.text.trim(),
@@ -763,6 +818,7 @@ class _AddHabitModalState extends State<AddHabitModal> {
           reminders: _reminders,
         );
 
+    if (!mounted) return;
     Navigator.of(context).pop(habit);
   }
 

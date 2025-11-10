@@ -23,11 +23,61 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   Future<List<Habit>> build() async {
     final repository = ref.read(habitRepositoryProvider);
     await repository.ensureInitialized();
+    
+    // Start subscription immediately for reactive updates
     _subscription ??= repository.watch().listen((habits) {
       state = AsyncData(habits);
     });
     ref.onDispose(() => _subscription?.cancel());
+    
+    // Schedule notifications in background to avoid blocking UI
+    // Use unawaited to prevent blocking the build method
+    _scheduleNotificationsInBackground(repository.current);
+    
     return repository.current;
+  }
+
+  /// Schedule notifications in background without blocking the main thread
+  void _scheduleNotificationsInBackground(List<Habit> habits) {
+    // Use Future.microtask to defer execution after current frame
+    Future.microtask(() async {
+      try {
+        final notifier = ref.read(notificationServiceProvider);
+        
+        // Check app-level notification setting
+        final settingsAsync = ref.read(profileSettingsProvider);
+        final appNotificationsEnabled = settingsAsync.maybeWhen(
+          data: (settings) => settings.notificationsEnabled,
+          orElse: () => true, // Default to enabled if settings not loaded yet
+        );
+        
+        if (appNotificationsEnabled) {
+          // Schedule notifications in batches to avoid blocking
+          // Process in chunks of 5 to allow UI to remain responsive
+          const batchSize = 5;
+          for (int i = 0; i < habits.length; i += batchSize) {
+            final batch = habits.skip(i).take(batchSize);
+            for (final habit in batch) {
+              for (final reminder in habit.reminders.where((r) => r.enabled)) {
+                // Don't await - let notifications schedule concurrently
+                notifier.scheduleReminder(
+                  habit,
+                  reminder,
+                  appNotificationsEnabled: true,
+                ).catchError((error) {
+                  // Silently handle errors to prevent log spam
+                  // Notifications will be rescheduled on next app start if needed
+                });
+              }
+            }
+            // Small delay between batches to keep UI responsive
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
+        }
+      } catch (e) {
+        // Silently handle errors - notifications are not critical for app startup
+      }
+    });
   }
 
   Future<void> refresh() async {
@@ -406,9 +456,23 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
     final notifier = ref.read(notificationServiceProvider);
     await notifier.cancelHabitReminders(habit);
     
+    // Check app-level notification setting
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final appNotificationsEnabled = settingsAsync.maybeWhen(
+      data: (settings) => settings.notificationsEnabled,
+      orElse: () => true, // Default to enabled if settings not loaded yet
+    );
+    
     // Schedule reminders (weekdays are already synchronized in addHabit/updateHabit)
-    for (final reminder in habit.reminders.where((r) => r.enabled)) {
-      await notifier.scheduleReminder(habit, reminder);
+    // Only schedule if app-level notifications are enabled
+    if (appNotificationsEnabled) {
+      for (final reminder in habit.reminders.where((r) => r.enabled)) {
+        await notifier.scheduleReminder(
+          habit,
+          reminder,
+          appNotificationsEnabled: true,
+        );
+      }
     }
   }
 }

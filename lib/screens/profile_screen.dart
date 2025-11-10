@@ -11,9 +11,11 @@ import 'package:share_plus/share_plus.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
+import '../providers/notification_provider.dart';
 import '../screens/notification_test_screen.dart';
 import '../theme/app_theme.dart';
 import '../utils/mock_data_generator.dart';
+import '../utils/notification_permissions.dart';
 import '../utils/page_transitions.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -23,6 +25,8 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(profileSettingsProvider);
     final colors = Theme.of(context).extension<AppColors>()!;
+    final notificationPermissionAsync =
+        ref.watch(notificationPermissionStatusProvider);
 
     return settingsAsync.when(
       loading: () => Scaffold(
@@ -93,11 +97,46 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: AppSizes.paddingXXL),
                 SwitchListTile(
                   value: settings.notificationsEnabled,
-                  onChanged: (value) => ref
-                      .read(profileSettingsProvider.notifier)
-                      .toggleNotifications(value),
+                  onChanged: (value) async {
+                    final notifier =
+                        ref.read(profileSettingsProvider.notifier);
+                    if (value) {
+                      final granted = await _ensureDeviceNotificationsAllowed(
+                        context,
+                        ref,
+                      );
+                      if (!granted) {
+                        return;
+                      }
+                    }
+                    await notifier.toggleNotifications(value);
+                  },
                   title: const Text('Notifications'),
                   subtitle: const Text('Receive local reminders'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.notifications_active_outlined,
+                    color: notificationPermissionAsync.maybeWhen(
+                      data: (status) =>
+                          _notificationStatusColor(status, colors),
+                      orElse: () => colors.textSecondary,
+                    ),
+                  ),
+                  title: const Text('Device notification permission'),
+                  subtitle: Text(
+                    notificationPermissionAsync.when(
+                      data: _notificationStatusLabel,
+                      loading: () => 'Checking status...',
+                      error: (error, _) =>
+                          'Could not get status. Check settings.',
+                    ),
+                  ),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () async {
+                    await NotificationPermissions.openSystemSettings();
+                    ref.invalidate(notificationPermissionStatusProvider);
+                  },
                 ),
                 SwitchListTile(
                   value: settings.hapticsEnabled,
@@ -200,6 +239,16 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSizes.paddingL),
+                  SwitchListTile(
+                    value: settings.performanceOverlayEnabled,
+                    onChanged: (value) => ref
+                        .read(profileSettingsProvider.notifier)
+                        .togglePerformanceOverlay(value),
+                    title: const Text('Performance overlay'),
+                    subtitle: const Text(
+                      'Show FPS and frame rendering time',
+                    ),
+                  ),
                   ListTile(
                     leading: const Icon(Icons.auto_awesome),
                     title: const Text('Load Mock Data'),
@@ -514,6 +563,65 @@ class ProfileScreen extends ConsumerWidget {
           ),
         );
       }
+    }
+  }
+
+  Future<bool> _ensureDeviceNotificationsAllowed(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final status = await NotificationPermissions.status();
+    if (status == NotificationPermissionState.granted) {
+      return true;
+    }
+
+    if (status == NotificationPermissionState.denied) {
+      final granted = await NotificationPermissions.request();
+      ref.invalidate(notificationPermissionStatusProvider);
+      if (granted) return true;
+    }
+
+    if (!context.mounted) return false;
+    await NotificationPermissionDialog.showSystemLevelDisabled(
+      context,
+      onOpenSettings: () async {
+        await NotificationPermissions.openSystemSettings();
+        ref.invalidate(notificationPermissionStatusProvider);
+      },
+      laterLabel: 'Cancel',
+      openSettingsLabel: 'Open Settings',
+    );
+    return false;
+  }
+
+  String _notificationStatusLabel(NotificationPermissionState status) {
+    switch (status) {
+      case NotificationPermissionState.granted:
+        return 'Enabled';
+      case NotificationPermissionState.denied:
+        return 'Denied';
+      case NotificationPermissionState.restricted:
+        return 'Restricted';
+      case NotificationPermissionState.permanentlyDenied:
+        return 'Permanently disabled';
+      case NotificationPermissionState.unknown:
+        return 'Unknown';
+    }
+  }
+
+  Color _notificationStatusColor(
+    NotificationPermissionState status,
+    AppColors colors,
+  ) {
+    switch (status) {
+      case NotificationPermissionState.granted:
+        return colors.statusComplete;
+      case NotificationPermissionState.restricted:
+        return colors.statusProgress;
+      case NotificationPermissionState.denied:
+      case NotificationPermissionState.permanentlyDenied:
+      case NotificationPermissionState.unknown:
+        return colors.statusIncomplete;
     }
   }
 }
