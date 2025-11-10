@@ -11,6 +11,7 @@ class AppSettingsService {
   static const _avatarSeedKey = 'avatar_seed';
   static const _allowPastDatesKey = 'allow_past_dates_before_creation';
   static const _performanceOverlayKey = 'performance_overlay_enabled';
+  static const _darkModeKey = 'dark_mode_enabled';
 
   Future<SharedPreferences> get _prefs async => SharedPreferences.getInstance();
 
@@ -112,5 +113,15 @@ class AppSettingsService {
   Future<void> setPerformanceOverlayEnabled(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_performanceOverlayKey, enabled);
+  }
+
+  Future<bool> darkModeEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_darkModeKey) ?? false;
+  }
+
+  Future<void> setDarkModeEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_darkModeKey, enabled);
   }
 }

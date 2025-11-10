@@ -80,6 +80,6 @@ class HabitStorage {
 
   /// Get default habits (for first launch)
   List<Habit> _getDefaultHabits() {
-    return HabitTemplates.buildTemplates();
+    return HabitPresets.buildTemplates();
   }
 }

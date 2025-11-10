@@ -67,6 +67,7 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
                   habit,
                   reminder,
                   appNotificationsEnabled: true,
+                  habits: habits, // Pass all habits for smart notifications
                 ).catchError((error) {
                   // Log errors but don't throw - notifications are non-critical
                   debugPrint('Failed to schedule notification for ${habit.title}: $error');
@@ -476,11 +477,14 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
     // Schedule reminders (weekdays are already synchronized in addHabit/updateHabit)
     // Only schedule if app-level notifications are enabled
     if (appNotificationsEnabled) {
+      final repository = ref.read(habitRepositoryProvider);
+      final allHabits = repository.current;
       for (final reminder in habit.reminders.where((r) => r.enabled)) {
         await notifier.scheduleReminder(
           habit,
           reminder,
           appNotificationsEnabled: true,
+          habits: allHabits, // Pass all habits for smart notifications
         );
       }
     }

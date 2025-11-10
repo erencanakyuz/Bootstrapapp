@@ -6,12 +6,16 @@ import 'providers/app_settings_providers.dart';
 import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/home_widget_service.dart';
 
 // Global navigator key for notification tap handling
 final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize home widget service
+  HomeWidgetService.initialize();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -38,14 +42,28 @@ class BootstrapApp extends ConsumerWidget {
     final onboardingState = ref.watch(onboardingCompletedProvider);
     final settingsAsync = ref.watch(profileSettingsProvider);
 
-    // Always use modern (light) theme - dark theme reserved for future use
-    final theme = buildAppTheme(AppPalette.modern);
-    final colors = colorsFor(AppPalette.modern);
+    // Get dark mode setting
+    final darkMode = settingsAsync.maybeWhen(
+      data: (settings) => settings.darkModeEnabled,
+      orElse: () => false,
+    );
+
+    // Use dark or light theme based on setting
+    final palette = darkMode ? AppPalette.dark : AppPalette.modern;
+    final theme = buildAppTheme(palette);
+    final colors = colorsFor(palette);
     
     // Get performance overlay setting
     final showPerformanceOverlay = settingsAsync.maybeWhen(
       data: (settings) => settings.performanceOverlayEnabled,
       orElse: () => false,
+    );
+
+    // Update system UI overlay style based on theme
+    SystemChrome.setSystemUIOverlayStyle(
+      darkMode
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
     );
 
     return onboardingState.when(
@@ -54,6 +72,8 @@ class BootstrapApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
+        darkTheme: buildAppTheme(AppPalette.dark),
+        themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
         home: Scaffold(
           backgroundColor: colors.background,
           body: Center(
@@ -66,6 +86,8 @@ class BootstrapApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
+        darkTheme: buildAppTheme(AppPalette.dark),
+        themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
         home: Scaffold(body: Center(child: Text('Error: $error'))),
       ),
       data: (completed) => MaterialApp(
@@ -74,6 +96,8 @@ class BootstrapApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         showPerformanceOverlay: showPerformanceOverlay,
         theme: theme,
+        darkTheme: buildAppTheme(AppPalette.dark),
+        themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
         home: completed ? const MainScreen() : const OnboardingScreen(),
       ),
     );

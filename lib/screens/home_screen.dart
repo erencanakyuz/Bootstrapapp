@@ -16,7 +16,13 @@ import '../utils/page_transitions.dart';
 import '../utils/responsive.dart';
 import '../widgets/add_habit_modal.dart';
 import '../widgets/habit_card.dart';
+import '../widgets/daily_motivation_widget.dart';
+import '../widgets/category_filter_bar.dart';
+import '../widgets/habit_suggestions_widget.dart';
+import '../widgets/empty_states.dart';
+import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
+import 'habit_templates_screen.dart';
 import 'onboarding_screen.dart';
 
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
@@ -55,6 +61,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _lastCacheDate;
   List<Habit>? _cachedActiveTodayHabits;
   DateTime? _frameNowSnapshot;
+  
+  // Filtering
+  List<Habit> _filteredHabits = [];
+  HabitCategory? _selectedCategory;
 
   DateTime get _frameNow => _frameNowSnapshot ?? DateTime.now();
   DateTime get _frameTodayKey {
@@ -83,6 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 2),
     );
+    _filteredHabits = widget.todayHabits;
   }
 
   @override
@@ -101,6 +112,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _confettiController.dispose();
     super.dispose();
+  }
+
+  void _onCategoryFilterChanged(List<Habit> results) {
+    setState(() {
+      // Store the category that was selected
+      if (results.isEmpty || results.length == widget.todayHabits.length) {
+        _selectedCategory = null;
+      } else {
+        _selectedCategory = results.first.category;
+      }
+      _filteredHabits = results;
+    });
+  }
+
+  Future<void> _showTemplatesScreen() async {
+    HapticFeedback.lightImpact();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      PageTransitions.slideFromRight(
+        HabitTemplatesScreen(
+          onTemplateSelected: (habit) {
+            widget.onAddHabit(habit);
+          },
+        ),
+      ),
+    );
   }
 
   void _toggleHabitCompletion(Habit habit) {
@@ -122,9 +159,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final updatedHabit = habit.toggleCompletion(today);
     widget.onUpdateHabit(updatedHabit);
 
+    // Update filtered habits list to reflect the change immediately
+    setState(() {
+      final index = _filteredHabits.indexWhere((h) => h.id == habit.id);
+      if (index != -1) {
+        _filteredHabits[index] = updatedHabit;
+      }
+      // Also update the main list cache
+      final activeIndex = _activeTodayHabits.indexWhere((h) => h.id == habit.id);
+      if (activeIndex != -1) {
+        _cachedActiveTodayHabits![activeIndex] = updatedHabit;
+      }
+    });
+
     // Invalidate cache when habit completion changes
     _cachedTotalStreak = null;
     _cachedWeeklyCompletions = null;
+
+    // Update home widget
+    final activeHabits = _activeTodayHabits;
+    final completedToday = activeHabits.where((h) => h.isCompletedOn(today)).length;
+    final totalToday = activeHabits.length;
+    final topHabit = activeHabits.isNotEmpty ? activeHabits.first : null;
+    HomeWidgetService.updateWidget(
+      completedToday: completedToday,
+      totalToday: totalToday,
+      currentStreak: _getTotalStreak(),
+      topHabitTitle: topHabit?.title ?? '',
+      topHabitColor: topHabit?.color ?? Colors.green,
+    );
 
     if (!wasCompleted && updatedHabit.isCompletedOn(today)) {
       // Check confetti setting
@@ -526,10 +589,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildDailyFocusSection(AppColors colors, AppTextStyles textStyles) {
-    final counts = _getTimeBlockCounts();
-    final hasHabits = counts.values.any((count) => count > 0);
-    if (!hasHabits) return const SizedBox.shrink();
     final activeHabits = _activeTodayHabits;
+    if (activeHabits.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,59 +602,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text('${activeHabits.length} habits', style: textStyles.caption),
           ],
         ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: HabitTimeBlock.values
-                .where((block) => counts[block]! > 0)
-                .map(
-                  (block) => _buildFocusChip(
-                    colors,
-                    textStyles,
-                    block,
-                    counts[block]!,
-                  ),
-                )
-                .toList(),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildFocusChip(
-    AppColors colors,
-    AppTextStyles textStyles,
-    HabitTimeBlock block,
-    int count,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.elevatedSurface, // Use theme elevatedSurface
-        borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(block.icon, size: 14, color: colors.textPrimary),
-          const SizedBox(width: 6),
-          Text(
-            '${block.label} • $count',
-            style: textStyles.captionUppercase.copyWith(
-              color: colors.textPrimary,
+  Widget _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
+    final activeHabits = _selectedCategory != null ? _filteredHabits : _activeTodayHabits;
+    
+    if (activeHabits.isEmpty && _selectedCategory != null) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.paddingXXL),
+          child: Center(
+            child: Text(
+              'No habits found in this category',
+              style: textStyles.bodySecondary,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  SliverList _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
-    final activeHabits = _activeTodayHabits;
+        ),
+      ) as Widget;
+    }
     
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -605,7 +633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               bottom: index == activeHabits.length - 1 ? 0 : 16,
             ),
             child: HabitCard(
-              key: ValueKey(habit.id),
+              key: ValueKey('${habit.id}_${habit.isCompletedOn(DateTime.now())}'),
               habit: habit,
               showNewBadge: isNew,
               onTap: () => _openHabitDetail(habit),
@@ -651,42 +679,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildEmptyState(AppColors colors, AppTextStyles textStyles) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: colors.elevatedSurface, // Use theme elevatedSurface
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: colors.elevatedSurface, // Use theme elevatedSurface
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: colors.outline.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.rocket_launch_rounded,
-              size: 60,
-              color: colors.textPrimary.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text('Start your journey', style: textStyles.displayLarge),
-          const SizedBox(height: 12),
-          Text(
-            'Create your first habit and begin building\na better version of yourself.',
-            textAlign: TextAlign.center,
-            style: textStyles.body,
-          ),
-        ],
-      ),
+    return EmptyHabitsState(
+      onAddHabit: () => _showAddHabitModal(),
+      onBrowseTemplates: () => _showTemplatesScreen(),
     );
   }
 
@@ -943,6 +938,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildGuidedCTA(colors, textStyles),
           ),
         ),
+        // Habit Suggestions
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            16,
+            horizontalPadding,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: HabitSuggestionsWidget(
+              onSuggestionSelected: (habit) => widget.onAddHabit(habit),
+            ),
+          ),
+        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
@@ -951,7 +960,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             0,
           ),
           sliver: SliverToBoxAdapter(
-            child: _buildDailyFocusSection(colors, textStyles),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDailyFocusSection(colors, textStyles),
+                if (todayActiveHabits.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  CategoryFilterBar(
+                    habits: widget.todayHabits,
+                    onFilterChanged: _onCategoryFilterChanged,
+                    initialCategory: _selectedCategory,
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
         if (todayActiveHabits.isEmpty)
@@ -966,7 +988,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildRestDayCard(colors, textStyles),
             ),
           )
-        else
+          else
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -976,6 +998,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             sliver: _buildHabitListSliver(colors, textStyles),
           ),
+        // Daily Motivation Widget - moved to bottom
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            24,
+            horizontalPadding,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: const DailyMotivationWidget(),
+          ),
+        ),
       ]);
     }
 
@@ -1047,35 +1081,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: AnimatedScale(
-        scale: 1.0,
-        duration: AppAnimations.normal,
-        curve: AppAnimations.spring,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-            boxShadow: AppShadows.floatingButton(null),
-          ),
-          child: FloatingActionButton.extended(
-            onPressed: () {
-              _showAddHabitModal();
-            },
-            backgroundColor: colors.textPrimary,
-            shape: RoundedRectangleBorder(
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Template button
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+              boxShadow: AppShadows.floatingButton(null),
             ),
-            icon: Icon(
-              Icons.add_rounded,
-              color: colors.surface,
-            ),
-            label: Text(
-              'New Habit',
-              style: textStyles.buttonLabel.copyWith(
-                color: colors.surface,
+            child: FloatingActionButton(
+              onPressed: _showTemplatesScreen,
+              backgroundColor: colors.elevatedSurface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                side: BorderSide(
+                  color: colors.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.auto_awesome,
+                color: colors.textPrimary,
+                size: 20,
               ),
             ),
           ),
-        ),
+          // Add habit button
+          AnimatedScale(
+            scale: 1.0,
+            duration: AppAnimations.normal,
+            curve: AppAnimations.spring,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                boxShadow: AppShadows.floatingButton(null),
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  _showAddHabitModal();
+                },
+                backgroundColor: colors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                ),
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: colors.surface,
+                ),
+                label: Text(
+                  'New Habit',
+                  style: textStyles.buttonLabel.copyWith(
+                    color: colors.surface,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

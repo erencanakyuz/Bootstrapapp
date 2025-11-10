@@ -50,7 +50,7 @@ class MockHabitStorage implements HabitStorage {
     if (shouldThrowOnLoad) {
       throw StorageException('Mock load error');
     }
-    return _storage.isEmpty ? HabitTemplates.buildTemplates() : _storage;
+    return _storage.isEmpty ? HabitPresets.buildTemplates() : _storage;
   }
 
   @override

@@ -30,6 +30,7 @@ dependencies:
   file_picker: ^10.3.3
   uuid: ^4.5.1
   audioplayers: ^6.1.0
+  home_widget: ^0.8.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

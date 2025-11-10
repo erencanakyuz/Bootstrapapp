@@ -179,6 +179,40 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 SwitchListTile(
+                  value: settings.darkModeEnabled,
+                  onChanged: (value) {
+                    ref.read(profileSettingsProvider.notifier).toggleDarkMode(value);
+                    // Force rebuild to apply theme change
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                        );
+                      }
+                    });
+                  },
+                  title: const Text('Dark Mode'),
+                  subtitle: const Text(
+                    'Use dark theme for better visibility in low light',
+                  ),
+                  secondary: Icon(
+                    settings.darkModeEnabled
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const Divider(height: 20),
+                ListTile(
+                  leading: Icon(Icons.widgets, color: colors.primary),
+                  title: const Text('Home Widget Setup'),
+                  subtitle: const Text(
+                    'Add widgets to your home screen to track habits',
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _showWidgetSetupDialog(context, colors),
+                ),
+                SwitchListTile(
                   value: settings.allowPastDatesBeforeCreation,
                   onChanged: (value) => ref
                       .read(profileSettingsProvider.notifier)
@@ -623,5 +657,90 @@ class ProfileScreen extends ConsumerWidget {
       case NotificationPermissionState.unknown:
         return colors.statusIncomplete;
     }
+  }
+
+  void _showWidgetSetupDialog(BuildContext context, AppColors colors) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Home Widget Setup'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Add widgets to your home screen to track your habits without opening the app.',
+                style: TextStyle(color: colors.textPrimary),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Android:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '1. Long press on your home screen\n'
+                '2. Tap "Widgets"\n'
+                '3. Find "Bootstrap Your Life"\n'
+                '4. Select widget size and tap to add',
+                style: TextStyle(color: colors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'iOS:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '1. Long press on your home screen\n'
+                '2. Tap the "+" button\n'
+                '3. Search for "Bootstrap Your Life"\n'
+                '4. Select widget size and tap "Add Widget"',
+                style: TextStyle(color: colors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.elevatedSurface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colors.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: colors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Widgets update automatically when you complete habits.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 }

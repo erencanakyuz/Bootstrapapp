@@ -902,7 +902,7 @@ class Habit {
 }
 
 /// Pre-defined habit templates with modern presets
-class HabitTemplates {
+class HabitPresets {
   static List<Habit> buildTemplates() {
     return [
       Habit(

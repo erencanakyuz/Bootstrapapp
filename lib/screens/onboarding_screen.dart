@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_constants.dart';
@@ -29,27 +28,178 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _commitmentLevel = 5;
   bool _isCreatingPlan = false;
 
+  // Comprehensive feature slides covering all app features
   final List<_OnboardingSlide> _slides = const [
+    // Welcome
     _OnboardingSlide(
-      title: 'Design Intentional Routines',
-      subtitle:
-          'Bootstrap Your Life turns your rituals into trackable systems with streaks, notes, and context-aware reminders.',
-      asset: 'assets/illustrations/onboarding_focus.svg',
+      title: 'Welcome to Bootstrap Your Life',
+      subtitle: 'Transform your daily routines into powerful habits with our comprehensive tracking system.',
+      asset: null, // Placeholder for image
       icon: Icons.auto_awesome,
+      featureType: FeatureType.welcome,
+    ),
+    // Home Screen Features
+    _OnboardingSlide(
+      title: 'Smart Habit Tracking',
+      subtitle: 'Track your habits with beautiful cards, streaks, and real-time progress. Quick actions let you complete habits instantly.',
+      asset: null,
+      icon: Icons.check_circle_outline,
+      featureType: FeatureType.homeTracking,
     ),
     _OnboardingSlide(
-      title: 'Stay Accountable Everywhere',
-      subtitle:
-          'Visual calendars, hero animations, and confetti moments keep motivation high every day.',
-      asset: 'assets/illustrations/onboarding_flow.svg',
+      title: 'Search & Filter',
+      subtitle: 'Find habits instantly with powerful search. Filter by category, time block, or tags. Organize your life effortlessly.',
+      asset: null,
+      icon: Icons.search,
+      featureType: FeatureType.searchFilter,
+    ),
+    _OnboardingSlide(
+      title: 'Daily Motivation',
+      subtitle: 'Get inspired every day with personalized motivational quotes. Refresh anytime to discover new insights.',
+      asset: null,
+      icon: Icons.psychology,
+      featureType: FeatureType.motivation,
+    ),
+    _OnboardingSlide(
+      title: 'Habit Suggestions',
+      subtitle: 'Discover new habits tailored to your goals. Our smart engine suggests habits based on your current patterns.',
+      asset: null,
+      icon: Icons.lightbulb_outline,
+      featureType: FeatureType.suggestions,
+    ),
+    // Calendar Features
+    _OnboardingSlide(
+      title: 'Visual Calendar',
+      subtitle: 'See your progress at a glance with beautiful calendar views. Track completions, streaks, and patterns over time.',
+      asset: null,
       icon: Icons.calendar_today,
+      featureType: FeatureType.calendar,
     ),
     _OnboardingSlide(
-      title: 'Celebrate Momentum',
-      subtitle:
-          'Unlock insights, achievements, and beautiful share cards as you stack wins week after week.',
-      asset: 'assets/illustrations/onboarding_celebrate.svg',
+      title: 'Full Calendar View',
+      subtitle: 'Dive deep into your monthly progress. Share beautiful calendar images with friends and celebrate your consistency.',
+      asset: null,
+      icon: Icons.calendar_month,
+      featureType: FeatureType.fullCalendar,
+    ),
+    // Habit Details
+    _OnboardingSlide(
+      title: 'Habit Chain Visualization',
+      subtitle: 'See your consistency with visual habit chains. Track dependencies and build powerful habit sequences.',
+      asset: null,
+      icon: Icons.link,
+      featureType: FeatureType.habitChain,
+    ),
+    _OnboardingSlide(
+      title: 'Streak Heatmap',
+      subtitle: 'GitHub-style annual heatmap shows your entire year at a glance. Celebrate your consistency and identify patterns.',
+      asset: null,
+      icon: Icons.local_fire_department,
+      featureType: FeatureType.heatmap,
+    ),
+    _OnboardingSlide(
+      title: 'Notes & Tasks',
+      subtitle: 'Add daily notes and to-do tasks to each habit. Reflect on your journey and break habits into actionable steps.',
+      asset: null,
+      icon: Icons.note_add,
+      featureType: FeatureType.notesTasks,
+    ),
+    // Templates & Quick Start
+    _OnboardingSlide(
+      title: 'Habit Templates',
+      subtitle: 'Start quickly with pre-made habit templates. Browse by category and customize to fit your lifestyle.',
+      asset: null,
+      icon: Icons.auto_awesome_motion,
+      featureType: FeatureType.templates,
+    ),
+    _OnboardingSlide(
+      title: 'Quick Actions',
+      subtitle: 'Complete habits instantly from your home screen. Quick actions show your most important habits for today.',
+      asset: null,
+      icon: Icons.flash_on,
+      featureType: FeatureType.quickActions,
+    ),
+    // Smart Features
+    _OnboardingSlide(
+      title: 'Smart Notifications',
+      subtitle: 'Get intelligent reminders that adapt to your schedule. Notifications learn your patterns and remind you at optimal times.',
+      asset: null,
+      icon: Icons.notifications_active,
+      featureType: FeatureType.smartNotifications,
+    ),
+    _OnboardingSlide(
+      title: 'Habit Dependencies',
+      subtitle: 'Build powerful habit chains. Some habits unlock only after completing others, creating natural sequences.',
+      asset: null,
+      icon: Icons.account_tree,
+      featureType: FeatureType.dependencies,
+    ),
+    // Insights & Analytics
+    _OnboardingSlide(
+      title: 'Insights & Analytics',
+      subtitle: 'Understand your patterns with detailed analytics. See completion rates, streaks, and trends over time.',
+      asset: null,
+      icon: Icons.insights,
+      featureType: FeatureType.insights,
+    ),
+    _OnboardingSlide(
+      title: 'Reports & Export',
+      subtitle: 'Export your data as JSON or CSV. Generate weekly and monthly reports to track your progress.',
+      asset: null,
+      icon: Icons.assessment,
+      featureType: FeatureType.reports,
+    ),
+    // Settings & Customization
+    _OnboardingSlide(
+      title: 'Dark Mode',
+      subtitle: 'Switch between light and dark themes. Customize your experience with beautiful color palettes.',
+      asset: null,
+      icon: Icons.dark_mode,
+      featureType: FeatureType.darkMode,
+    ),
+    _OnboardingSlide(
+      title: 'Home Widgets',
+      subtitle: 'Track your habits from your home screen. Add widgets to see progress without opening the app.',
+      asset: null,
+      icon: Icons.widgets,
+      featureType: FeatureType.widgets,
+    ),
+    _OnboardingSlide(
+      title: 'Customization',
+      subtitle: 'Personalize everything: sounds, haptics, confetti, animations. Make the app truly yours.',
+      asset: null,
+      icon: Icons.settings,
+      featureType: FeatureType.customization,
+    ),
+    // Advanced Features
+    _OnboardingSlide(
+      title: 'Freeze Feature',
+      subtitle: 'Take breaks without breaking streaks. Freeze habits when life gets busy and resume when ready.',
+      asset: null,
+      icon: Icons.pause_circle_outline,
+      featureType: FeatureType.freeze,
+    ),
+    _OnboardingSlide(
+      title: 'Weekly & Monthly Targets',
+      subtitle: 'Set goals for each habit. Track progress toward weekly and monthly targets with visual indicators.',
+      asset: null,
+      icon: Icons.track_changes,
+      featureType: FeatureType.targets,
+    ),
+    _OnboardingSlide(
+      title: 'Categories & Tags',
+      subtitle: 'Organize habits by categories and tags. Filter, search, and group related habits together.',
+      asset: null,
+      icon: Icons.label_outline,
+      featureType: FeatureType.categories,
+    ),
+    // Celebration
+    _OnboardingSlide(
+      title: 'Celebrate Your Wins',
+      subtitle: 'Confetti animations, streak celebrations, and achievement unlocks make every completion feel special.',
+      asset: null,
       icon: Icons.celebration,
+      featureType: FeatureType.celebration,
     ),
   ];
 
@@ -133,7 +283,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 itemBuilder: (context, index) {
                   if (index < _slides.length) {
                     final slide = _slides[index];
-                    return _buildSlide(colors, textStyles, slide);
+                    return _buildFeatureSlide(colors, textStyles, slide);
                   } else {
                     return _buildQuestionnaire(colors, textStyles);
                   }
@@ -144,14 +294,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             // Page indicators
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingM),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
                 children: List.generate(
                   _slides.length + 1,
                   (index) => AnimatedContainer(
                     duration: AppAnimations.normal,
                     curve: Curves.easeInOut,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _currentIndex == index ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
@@ -193,11 +343,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ? () {
                                   if (_currentIndex == _slides.length) {
                                     _createPlanAndComplete();
-                                  } else if (_currentIndex == _slides.length - 1) {
-                                    _pageController.nextPage(
-                                      duration: AppAnimations.moderate,
-                                      curve: AppAnimations.emphasized,
-                                    );
                                   } else {
                                     _pageController.nextPage(
                                       duration: AppAnimations.moderate,
@@ -221,9 +366,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           child: Text(
                             _currentIndex == _slides.length
                                 ? 'Create My Plan'
-                                : _currentIndex == _slides.length - 1
-                                    ? 'Get Started'
-                                    : 'Next',
+                                : 'Next',
                             style: GoogleFonts.fraunces(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -245,7 +388,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return _selectedScheduleType != null;
   }
 
-  Widget _buildSlide(
+  Widget _buildFeatureSlide(
     AppColors colors,
     AppTextStyles textStyles,
     _OnboardingSlide slide,
@@ -272,12 +415,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: AppSizes.paddingXL),
           
-          // Illustration
-          SvgPicture.asset(
-            slide.asset,
-            height: 200,
-            fit: BoxFit.contain,
-          ),
+          // Feature-specific illustration (placeholder for image)
+          _buildFeatureIllustration(colors, slide.featureType),
+          
           const SizedBox(height: AppSizes.paddingXXXL),
           
           // Title
@@ -304,6 +444,687 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureIllustration(AppColors colors, FeatureType featureType) {
+    // Placeholder for images - will be replaced later
+    // For now, create UI-based illustrations
+    return Container(
+      height: 200,
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingL),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: _buildFeatureUI(colors, featureType),
+    );
+  }
+
+  Widget _buildFeatureUI(AppColors colors, FeatureType featureType) {
+    switch (featureType) {
+      case FeatureType.welcome:
+        return _buildWelcomeUI(colors);
+      case FeatureType.homeTracking:
+        return _buildHomeTrackingUI(colors);
+      case FeatureType.searchFilter:
+        return _buildSearchFilterUI(colors);
+      case FeatureType.motivation:
+        return _buildMotivationUI(colors);
+      case FeatureType.suggestions:
+        return _buildSuggestionsUI(colors);
+      case FeatureType.calendar:
+        return _buildCalendarUI(colors);
+      case FeatureType.fullCalendar:
+        return _buildFullCalendarUI(colors);
+      case FeatureType.habitChain:
+        return _buildHabitChainUI(colors);
+      case FeatureType.heatmap:
+        return _buildHeatmapUI(colors);
+      case FeatureType.notesTasks:
+        return _buildNotesTasksUI(colors);
+      case FeatureType.templates:
+        return _buildTemplatesUI(colors);
+      case FeatureType.quickActions:
+        return _buildQuickActionsUI(colors);
+      case FeatureType.smartNotifications:
+        return _buildSmartNotificationsUI(colors);
+      case FeatureType.dependencies:
+        return _buildDependenciesUI(colors);
+      case FeatureType.insights:
+        return _buildInsightsUI(colors);
+      case FeatureType.reports:
+        return _buildReportsUI(colors);
+      case FeatureType.darkMode:
+        return _buildDarkModeUI(colors);
+      case FeatureType.widgets:
+        return _buildWidgetsUI(colors);
+      case FeatureType.customization:
+        return _buildCustomizationUI(colors);
+      case FeatureType.freeze:
+        return _buildFreezeUI(colors);
+      case FeatureType.targets:
+        return _buildTargetsUI(colors);
+      case FeatureType.categories:
+        return _buildCategoriesUI(colors);
+      case FeatureType.celebration:
+        return _buildCelebrationUI(colors);
+    }
+  }
+
+  // UI Illustrations for each feature
+  Widget _buildWelcomeUI(AppColors colors) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.auto_awesome, size: 64, color: colors.primary),
+          const SizedBox(height: 16),
+          Text(
+            '🚀',
+            style: TextStyle(fontSize: 48),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeTrackingUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildMiniCard(colors, 'Exercise', true),
+              _buildMiniCard(colors, 'Read', true),
+              _buildMiniCard(colors, 'Meditate', false),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.local_fire_department, size: 20, color: colors.accentAmber),
+              const SizedBox(width: 4),
+              Text('7 day streak', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchFilterUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search, size: 16, color: colors.textSecondary),
+                const SizedBox(width: 8),
+                Text('Search habits...', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildMiniChip(colors, 'Health', true),
+              _buildMiniChip(colors, 'Productivity', false),
+              _buildMiniChip(colors, 'Learning', false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMotivationUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.format_quote, size: 24, color: colors.textPrimary),
+            const SizedBox(height: 8),
+            Text(
+              '"Every day is a fresh start"',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: colors.textPrimary, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lightbulb_outline, size: 32, color: colors.accentAmber),
+          const SizedBox(height: 12),
+          _buildMiniCard(colors, 'Suggested: Morning Walk', false),
+          const SizedBox(height: 8),
+          Text('Based on your goals', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalendarUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(7, (i) => _buildMiniDay(colors, i < 5)),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(7, (i) => _buildMiniDay(colors, i < 3)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullCalendarUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('📅', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 8),
+          Text('Share your progress', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHabitChainUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: List.generate(20, (i) => Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: i < 15 ? colors.accentGreen : colors.outline.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            )),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.link, size: 16, color: colors.textSecondary),
+              const SizedBox(width: 4),
+              Text('15 day chain', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeatmapUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Wrap(
+            spacing: 2,
+            runSpacing: 2,
+            children: List.generate(52, (i) => Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i % 4 == 0 ? colors.accentGreen : colors.outline.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            )),
+          ),
+          const SizedBox(height: 8),
+          Text('Year overview', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesTasksUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  Icon(Icons.note, size: 24, color: colors.accentBlue),
+                  const SizedBox(height: 4),
+                  Text('Notes', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+                ],
+              ),
+              Column(
+                children: [
+                  Icon(Icons.checklist, size: 24, color: colors.accentGreen),
+                  const SizedBox(height: 4),
+                  Text('Tasks', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTemplatesUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildMiniCard(colors, 'Template', false),
+              _buildMiniCard(colors, 'Template', false),
+              _buildMiniCard(colors, 'Template', false),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Browse & customize', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildQuickActionButton(colors, '✓', true),
+              _buildQuickActionButton(colors, '✓', true),
+              _buildQuickActionButton(colors, '○', false),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Quick complete', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmartNotificationsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.notifications, size: 16, color: colors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Smart reminder',
+                        style: TextStyle(fontSize: 11, color: colors.textPrimary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Time to complete "Exercise"',
+                  style: TextStyle(fontSize: 10, color: colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDependenciesUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildMiniCard(colors, 'Habit 1', true),
+              Icon(Icons.arrow_forward, size: 16, color: colors.textSecondary),
+              _buildMiniCard(colors, 'Habit 2', false),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Build chains', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 60,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colors.accentGreen.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Center(
+              child: Text('85%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.accentGreen)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text('Completion rate', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Icon(Icons.file_download, size: 24, color: colors.accentBlue),
+              Icon(Icons.assessment, size: 24, color: colors.accentGreen),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Export & analyze', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDarkModeUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.outline),
+            ),
+            child: Icon(Icons.light_mode, size: 20, color: colors.textPrimary),
+          ),
+          Icon(Icons.swap_horiz, size: 24, color: colors.textSecondary),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: colors.outline),
+            ),
+            child: Icon(Icons.dark_mode, size: 20, color: colors.textPrimary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWidgetsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text('2/5', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+                const SizedBox(width: 8),
+                Text('habits today', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            LinearProgressIndicator(
+              value: 0.4,
+              backgroundColor: colors.outline.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(colors.accentGreen),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomizationUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Icon(Icons.volume_up, size: 20, color: colors.textSecondary),
+          Icon(Icons.vibration, size: 20, color: colors.textSecondary),
+          Icon(Icons.celebration, size: 20, color: colors.textSecondary),
+          Icon(Icons.animation, size: 20, color: colors.textSecondary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFreezeUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.pause_circle_outline, size: 32, color: colors.accentAmber),
+          const SizedBox(height: 8),
+          Text('Pause without penalty', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetsUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  Text('5/7', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+                  Text('Weekly', style: TextStyle(fontSize: 9, color: colors.textTertiary)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text('18/20', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+                  Text('Monthly', style: TextStyle(fontSize: 9, color: colors.textTertiary)),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoriesUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        children: [
+          _buildMiniChip(colors, 'Health', true),
+          _buildMiniChip(colors, 'Productivity', false),
+          _buildMiniChip(colors, 'Learning', false),
+          _buildMiniChip(colors, 'Mindfulness', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCelebrationUI(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('🎉', style: TextStyle(fontSize: 64)),
+          const SizedBox(height: 8),
+          Text('Celebrate wins!', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  // Helper widgets
+  Widget _buildMiniCard(AppColors colors, String title, bool completed) {
+    return Container(
+      width: 50,
+      height: 30,
+      decoration: BoxDecoration(
+        color: completed ? colors.accentGreen.withValues(alpha: 0.2) : colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: completed
+            ? Icon(Icons.check, size: 14, color: colors.accentGreen)
+            : Text(title.substring(0, 1), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+      ),
+    );
+  }
+
+  Widget _buildMiniChip(AppColors colors, String label, bool selected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: selected ? colors.primary.withValues(alpha: 0.15) : colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selected ? colors.primary : colors.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 9, color: selected ? colors.primary : colors.textSecondary),
+      ),
+    );
+  }
+
+  Widget _buildMiniDay(AppColors colors, bool completed) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(AppColors colors, String icon, bool completed) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: completed ? colors.accentGreen : colors.elevatedSurface,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(icon, style: TextStyle(fontSize: 16, color: completed ? Colors.white : colors.textSecondary)),
       ),
     );
   }
@@ -758,17 +1579,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
+enum FeatureType {
+  welcome,
+  homeTracking,
+  searchFilter,
+  motivation,
+  suggestions,
+  calendar,
+  fullCalendar,
+  habitChain,
+  heatmap,
+  notesTasks,
+  templates,
+  quickActions,
+  smartNotifications,
+  dependencies,
+  insights,
+  reports,
+  darkMode,
+  widgets,
+  customization,
+  freeze,
+  targets,
+  categories,
+  celebration,
+}
+
 class _OnboardingSlide {
   final String title;
   final String subtitle;
-  final String asset;
+  final String? asset; // Placeholder for image - null for now
   final IconData icon;
+  final FeatureType featureType;
 
   const _OnboardingSlide({
     required this.title,
     required this.subtitle,
-    required this.asset,
+    this.asset,
     required this.icon,
+    required this.featureType,
   });
 }
 
