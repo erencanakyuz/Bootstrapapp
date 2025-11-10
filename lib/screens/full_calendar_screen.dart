@@ -1717,25 +1717,45 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     Set<DateTime> completedDates,
     DateTime now,
   ) async {
+    // Early safety checks
+    if (!mounted) return;
+    
     if (_viewMode != CalendarViewMode.monthly) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Only monthly view can be shared'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Only monthly view can be shared'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       return;
     }
 
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => _ShareCalendarDialog(colors: colors),
-      useRootNavigator: true,
-    );
+    Map<String, dynamic>? result;
+    try {
+      result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => _ShareCalendarDialog(colors: colors),
+        useRootNavigator: true,
+      );
+    } catch (e) {
+      debugPrint('Error showing share dialog: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
 
     // Early return if dialog was cancelled
-    if (result == null || !mounted) return;
-
+    if (result == null || !mounted) {
+      return;
+    }
     setState(() => _isSharing = true);
 
     try {
@@ -2136,16 +2156,20 @@ class _ShareCalendarDialogState extends State<_ShareCalendarDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(
-              context,
-              {
+            try {
+              final message = _messageController.text.trim();
+              final resultMap = <String, dynamic>{
                 'includeStats': _includeStats,
                 'includeWatermark': _includeWatermark,
-                'customMessage': _messageController.text.trim().isEmpty
-                    ? null
-                    : _messageController.text.trim(),
-              },
-            );
+              };
+              if (message.isNotEmpty) {
+                resultMap['customMessage'] = message;
+              }
+              Navigator.pop(context, resultMap);
+            } catch (e) {
+              debugPrint('Error in share dialog: $e');
+              Navigator.pop(context, null);
+            }
           },
           child: const Text('Share'),
         ),

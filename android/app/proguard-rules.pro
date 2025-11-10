@@ -44,3 +44,38 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
+# ============================================
+# Flutter Plugin Rules
+# ============================================
+
+# Share Plus plugin
+-keep class dev.fluttercommunity.plus.share.** { *; }
+-keep class androidx.core.content.FileProvider { *; }
+-keep class androidx.core.content.FileProvider$* { *; }
+
+# Path Provider plugin
+-keep class io.flutter.plugins.pathprovider.** { *; }
+-keep class androidx.documentfile.provider.** { *; }
+
+# Shared Preferences plugin
+-keep class io.flutter.plugins.sharedpreferences.** { *; }
+-keep class android.content.SharedPreferences { *; }
+-keep class android.content.SharedPreferences$* { *; }
+-keepclassmembers class * implements android.content.SharedPreferences {
+    <methods>;
+}
+
+# Keep all Flutter plugin classes
+-keep class io.flutter.plugins.** { *; }
+-dontwarn io.flutter.plugins.**
+
+# Keep native method registration
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep reflection-based code (used by plugins)
+-keepattributes RuntimeVisibleAnnotations
+-keepattributes RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
+

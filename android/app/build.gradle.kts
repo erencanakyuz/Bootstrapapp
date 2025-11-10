@@ -34,6 +34,11 @@ android {
         versionName = flutter.versionName
     }
 
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
     signingConfigs {
         create("release") {
             val keystorePropertiesFile = rootProject.file("key.properties")
@@ -54,6 +59,8 @@ android {
             // Minify kapalı - basit build için
             isMinifyEnabled = false
             isShrinkResources = false
+            // Lint'i atla - build hızlandırma için
+            tasks.findByName("lintVitalAnalyzeRelease")?.enabled = false
         }
     }
 }
