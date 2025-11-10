@@ -61,16 +61,18 @@ class CalendarShareService {
       ui.Image? image;
       try {
         image = await boundary.toImage(pixelRatio: pixelRatio);
-        if (image == null) {
-          return null;
-        }
         
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData == null) {
+          image.dispose();
           return null;
         }
         return byteData.buffer.asUint8List();
+      } catch (e) {
+        debugPrint('Error generating calendar image: $e');
+        return null;
       } finally {
+        // Dispose image if it was created
         image?.dispose();
       }
     } catch (e) {
@@ -118,26 +120,21 @@ class CalendarShareService {
         return false;
       }
 
-      // Share using Share.shareXFiles which is more reliable
+      // Share using SharePlus.instance.share() (replaces deprecated Share.shareXFiles)
       final xFile = XFile(tempFile.path);
       final shareText = _buildShareText(month, habits, completedDates);
       final shareSubject = 'My ${DateFormat('MMMM yyyy').format(month)} Calendar';
 
-      // Use the more reliable shareXFiles method
+      // Use SharePlus.instance.share() instead of deprecated Share.shareXFiles
       try {
-        final result = await Share.shareXFiles(
-          [xFile],
-          text: shareText,
-          subject: shareSubject,
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [xFile],
+            text: shareText,
+            subject: shareSubject,
+          ),
         );
-
-        // Check if share was successful (result.status should be 'success' or 'dismissed')
-        // Handle potential null or uninitialized result
-        if (result.status == ShareResultStatus.success ||
-            result.status == ShareResultStatus.dismissed) {
-          return true;
-        }
-        return false;
+        return true;
       } catch (shareError) {
         debugPrint('Share plugin error: $shareError');
         // If share plugin fails, still return false but log the error

@@ -10,6 +10,8 @@ import '../providers/app_settings_providers.dart';
 import '../providers/notification_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/notification_permissions.dart';
+import '../screens/habit_templates_screen.dart';
+import '../utils/page_transitions.dart';
 import 'modern_button.dart';
 
 const _uuid = Uuid();
@@ -232,6 +234,37 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
                   color: colors.textPrimary,
                 ),
               ),
+              if (widget.habitToEdit == null) ...[
+                const SizedBox(height: AppSizes.paddingM),
+                TextButton.icon(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    if (!context.mounted) return;
+                    final selectedHabit = await Navigator.of(context).push(
+                      PageTransitions.slideFromRight(
+                        HabitTemplatesScreen(
+                          onTemplateSelected: (habit) => Navigator.of(context).pop(habit),
+                        ),
+                      ),
+                    ) as Habit?;
+                    if (selectedHabit != null && context.mounted) {
+                      Navigator.of(context).pop(selectedHabit);
+                    }
+                  },
+                  icon: Icon(Icons.auto_awesome, size: 18, color: colors.primary),
+                  label: Text(
+                    'Browse Templates',
+                    style: TextStyle(color: colors.primary),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.paddingL,
+                      vertical: AppSizes.paddingM,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSizes.paddingXXL),
               // Error banner
               if (_errorMessage != null) ...[
@@ -654,36 +687,43 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   }
 
   Widget _buildIconSelector(AppColors colors) {
-    return Wrap(
-      spacing: AppSizes.paddingM,
-      runSpacing: AppSizes.paddingM,
-      children: HabitIconLibrary.icons.map((icon) {
-        final isSelected = icon == _selectedIcon;
-        return RepaintBoundary(
-          key: ValueKey('icon_$icon'),
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedIcon = icon),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? _selectedColor.withValues(alpha: 0.2)
-                    : colors.surface,
-                border: Border.all(
-                  color: isSelected ? _selectedColor : colors.outline,
-                  width: isSelected ? 2 : 1,
+    return SizedBox(
+      height: 120,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Wrap(
+          spacing: AppSizes.paddingM,
+          runSpacing: AppSizes.paddingM,
+          direction: Axis.horizontal,
+          children: HabitIconLibrary.icons.map((icon) {
+            final isSelected = icon == _selectedIcon;
+            return RepaintBoundary(
+              key: ValueKey('icon_$icon'),
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedIcon = icon),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? _selectedColor.withValues(alpha: 0.2)
+                        : colors.surface,
+                    border: Border.all(
+                      color: isSelected ? _selectedColor : colors.outline,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? _selectedColor : colors.textSecondary,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(AppSizes.radiusM),
               ),
-              child: Icon(
-                icon,
-                color: isSelected ? _selectedColor : colors.textSecondary,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -694,7 +734,7 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
       children: _colors.map((color) {
         final isSelected = color == _selectedColor;
         return RepaintBoundary(
-          key: ValueKey('color_${color.value}'),
+          key: ValueKey('color_${color.toARGB32()}'),
           child: GestureDetector(
             onTap: () => setState(() => _selectedColor = color),
             child: AnimatedContainer(

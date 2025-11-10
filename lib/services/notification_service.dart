@@ -11,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/habit.dart';
 import 'notification_backend.dart';
 import 'notification_schedule_calculator.dart';
+import 'smart_notification_service.dart';
 
 /// Service for scheduling and managing habit reminder notifications.
 /// Fully integrated with mobile support - Windows/Web builds skip
@@ -113,6 +114,7 @@ class NotificationService {
     bool isTest = false,
     Duration? testDelay,
     bool? appNotificationsEnabled,
+    List<Habit>? habits, // Optional: all habits for smart notifications
   }) async {
     await initialize();
     if (!_isPlatformSupported) return;
@@ -185,9 +187,31 @@ class NotificationService {
 
       // Create rich notification content similar to habit card
       final notificationTitle = habit.title;
-      final notificationBody = habit.description?.isNotEmpty == true
-          ? habit.description!
-          : 'Time to complete ${habit.title}!';
+      
+      // Use smart notification service for personalized messages
+      // Get all habits for dependency checking
+      final allHabits = habits ?? [];
+      final smartScheduler = SmartNotificationScheduler(
+        habits: allHabits,
+        completionHistory: {
+          habit.id: habit.completedDates,
+        },
+      );
+      
+      final today = DateTime.now();
+      // final streak = habit.getCurrentStreak();
+      final isStreakAtRisk = smartScheduler.isStreakAtRisk(habit, today);
+      final unsatisfiedDeps = smartScheduler.getUnsatisfiedDependencies(habit, today);
+      
+      // Check if it's evening (after 6 PM) for evening-specific messages
+      final isEveningReminder = scheduleDate.hour >= 18;
+      
+      final notificationBody = smartScheduler.getPersonalizedMessage(
+        habit,
+        isStreakAtRisk: isStreakAtRisk,
+        unsatisfiedDependencies: unsatisfiedDeps.isNotEmpty ? unsatisfiedDeps : null,
+        isEveningReminder: isEveningReminder,
+      );
 
       // Calculate time until scheduled date
       final now = DateTime.now();

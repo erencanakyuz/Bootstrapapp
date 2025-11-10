@@ -357,7 +357,7 @@ class HabitRepository {
     final Set<String> existingTitles = _cache
         .map((habit) => habit.title.toLowerCase())
         .toSet();
-    final templates = HabitTemplates.buildTemplates();
+    final templates = HabitPresets.buildTemplates();
     final missing = templates.where(
       (habit) => !existingTitles.contains(habit.title.toLowerCase()),
     );

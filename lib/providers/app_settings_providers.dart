@@ -19,6 +19,7 @@ class ProfileSettings {
   final int avatarSeed;
   final bool allowPastDatesBeforeCreation;
   final bool performanceOverlayEnabled;
+  final bool darkModeEnabled;
 
   const ProfileSettings({
     required this.name,
@@ -30,6 +31,7 @@ class ProfileSettings {
     required this.avatarSeed,
     required this.allowPastDatesBeforeCreation,
     required this.performanceOverlayEnabled,
+    required this.darkModeEnabled,
   });
 
   ProfileSettings copyWith({
@@ -42,6 +44,7 @@ class ProfileSettings {
     int? avatarSeed,
     bool? allowPastDatesBeforeCreation,
     bool? performanceOverlayEnabled,
+    bool? darkModeEnabled,
   }) {
     return ProfileSettings(
       name: name ?? this.name,
@@ -55,6 +58,7 @@ class ProfileSettings {
           allowPastDatesBeforeCreation ?? this.allowPastDatesBeforeCreation,
       performanceOverlayEnabled:
           performanceOverlayEnabled ?? this.performanceOverlayEnabled,
+      darkModeEnabled: darkModeEnabled ?? this.darkModeEnabled,
     );
   }
 }
@@ -72,6 +76,7 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     final avatar = await service.avatarSeed();
     final allowPastDates = await service.allowPastDatesBeforeCreation();
     final performanceOverlay = await service.performanceOverlayEnabled();
+    final darkMode = await service.darkModeEnabled();
     
     // Initialize sound service with current settings
     final soundService = ref.read(soundServiceProvider);
@@ -87,6 +92,7 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
       avatarSeed: avatar,
       allowPastDatesBeforeCreation: allowPastDates,
       performanceOverlayEnabled: performanceOverlay,
+      darkModeEnabled: darkMode,
     );
   }
 
@@ -112,6 +118,7 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
             habit,
             reminder,
             appNotificationsEnabled: true,
+            habits: habits, // Pass all habits for smart notifications
           );
         }
       }
@@ -182,6 +189,14 @@ class ProfileSettingsNotifier extends AsyncNotifier<ProfileSettings> {
     await service.setPerformanceOverlayEnabled(enabled);
     state = state.whenData(
       (settings) => settings.copyWith(performanceOverlayEnabled: enabled),
+    );
+  }
+
+  Future<void> toggleDarkMode(bool enabled) async {
+    final service = ref.read(appSettingsServiceProvider);
+    await service.setDarkModeEnabled(enabled);
+    state = state.whenData(
+      (settings) => settings.copyWith(darkModeEnabled: enabled),
     );
   }
 }

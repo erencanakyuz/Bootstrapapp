@@ -274,37 +274,37 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     chipOutline: Color(0xFFD7C9BA), // chipOutline - RefactorUi.md
   ),
   AppPalette.dark: AppColors(
-    // Dark theme - Reserved for future use
-    primary: Color(0xFFA78BFA), // Lighter purple for dark mode
-    primaryDark: Color(0xFF8B5CF6),
-    primarySoft: Color(0xFF1E293B),
-    accentGreen: Color(0xFF2DD4BF),
-    accentBlue: Color(0xFF60A5FA),
-    accentAmber: Color(0xFFF59E0B),
-    background: Color(0xFF0B0D10), // Very dark background
-    surface: Color(0xFF111318), // Dark surface
-    elevatedSurface: Color(0xFF1E293B), // Elevated dark surface
-    outline: Color(0xFF242933), // Dark outline
-    textPrimary: Color(0xFFF5F7FA), // Light text
+    // Dark theme - Fully implemented with muted palette
+    primary: Color(0xFF7A8B6B), // Muted green for dark mode
+    primaryDark: Color(0xFF6B7D5A), // Darker muted green
+    primarySoft: Color(0xFF2A2D26), // Dark soft green
+    accentGreen: Color(0xFF7A8B6B), // Muted green
+    accentBlue: Color(0xFF6B8FA3), // Muted blue-gray (same as light)
+    accentAmber: Color(0xFFC9A882), // Muted warm beige-orange (same as light)
+    background: Color(0xFF1A1C18), // Very dark background
+    surface: Color(0xFF242622), // Dark surface
+    elevatedSurface: Color(0xFF2A2D26), // Elevated dark surface
+    outline: Color(0xFF3A3D36), // Dark outline
+    textPrimary: Color(0xFFE8E5E0), // Light text
     textSecondary: Color(0xFF9AA3B2), // Muted light text
     textTertiary: Color(0xFF6B7280), // Very muted light text
-    statusComplete: Color(0xFF2DD4BF),
-    statusProgress: Color(0xFFF59E0B),
-    statusIncomplete: Color(0xFFF05252),
-    // Dark theme gradients
-    brandAccentPurple: Color(0xFF8B5CF6),
-    brandAccentPurpleSoft: Color(0xFFA78BFA),
-    brandAccentPeach: Color(0xFFF97316),
-    brandAccentPeachSoft: Color(0xFFFB923C),
-    brandMutedIcon: Color(0xFF6B7280),
-    gradientPeachStart: Color(0xFF1E293B), // Dark peach gradient start
-    gradientPeachEnd: Color(0xFF0F172A), // Dark peach gradient end
-    gradientPurpleStart: Color(0xFF8B5CF6), // Dark purple gradient start
-    gradientPurpleEnd: Color(0xFFA78BFA), // Dark purple gradient end
-    gradientPurpleLighterStart: Color(0xFF1E293B), // Dark purple lighter start
-    gradientPurpleLighterEnd: Color(0xFF0F172A), // Dark purple lighter end
-    gradientBlueAudioStart: Color(0xFF1E293B), // Dark blue audio start
-    gradientBlueAudioEnd: Color(0xFF0F172A), // Dark blue audio end
+    statusComplete: Color(0xFF7A8B6B), // Muted green
+    statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
+    statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose (same as light)
+    // Dark theme gradients - muted palette
+    brandAccentPurple: Color(0xFF9B8FA8), // Muted dusty lavender (same as light)
+    brandAccentPurpleSoft: Color(0xFF7A6F8B), // Darker muted lavender
+    brandAccentPeach: Color(0xFFD4A882), // Darker muted peach
+    brandAccentPeachSoft: Color(0xFFB8967A), // Darker soft peach
+    brandMutedIcon: Color(0xFF6B7280), // Muted icon color
+    gradientPeachStart: Color(0xFF2A2D26), // Dark peach gradient start
+    gradientPeachEnd: Color(0xFF1A1C18), // Dark peach gradient end
+    gradientPurpleStart: Color(0xFF7A6F8B), // Dark purple gradient start
+    gradientPurpleEnd: Color(0xFF9B8FA8), // Dark purple gradient end
+    gradientPurpleLighterStart: Color(0xFF3A3D36), // Dark purple lighter start
+    gradientPurpleLighterEnd: Color(0xFF2A2D26), // Dark purple lighter end
+    gradientBlueAudioStart: Color(0xFF3A3D36), // Dark blue audio start
+    gradientBlueAudioEnd: Color(0xFF2A2D26), // Dark blue audio end
     chipOutline: Color(0xFF6B7280), // Dark theme chip outline
   ),
 };

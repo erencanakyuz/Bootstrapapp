@@ -9,6 +9,8 @@ import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/add_habit_modal.dart';
+import '../widgets/streak_heatmap_widget.dart';
+import '../widgets/habit_chain_widget.dart';
 
 class HabitDetailScreen extends ConsumerWidget {
   final String habitId;
@@ -248,6 +250,28 @@ class HabitDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: AppSizes.paddingXXL),
+                Text(
+                  'Habit Chain',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.paddingM),
+                HabitChainWidget(habit: habit),
+                const SizedBox(height: AppSizes.paddingXXL),
+                Text(
+                  'Year Activity',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.paddingM),
+                StreakHeatmapWidget(habit: habit),
                 const SizedBox(height: AppSizes.paddingXXL),
                 Text(
                   'Last 30 days',
