@@ -10,6 +10,7 @@ class AppSettingsService {
   static const _userNameKey = 'user_name';
   static const _avatarSeedKey = 'avatar_seed';
   static const _allowPastDatesKey = 'allow_past_dates_before_creation';
+  static const _performanceOverlayKey = 'performance_overlay_enabled';
 
   Future<SharedPreferences> get _prefs async => SharedPreferences.getInstance();
 
@@ -101,5 +102,15 @@ class AppSettingsService {
   Future<void> setAllowPastDatesBeforeCreation(bool enabled) async {
     final prefs = await _prefs;
     await prefs.setBool(_allowPastDatesKey, enabled);
+  }
+
+  Future<bool> performanceOverlayEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_performanceOverlayKey) ?? false;
+  }
+
+  Future<void> setPerformanceOverlayEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_performanceOverlayKey, enabled);
   }
 }

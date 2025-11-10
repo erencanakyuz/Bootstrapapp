@@ -124,9 +124,12 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
   }
 
   Future<void> _testScheduleNormal() async {
-    // Create a test habit with a reminder
+    // Create a test habit with a reminder scheduled for 5 seconds from now
+    final now = DateTime.now();
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final testHabit = Habit(
-      id: 'test_habit_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'test_habit_${now.millisecondsSinceEpoch}',
       title: 'Test Habit - Normal',
       description: 'Testing normal notification scheduling',
       category: HabitCategory.health,
@@ -134,26 +137,33 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'test_reminder_1',
-          hour: DateTime.now().hour,
-          minute: (DateTime.now().minute + 2) % 60, // 2 minutes from now
-          weekdays: [DateTime.now().weekday],
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
       ],
     );
 
+    // Schedule with isTest=true to disable recurring (matchDateTimeComponents=null)
+    // Use testDelay to schedule exactly 5 seconds from now
     await _notificationService.scheduleReminder(
       testHabit,
       testHabit.reminders.first,
+      isTest: true,
+      testDelay: const Duration(seconds: 5),
     );
   }
 
   Future<void> _testScheduleEmptyWeekdays() async {
     // Test case: Empty weekdays list - should schedule for today as fallback
+    final now = DateTime.now();
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final testHabit = Habit(
       id: 'test_habit_empty_weekdays',
       title: 'Test Habit - Empty Weekdays',
@@ -163,12 +173,12 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'test_reminder_empty',
-          hour: DateTime.now().hour,
-          minute: (DateTime.now().minute + 2) % 60,
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
           weekdays: [], // Empty weekdays - should trigger fallback
           enabled: true,
         ),
@@ -178,19 +188,16 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     await _notificationService.scheduleReminder(
       testHabit,
       testHabit.reminders.first,
+      isTest: true,
+      testDelay: const Duration(seconds: 5),
     );
   }
 
   Future<void> _testScheduleNoValidWeekday() async {
-    // Test case: No valid weekday in 2 weeks - should find next available
+    // Test case: No valid weekday - schedule for 5 seconds from now
     final now = DateTime.now();
-    final currentWeekday = now.weekday;
-    // Use weekdays that don't include today or next few days
-    final futureWeekdays = [
-      (currentWeekday + 3) % 7 + 1, // 3 days from now
-      (currentWeekday + 4) % 7 + 1, // 4 days from now
-    ];
-
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final testHabit = Habit(
       id: 'test_habit_no_valid',
       title: 'Test Habit - No Valid Weekday',
@@ -200,13 +207,13 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'test_reminder_no_valid',
-          hour: now.hour,
-          minute: now.minute,
-          weekdays: futureWeekdays,
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday], // Use today's weekday for test
           enabled: true,
         ),
       ],
@@ -215,11 +222,16 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     await _notificationService.scheduleReminder(
       testHabit,
       testHabit.reminders.first,
+      isTest: true,
+      testDelay: const Duration(seconds: 5),
     );
   }
 
   Future<void> _testScheduleMultipleReminders() async {
-    // Test case: Multiple reminders for same habit
+    // Test case: Multiple reminders for same habit - schedule both for 5 seconds from now
+    final now = DateTime.now();
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final testHabit = Habit(
       id: 'test_habit_multiple',
       title: 'Test Habit - Multiple Reminders',
@@ -229,32 +241,40 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'test_reminder_morning',
-          hour: 9,
-          minute: 0,
-          weekdays: [1, 2, 3, 4, 5], // Weekdays
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
         HabitReminder(
           id: 'test_reminder_evening',
-          hour: 20,
-          minute: 0,
-          weekdays: [1, 2, 3, 4, 5], // Weekdays
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
       ],
     );
 
     for (final reminder in testHabit.reminders) {
-      await _notificationService.scheduleReminder(testHabit, reminder);
+      await _notificationService.scheduleReminder(
+        testHabit,
+        reminder,
+        isTest: true,
+        testDelay: const Duration(seconds: 5),
+      );
     }
   }
 
   Future<void> _testCancelSingleReminder() async {
     // First schedule a reminder, then cancel it
+    final now = DateTime.now();
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final testHabit = Habit(
       id: 'test_habit_cancel',
       title: 'Test Habit - Cancel',
@@ -264,13 +284,13 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'test_reminder_cancel',
-          hour: DateTime.now().hour,
-          minute: (DateTime.now().minute + 5) % 60,
-          weekdays: [DateTime.now().weekday],
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
       ],
@@ -279,6 +299,8 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
     await _notificationService.scheduleReminder(
       testHabit,
       testHabit.reminders.first,
+      isTest: true,
+      testDelay: const Duration(seconds: 5),
     );
     await Future.delayed(const Duration(milliseconds: 500));
     await _notificationService.cancelHabitReminders(testHabit);
@@ -299,6 +321,9 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
 
   Future<void> _testNotificationIdUniqueness() async {
     // Test that different habits with same reminder ID get unique notification IDs
+    final now = DateTime.now();
+    final scheduleTime = now.add(const Duration(seconds: 5));
+    
     final habit1 = Habit(
       id: 'habit_1',
       title: 'Habit 1',
@@ -308,13 +333,13 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'same_reminder_id',
-          hour: DateTime.now().hour,
-          minute: (DateTime.now().minute + 10) % 60,
-          weekdays: [DateTime.now().weekday],
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
       ],
@@ -329,20 +354,20 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
       icon: HabitIconLibrary.icons.first,
       weeklyTarget: 5,
       monthlyTarget: 20,
-      createdAt: DateTime.now(),
+      createdAt: now,
       reminders: [
         HabitReminder(
           id: 'same_reminder_id', // Same reminder ID but different habit
-          hour: DateTime.now().hour,
-          minute: (DateTime.now().minute + 15) % 60,
-          weekdays: [DateTime.now().weekday],
+          hour: scheduleTime.hour,
+          minute: scheduleTime.minute,
+          weekdays: [scheduleTime.weekday],
           enabled: true,
         ),
       ],
     );
 
-    await _notificationService.scheduleReminder(habit1, habit1.reminders.first);
-    await _notificationService.scheduleReminder(habit2, habit2.reminders.first);
+    await _notificationService.scheduleReminder(habit1, habit1.reminders.first, isTest: true);
+    await _notificationService.scheduleReminder(habit2, habit2.reminders.first, isTest: true);
   }
 
   @override
@@ -419,9 +444,10 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
             else
               ..._pendingNotifications.map((n) {
                 // Get scheduled date from service
-                final scheduledDate = _notificationService.getScheduledDate(
+                DateTime? scheduledDate = _notificationService.getScheduledDate(
                   n.id,
                 );
+                
                 final now = DateTime.now();
                 final isPast =
                     scheduledDate != null && scheduledDate.isBefore(now);
@@ -430,7 +456,7 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                 String countdownText = 'Unknown';
                 Color countdownColor = colors.textTertiary;
 
-                if (timeUntil != null) {
+                if (timeUntil != null && timeUntil.inSeconds >= 0) {
                   if (isPast) {
                     countdownText =
                         '⚠️ Should have appeared ${_formatDuration(now.difference(scheduledDate))} ago';
@@ -438,20 +464,25 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
                   } else {
                     if (timeUntil.inDays > 0) {
                       countdownText =
-                          '⏰ ${timeUntil.inDays} gün ${timeUntil.inHours % 24} saat sonra';
+                          '⏰ ${timeUntil.inDays} day${timeUntil.inDays > 1 ? 's' : ''} ${timeUntil.inHours % 24} hour${(timeUntil.inHours % 24) > 1 ? 's' : ''} later';
                     } else if (timeUntil.inHours > 0) {
                       countdownText =
-                          '⏰ ${timeUntil.inHours} saat ${timeUntil.inMinutes % 60} dakika sonra';
+                          '⏰ ${timeUntil.inHours} hour${timeUntil.inHours > 1 ? 's' : ''} ${timeUntil.inMinutes % 60} minute${(timeUntil.inMinutes % 60) > 1 ? 's' : ''} later';
                     } else if (timeUntil.inMinutes > 0) {
                       countdownText =
-                          '⏰ ${timeUntil.inMinutes} dakika ${timeUntil.inSeconds % 60} saniye sonra';
+                          '⏰ ${timeUntil.inMinutes} minute${timeUntil.inMinutes > 1 ? 's' : ''} ${timeUntil.inSeconds % 60} second${(timeUntil.inSeconds % 60) > 1 ? 's' : ''} later';
+                    } else if (timeUntil.inSeconds > 0) {
+                      countdownText = '⏰ ${timeUntil.inSeconds} second${timeUntil.inSeconds > 1 ? 's' : ''} later';
+                      countdownColor = colors.accentGreen;
                     } else {
-                      countdownText = '⏰ ${timeUntil.inSeconds} saniye sonra';
+                      countdownText = '⏰ Now';
                       countdownColor = colors.accentGreen;
                     }
                   }
+                } else if (scheduledDate == null) {
+                  countdownText = '📅 Scheduled (recurring or date unknown)';
                 } else {
-                  countdownText = '📅 Zamanlanmış (recurring)';
+                  countdownText = '📅 Scheduled';
                 }
 
                 return Container(
@@ -695,13 +726,13 @@ class _NotificationTestScreenState extends ConsumerState<NotificationTestScreen>
 
   String _formatDuration(Duration duration) {
     if (duration.inDays > 0) {
-      return '${duration.inDays} gün ${duration.inHours % 24} saat';
+      return '${duration.inDays} day${duration.inDays > 1 ? 's' : ''} ${duration.inHours % 24} hour${(duration.inHours % 24) > 1 ? 's' : ''}';
     } else if (duration.inHours > 0) {
-      return '${duration.inHours} saat ${duration.inMinutes % 60} dakika';
+      return '${duration.inHours} hour${duration.inHours > 1 ? 's' : ''} ${duration.inMinutes % 60} minute${(duration.inMinutes % 60) > 1 ? 's' : ''}';
     } else if (duration.inMinutes > 0) {
-      return '${duration.inMinutes} dakika';
+      return '${duration.inMinutes} minute${duration.inMinutes > 1 ? 's' : ''}';
     } else {
-      return '${duration.inSeconds} saniye';
+      return '${duration.inSeconds} second${duration.inSeconds > 1 ? 's' : ''}';
     }
   }
 

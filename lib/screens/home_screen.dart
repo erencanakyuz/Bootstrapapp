@@ -69,8 +69,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   HabitDifficulty? _currentHabitDifficulty; // Store the difficulty of the completed habit
   int _confettiPaletteSeed = 0; // Forces ConfettiWidget to rebuild with new colors
 
-  List<Habit> get _activeTodayHabits =>
-      widget.todayHabits.where((habit) => !habit.archived).toList();
+  // Cache for expensive computations
+  int? _cachedTotalStreak;
+  int? _cachedWeeklyCompletions;
+  Map<HabitTimeBlock, int>? _cachedTimeBlockCounts;
+  String? _cachedWeekRangeLabel;
+  DateTime? _lastCacheDate;
+  List<Habit>? _cachedActiveTodayHabits;
+
+  List<Habit> get _activeTodayHabits {
+    // Cache active habits per day to avoid recalculation
+    final today = DateTime.now();
+    final todayKey = DateTime(today.year, today.month, today.day);
+    if (_lastCacheDate != todayKey || _cachedActiveTodayHabits == null) {
+      _cachedActiveTodayHabits = widget.todayHabits.where((habit) => !habit.archived).toList();
+      _lastCacheDate = todayKey;
+      // Invalidate cached computations when habits change
+      _cachedTotalStreak = null;
+      _cachedWeeklyCompletions = null;
+      _cachedTimeBlockCounts = null;
+    }
+    return _cachedActiveTodayHabits!;
+  }
 
   @override
   void initState() {
@@ -78,6 +98,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 2),
     );
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Invalidate cache when habits change
+    if (oldWidget.todayHabits != widget.todayHabits) {
+      _cachedActiveTodayHabits = null;
+      _cachedTotalStreak = null;
+      _cachedWeeklyCompletions = null;
+      _cachedTimeBlockCounts = null;
+    }
   }
 
   @override
@@ -104,6 +136,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final wasCompleted = habit.isCompletedOn(today);
     final updatedHabit = habit.toggleCompletion(today);
     widget.onUpdateHabit(updatedHabit);
+
+    // Invalidate cache when habit completion changes
+    _cachedTotalStreak = null;
+    _cachedWeeklyCompletions = null;
 
     if (!wasCompleted && updatedHabit.isCompletedOn(today)) {
       // Check confetti setting
@@ -854,17 +890,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   int _getTotalStreak() {
+    // Use cached value if available
+    if (_cachedTotalStreak != null) return _cachedTotalStreak!;
+    
     final activeHabits = _activeTodayHabits;
-    if (activeHabits.isEmpty) return 0;
+    if (activeHabits.isEmpty) {
+      _cachedTotalStreak = 0;
+      return 0;
+    }
     int maxStreak = 0;
     for (final habit in activeHabits) {
       final streak = habit.getCurrentStreak();
       if (streak > maxStreak) maxStreak = streak;
     }
+    _cachedTotalStreak = maxStreak;
     return maxStreak;
   }
 
   int _getWeeklyCompletions() {
+    // Use cached value if available
+    if (_cachedWeeklyCompletions != null) return _cachedWeeklyCompletions!;
+    
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     int count = 0;
@@ -877,6 +923,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       }
     }
+    _cachedWeeklyCompletions = count;
     return count;
   }
 
@@ -907,20 +954,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Map<HabitTimeBlock, int> _getTimeBlockCounts() {
+    // Use cached value if available
+    if (_cachedTimeBlockCounts != null) return _cachedTimeBlockCounts!;
+    
     final activeHabits = _activeTodayHabits;
     final counts = {for (final block in HabitTimeBlock.values) block: 0};
     for (final habit in activeHabits) {
       counts[habit.timeBlock] = counts[habit.timeBlock]! + 1;
     }
+    _cachedTimeBlockCounts = counts;
     return counts;
   }
 
   String _weekRangeLabel() {
+    // Use cached value if available
+    if (_cachedWeekRangeLabel != null) return _cachedWeekRangeLabel!;
+    
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekEnd = weekStart.add(const Duration(days: 6));
     final formatter = DateFormat('MMM d');
-    return '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
+    _cachedWeekRangeLabel = '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
+    return _cachedWeekRangeLabel!;
   }
 
   void _handlePlaySample() {

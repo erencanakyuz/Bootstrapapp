@@ -29,7 +29,6 @@ class CalendarShareService {
               as RenderRepaintBoundary?;
 
       if (boundary == null) {
-        debugPrint('RepaintBoundary not found');
         return null;
       }
 
@@ -149,7 +148,7 @@ class CalendarShareService {
                     ),
                   ),
                 ),
-                // Statistics - compact footer style
+                // Statistics - gradient card style at bottom
                 if (includeStats) ...[
                   const SizedBox(height: 20),
                   _buildStatsSection(stats),
@@ -352,6 +351,7 @@ class CalendarShareService {
         : habits.map((h) => h.bestStreak).reduce((a, b) => a > b ? a : b);
 
     return CalendarStats(
+      month: month,
       totalCompletions: totalCompletions,
       completionRate: completionRate,
       activeHabits: activeHabits,
@@ -383,12 +383,14 @@ class CalendarShareService {
 
 /// Statistics data class
 class CalendarStats {
+  final DateTime month;
   final int totalCompletions;
   final double completionRate;
   final int activeHabits;
   final int bestStreak;
 
   CalendarStats({
+    required this.month,
     required this.totalCompletions,
     required this.completionRate,
     required this.activeHabits,

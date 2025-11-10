@@ -1107,19 +1107,19 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildMomentumCard(
-                              colors,
-                              monthCompletedDates,
-                              daysInMonth,
-                              now,
-                            ),
-                            const SizedBox(height: 24),
                             _buildStatsContent(
                               colors,
                               monthCompletedDates.length,
                               daysInMonth,
                               completionRate,
                               advancedStats,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildMomentumCard(
+                              colors,
+                              monthCompletedDates,
+                              daysInMonth,
+                              now,
                             ),
                           ],
                         ),
@@ -1429,9 +1429,10 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colors.surface,
+        gradient: LinearGradient(
+          colors: [colors.gradientPurpleLighterStart, colors.gradientPeachEnd],
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
         boxShadow: AppShadows.cardSoft(null),
       ),
       child: Column(
@@ -1440,31 +1441,54 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
           Text(
             'Year in review',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: colors.textSecondary,
-              letterSpacing: 0.5,
+              color: colors.textPrimary.withValues(alpha: 0.8),
+              letterSpacing: 0.4,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                child: Text(
-                  '$completedDays days completed',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: colors.textPrimary,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$completedDays',
+                        style: TextStyle(
+                          fontSize: 42,
+                          fontWeight: FontWeight.w800,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '/$totalDays days',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Text(
-                '${(completionRate * 100).toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${(completionRate * 100).toStringAsFixed(1)}% complete',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -1546,7 +1570,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildYearHero(
+                            _buildStatsContent(
                               colors,
                               completedDays,
                               totalDays,
@@ -1554,7 +1578,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                               advancedStats,
                             ),
                             const SizedBox(height: 24),
-                            _buildStatsContent(
+                            _buildYearHero(
                               colors,
                               completedDays,
                               totalDays,
@@ -1584,49 +1608,26 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem(
-                colors,
-                'Completed',
-                completed.toString(),
-                Icons.check_circle,
-              ),
-              _buildStatItem(
-                colors,
-                'Total',
-                total.toString(),
-                Icons.calendar_today,
-              ),
-              _buildStatItem(
-                colors,
-                'Rate',
-                '${(rate * 100).toStringAsFixed(1)}%',
-                Icons.trending_up,
-              ),
-            ],
+          _buildStatItem(
+            colors,
+            'Completed',
+            completed.toString(),
+            Icons.check_circle,
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem(
-                colors,
-                'Streak',
-                '${advancedStats['currentStreak']}',
-                Icons.local_fire_department,
-              ),
-              _buildStatItem(
-                colors,
-                'Best',
-                '${advancedStats['longestStreak']}',
-                Icons.emoji_events,
-              ),
-            ],
+          _buildStatItem(
+            colors,
+            'Total',
+            total.toString(),
+            Icons.calendar_today,
+          ),
+          _buildStatItem(
+            colors,
+            'Rate',
+            '${(rate * 100).toStringAsFixed(1)}%',
+            Icons.trending_up,
           ),
         ],
       ),
@@ -1929,12 +1930,12 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         attempts++;
       }
       
-      // Final check - if still needs paint, log warning but proceed
+      // Final check - if still needs paint, proceed anyway
       if (boundary.debugNeedsPaint) {
-        debugPrint('Warning: RepaintBoundary still needs paint after waiting');
+        // Continue despite needing paint
       }
     } else {
-      debugPrint('Warning: RepaintBoundary not found in widget tree');
+      // RepaintBoundary not found, skip
     }
   }
 
