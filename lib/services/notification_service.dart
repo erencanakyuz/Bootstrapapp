@@ -182,20 +182,16 @@ class NotificationService {
             )
           : _scheduleCalculator.resolveNextSchedule(reminder);
 
-      // Debug: Log schedule details
-      final now = DateTime.now();
-      final timeUntil = scheduleDate.toLocal().difference(now);
-      debugPrint(
-        'Scheduling notification: habit=${habit.title}, reminder=${reminder.hour}:${reminder.minute.toString().padLeft(2, '0')}, '
-        'scheduleDate=${scheduleDate.toLocal()}, now=$now, timeUntil=${timeUntil.inMinutes}min, '
-        'weekdays=${reminder.weekdays}',
-      );
 
       // Create rich notification content similar to habit card
       final notificationTitle = habit.title;
       final notificationBody = habit.description?.isNotEmpty == true
           ? habit.description!
           : 'Time to complete ${habit.title}!';
+
+      // Calculate time until scheduled date
+      final now = DateTime.now();
+      final timeUntil = scheduleDate.toLocal().difference(now);
 
       // If notification is scheduled for less than 1 minute in the future,
       // use immediate notification instead to ensure it appears
@@ -243,12 +239,8 @@ class NotificationService {
             debugPrint('Exact alarms not permitted, using inexact alarms');
             _exactAlarmsWarningLogged = true;
           }
-        } else {
-          debugPrint('Using exact alarms (exact alarm permission granted)');
         }
       }
-      
-      debugPrint('Notification schedule mode: ${scheduleMode == AndroidScheduleMode.exactAllowWhileIdle ? "EXACT" : "INEXACT"}');
       
       // Include habit ID in payload for tap handling
       final payload = habit.id;

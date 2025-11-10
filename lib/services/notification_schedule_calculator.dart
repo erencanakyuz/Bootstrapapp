@@ -56,12 +56,8 @@ class NotificationScheduleCalculator {
       reminder.minute,
     );
 
-    // If the time today has passed, move to next valid weekday
-    // But if it's within the same minute, keep it for today
-    final isPastToday = candidate.isBefore(now.subtract(const Duration(minutes: 1)));
-    
     int daysChecked = 0;
-    while ((isPastToday ||
+    while ((candidate.isBefore(now.subtract(const Duration(minutes: 1))) ||
             !reminder.weekdays.contains(candidate.weekday)) &&
         daysChecked < maxLookAheadDays) {
       candidate = candidate.add(const Duration(days: 1));

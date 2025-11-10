@@ -58,42 +58,62 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final habitsAsync = ref.watch(habitsProvider);
-    final todayHabits = ref.watch(filteredHabitsProvider);
 
     return habitsAsync.when(
       loading: () => _buildLoadingState(colors),
       error: (error, stack) => _buildErrorState(colors, error),
-      data: (habits) => _buildContent(colors, habits, todayHabits),
+      data: (habits) => _buildContent(colors, habits),
     );
   }
 
   Widget _buildContent(
     AppColors colors,
     List<Habit> habits,
-    List<Habit> todayHabits,
   ) {
-    final screens = [
-      _KeepAliveWrapper(
-        child: HomeScreen(
-          habits: habits,
-          todayHabits: todayHabits,
-          onAddHabit: _handleAddHabit,
-          onUpdateHabit: _handleUpdateHabit,
-          onDeleteHabit: _handleDeleteHabit,
-        ),
-      ),
-      _KeepAliveWrapper(
-        child: CalendarScreen(
-          habits: habits,
-          onUpdateHabit: _handleUpdateHabit,
-        ),
-      ),
-      _KeepAliveWrapper(child: InsightsScreen(habits: habits)),
-      _KeepAliveWrapper(child: ProfileScreen()),
-    ];
+    // Build only the active screen to prevent unnecessary rebuilds
+    // IndexedStack will maintain the widget tree but inactive screens won't rebuild
+    Widget activeScreen;
+    switch (_currentIndex) {
+      case 0:
+        activeScreen = _KeepAliveWrapper(
+          child: Consumer(
+            builder: (context, ref, _) {
+              final todayHabits = ref.watch(filteredHabitsProvider);
+              return HomeScreen(
+                habits: habits,
+                todayHabits: todayHabits,
+                onAddHabit: _handleAddHabit,
+                onUpdateHabit: _handleUpdateHabit,
+                onDeleteHabit: _handleDeleteHabit,
+              );
+            },
+          ),
+        );
+        break;
+      case 1:
+        activeScreen = _KeepAliveWrapper(
+          child: CalendarScreen(
+            habits: habits,
+            onUpdateHabit: _handleUpdateHabit,
+          ),
+        );
+        break;
+      case 2:
+        activeScreen = _KeepAliveWrapper(
+          child: InsightsScreen(habits: habits),
+        );
+        break;
+      case 3:
+        activeScreen = _KeepAliveWrapper(
+          child: ProfileScreen(),
+        );
+        break;
+      default:
+        activeScreen = const SizedBox.shrink();
+    }
 
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: screens),
+      body: activeScreen,
       bottomNavigationBar: _buildBottomNavigation(colors),
     );
   }

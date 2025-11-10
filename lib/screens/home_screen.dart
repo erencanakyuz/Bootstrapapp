@@ -88,6 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _cachedTotalStreak = null;
       _cachedWeeklyCompletions = null;
       _cachedTimeBlockCounts = null;
+      _cachedWeekRangeLabel = null;
     }
     return _cachedActiveTodayHabits!;
   }
