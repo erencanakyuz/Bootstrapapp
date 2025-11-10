@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
@@ -57,19 +58,28 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
           const batchSize = 5;
           for (int i = 0; i < habits.length; i += batchSize) {
             final batch = habits.skip(i).take(batchSize);
+            final schedulingTasks = <Future<void>>[];
+
             for (final habit in batch) {
               for (final reminder in habit.reminders.where((r) => r.enabled)) {
-                // Don't await - let notifications schedule concurrently
-                notifier.scheduleReminder(
+                // Collect all scheduling tasks to track completion
+                final task = notifier.scheduleReminder(
                   habit,
                   reminder,
                   appNotificationsEnabled: true,
                 ).catchError((error) {
-                  // Silently handle errors to prevent log spam
-                  // Notifications will be rescheduled on next app start if needed
+                  // Log errors but don't throw - notifications are non-critical
+                  debugPrint('Failed to schedule notification for ${habit.title}: $error');
+                  return; // Return void to match Future<void>
                 });
+                schedulingTasks.add(task);
               }
             }
+
+            // Wait for all tasks in this batch to complete before moving to next batch
+            // This prevents overwhelming the notification service while maintaining order
+            await Future.wait(schedulingTasks);
+
             // Small delay between batches to keep UI responsive
             await Future.delayed(const Duration(milliseconds: 50));
           }

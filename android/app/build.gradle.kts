@@ -9,6 +9,8 @@ import java.util.Properties
 import java.io.FileInputStream
 
 android {
+    // TODO(production): Change namespace from com.example to production name before release
+    // Example: namespace = "com.bootstrapyourlife.app"
     namespace = "com.example.bootstrap_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -24,7 +26,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO(production): Change applicationId from com.example to production name before release
+        // Example: applicationId = "com.bootstrapyourlife.app"
         applicationId = "com.example.bootstrap_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -59,6 +62,8 @@ android {
             // Minify kapalı - basit build için
             isMinifyEnabled = false
             isShrinkResources = false
+            // Debug symbols - crash'leri daha iyi görmek için
+            isDebuggable = false // false = production, true = debug edilebilir
             // Lint'i atla - build hızlandırma için
             tasks.findByName("lintVitalAnalyzeRelease")?.enabled = false
         }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +22,16 @@ class SoundService {
   /// Uses iOS system sound on iOS, custom sound on Android
   Future<void> playClick() async {
     if (!_enabled) return;
+
+    // Web doesn't support Platform.isIOS
+    if (kIsWeb) {
+      try {
+        await _player.play(AssetSource('sounds/click.mp3'));
+      } catch (e) {
+        // Silently fail on web
+      }
+      return;
+    }
 
     if (Platform.isIOS) {
       // Use iOS system sound - crisp and professional
@@ -44,6 +55,16 @@ class SoundService {
   /// Uses iOS system sound on iOS, custom sound on Android
   Future<void> playSuccess() async {
     if (!_enabled) return;
+
+    // Web doesn't support Platform.isIOS
+    if (kIsWeb) {
+      try {
+        await _player.play(AssetSource('sounds/success.mp3'));
+      } catch (e) {
+        // Silently fail on web
+      }
+      return;
+    }
 
     if (Platform.isIOS) {
       // Use iOS system sound for success (peek sound)
@@ -74,6 +95,16 @@ class SoundService {
   /// Uses iOS system sound on iOS, custom sound on Android
   Future<void> playNavigation() async {
     if (!_enabled) return;
+
+    // Web doesn't support Platform.isIOS
+    if (kIsWeb) {
+      try {
+        await _player.play(AssetSource('sounds/navigation.mp3'));
+      } catch (e) {
+        // Silently fail on web
+      }
+      return;
+    }
 
     if (Platform.isIOS) {
       // Use iOS system sound for navigation

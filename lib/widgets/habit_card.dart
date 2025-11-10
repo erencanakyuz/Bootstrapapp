@@ -262,11 +262,11 @@ class HabitCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // NEW Badge - Top left (where checkbox used to be)
+              // NEW Badge - Left of checkbox
               if (showNewBadge)
                 Positioned(
                   top: 12,
-                  left: 12,
+                  right: 48, // Positioned to the left of checkbox (14px padding + 24px checkbox + 10px spacing)
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,

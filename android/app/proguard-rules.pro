@@ -48,10 +48,26 @@
 # Flutter Plugin Rules
 # ============================================
 
-# Share Plus plugin
+# Share Plus plugin - prevent late initialization errors
 -keep class dev.fluttercommunity.plus.share.** { *; }
 -keep class androidx.core.content.FileProvider { *; }
 -keep class androidx.core.content.FileProvider$* { *; }
+-keepclassmembers class dev.fluttercommunity.plus.share.** { *; }
+-dontwarn dev.fluttercommunity.plus.share.**
+
+# XFile and related classes (used by share_plus)
+-keep class io.flutter.plugins.** { *; }
+-keepclassmembers class io.flutter.plugins.** { *; }
+
+# Keep all fields and methods that might be accessed via reflection
+-keepclassmembers class * {
+    @androidx.annotation.Keep *;
+}
+
+# Prevent R8 from leaving Data object members always null
+-keepclassmembers,allowobfuscation class * {
+  @com.google.gson.annotations.SerializedName <fields>;
+}
 
 # Path Provider plugin
 -keep class io.flutter.plugins.pathprovider.** { *; }

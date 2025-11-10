@@ -443,44 +443,49 @@ class HabitDetailScreen extends ConsumerWidget {
     String initialText,
   ) async {
     final controller = TextEditingController(text: initialText);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final viewInsets = MediaQuery.viewInsetsOf(context);
-        return Padding(
-          padding: EdgeInsets.only(bottom: viewInsets.bottom),
-          child: AlertDialog(
-            title: const Text('Daily note'),
-            content: TextField(
-              controller: controller,
-              maxLines: 4,
-              decoration: const InputDecoration(hintText: 'What did you notice?'),
-              autofocus: true,
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          final viewInsets = MediaQuery.viewInsetsOf(context);
+          return Padding(
+            padding: EdgeInsets.only(bottom: viewInsets.bottom),
+            child: AlertDialog(
+              title: const Text('Daily note'),
+              content: TextField(
+                controller: controller,
+                maxLines: 4,
+                decoration: const InputDecoration(hintText: 'What did you notice?'),
+                autofocus: true,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, controller.text.trim()),
+                  child: const Text('Save'),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, controller.text.trim()),
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
 
-    if (!context.mounted) {
-      return;
-    }
+      if (!context.mounted) {
+        return;
+      }
 
-    if (result != null && result.isNotEmpty) {
-      final note = HabitNote(date: DateTime.now(), text: result);
-      await ref
-          .read(habitsProvider.notifier)
-          .upsertNote(habitId: habit.id, note: note);
+      if (result != null && result.isNotEmpty) {
+        final note = HabitNote(date: DateTime.now(), text: result);
+        await ref
+            .read(habitsProvider.notifier)
+            .upsertNote(habitId: habit.id, note: note);
+      }
+    } finally {
+      // Always dispose controller to prevent memory leak
+      controller.dispose();
     }
   }
 
@@ -629,46 +634,51 @@ class HabitDetailScreen extends ConsumerWidget {
     Habit habit,
   ) async {
     final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final viewInsets = MediaQuery.viewInsetsOf(context);
-        return Padding(
-          padding: EdgeInsets.only(bottom: viewInsets.bottom),
-          child: AlertDialog(
-            title: const Text('Add Task'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'Enter task title',
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          final viewInsets = MediaQuery.viewInsetsOf(context);
+          return Padding(
+            padding: EdgeInsets.only(bottom: viewInsets.bottom),
+            child: AlertDialog(
+              title: const Text('Add Task'),
+              content: TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Enter task title',
+                ),
+                autofocus: true,
               ),
-              autofocus: true,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, controller.text.trim()),
+                  child: const Text('Add'),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, controller.text.trim()),
-                child: const Text('Add'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (!context.mounted) {
-      return;
-    }
-
-    if (result != null && result.isNotEmpty) {
-      final task = HabitTask(title: result);
-      await ref.read(habitsProvider.notifier).addTask(
-            habitId: habit.id,
-            task: task,
           );
+        },
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      if (result != null && result.isNotEmpty) {
+        final task = HabitTask(title: result);
+        await ref.read(habitsProvider.notifier).addTask(
+              habitId: habit.id,
+              task: task,
+          );
+      }
+    } finally {
+      // Always dispose controller to prevent memory leak
+      controller.dispose();
     }
   }
 

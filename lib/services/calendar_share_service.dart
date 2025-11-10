@@ -39,19 +39,39 @@ class CalendarShareService {
               ui.PlatformDispatcher.instance.views.first.devicePixelRatio)
           : ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
       final pixelRatio = devicePixelRatio.clamp(1.0, 3.0);
-      
-      if (boundary.debugNeedsPaint) {
-        await Future.delayed(const Duration(milliseconds: 16));
+
+      // Wait for paint to complete (debugNeedsPaint not available in release/profile)
+      // Use multiple frames to ensure rendering is complete in all build modes
+      for (int i = 0; i < 3; i++) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        await WidgetsBinding.instance.endOfFrame;
+      }
+
+      // Additional wait for complex widgets
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Verify boundary is still valid after async operations
+      final currentBoundary = repaintBoundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (currentBoundary == null || currentBoundary != boundary) {
+        return null;
       }
 
       // Use stored pixelRatio (calculated before async gap)
-
-      final image = await boundary.toImage(pixelRatio: pixelRatio);
+      ui.Image? image;
       try {
+        image = await boundary.toImage(pixelRatio: pixelRatio);
+        if (image == null) {
+          return null;
+        }
+        
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        return byteData?.buffer.asUint8List();
+        if (byteData == null) {
+          return null;
+        }
+        return byteData.buffer.asUint8List();
       } finally {
-        image.dispose();
+        image?.dispose();
       }
     } catch (e) {
       debugPrint('Error generating calendar image: $e');
@@ -74,31 +94,71 @@ class CalendarShareService {
       );
 
       if (imageBytes == null) {
+        debugPrint('Failed to generate calendar image: imageBytes is null');
         return false;
       }
 
       // Save to temporary file
       final tempDir = await getTemporaryDirectory();
-      tempFile = File(
-        '${tempDir.path}/${fileName ?? 'calendar_${DateFormat('yyyyMM').format(month)}.png'}',
-      );
-      await tempFile.writeAsBytes(imageBytes);
+      final generatedFileName = fileName ?? 'calendar_${DateFormat('yyyyMM').format(month)}.png';
+      tempFile = File('${tempDir.path}/$generatedFileName');
 
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(tempFile.path)],
-          text: _buildShareText(month, habits, completedDates),
-          subject: 'My ${DateFormat('MMMM yyyy').format(month)} Calendar',
-        ),
-      );
+      // Write bytes to file
+      await tempFile.writeAsBytes(imageBytes, flush: true);
 
-      return true;
-    } catch (e) {
+      // Verify file exists and has content
+      if (!await tempFile.exists()) {
+        debugPrint('Failed to create temp file');
+        return false;
+      }
+
+      final fileSize = await tempFile.length();
+      if (fileSize == 0) {
+        debugPrint('Temp file is empty');
+        return false;
+      }
+
+      // Share using Share.shareXFiles which is more reliable
+      final xFile = XFile(tempFile.path);
+      final shareText = _buildShareText(month, habits, completedDates);
+      final shareSubject = 'My ${DateFormat('MMMM yyyy').format(month)} Calendar';
+
+      // Use the more reliable shareXFiles method
+      try {
+        final result = await Share.shareXFiles(
+          [xFile],
+          text: shareText,
+          subject: shareSubject,
+        );
+
+        // Check if share was successful (result.status should be 'success' or 'dismissed')
+        // Handle potential null or uninitialized result
+        if (result.status == ShareResultStatus.success ||
+            result.status == ShareResultStatus.dismissed) {
+          return true;
+        }
+        return false;
+      } catch (shareError) {
+        debugPrint('Share plugin error: $shareError');
+        // If share plugin fails, still return false but log the error
+        return false;
+      }
+    } catch (e, stackTrace) {
       debugPrint('Error sharing calendar image: $e');
+      debugPrint('Stack trace: $stackTrace');
       return false;
     } finally {
-      if (tempFile != null && await tempFile.exists()) {
-        await tempFile.delete();
+      // Clean up temp file after a delay to ensure share completes
+      if (tempFile != null) {
+        Future.delayed(const Duration(seconds: 2), () async {
+          try {
+            if (await tempFile!.exists()) {
+              await tempFile.delete();
+            }
+          } catch (e) {
+            debugPrint('Error deleting temp file: $e');
+          }
+        });
       }
     }
   }
