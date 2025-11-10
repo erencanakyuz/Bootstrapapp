@@ -1725,7 +1725,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   ) async {
     // Early safety checks
     if (!mounted) return;
-    
+
     if (_viewMode != CalendarViewMode.monthly) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1779,8 +1779,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       final availableWidth = shareWidth - horizontalPadding;
       final calculatedTableWidth = _calculateTableWidth(daysInMonth);
       // Use full available width if table is smaller, otherwise use calculated width
-      final shareTableWidth = calculatedTableWidth < availableWidth 
-          ? availableWidth 
+      final shareTableWidth = calculatedTableWidth < availableWidth
+          ? availableWidth
           : calculatedTableWidth;
 
       final tableWidget = _buildMonthlyTable(
@@ -1892,13 +1892,15 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       } finally {
         overlayEntry?.remove();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error sharing calendar: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Share error: ${e.toString()}'),
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -1912,35 +1914,22 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   Future<void> _waitForShareRender() async {
     // Wait for widget to be built
     await Future.delayed(Duration.zero);
-    
+
     // Wait for the next frame to ensure widget is rendered
     await WidgetsBinding.instance.endOfFrame;
-    
+
     // Wait additional frames to ensure RepaintBoundary is painted
     for (int i = 0; i < 3; i++) {
       await Future.delayed(const Duration(milliseconds: 50));
       await WidgetsBinding.instance.endOfFrame;
     }
-    
-    // Verify RepaintBoundary is ready and painted
-    final boundary = _shareRepaintBoundaryKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
-    
-    if (boundary != null) {
-      // Wait until boundary is painted (max 10 attempts = 500ms)
-      int attempts = 0;
-      while (boundary.debugNeedsPaint && attempts < 10) {
-        await Future.delayed(const Duration(milliseconds: 50));
-        await WidgetsBinding.instance.endOfFrame;
-        attempts++;
-      }
-      
-      // Final check - if still needs paint, proceed anyway
-      if (boundary.debugNeedsPaint) {
-        // Continue despite needing paint
-      }
-    } else {
-      // RepaintBoundary not found, skip
+
+    // Additional fixed delay to ensure RepaintBoundary is fully painted
+    // debugNeedsPaint not available in release/profile builds, use fixed delay
+    // Wait up to 500ms total for complex calendars
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      await WidgetsBinding.instance.endOfFrame;
     }
   }
 
