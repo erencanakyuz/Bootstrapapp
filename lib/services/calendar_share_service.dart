@@ -47,9 +47,12 @@ class CalendarShareService {
       // Use stored pixelRatio (calculated before async gap)
 
       final image = await boundary.toImage(pixelRatio: pixelRatio);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-      return byteData?.buffer.asUint8List();
+      try {
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        return byteData?.buffer.asUint8List();
+      } finally {
+        image.dispose();
+      }
     } catch (e) {
       debugPrint('Error generating calendar image: $e');
       return null;

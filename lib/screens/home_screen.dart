@@ -41,28 +41,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static const List<double> _waveformHeights = [
-    28,
-    44,
-    18,
-    48,
-    22,
-    36,
-    20,
-    34,
-    16,
-    38,
-    24,
-    30,
-    18,
-    40,
-    26,
-    32,
-    20,
-    42,
-    24,
-    36,
-  ];
 
   late ConfettiController _confettiController;
   Color? _currentHabitColor; // Store the color of the completed habit
@@ -76,11 +54,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _cachedWeekRangeLabel;
   DateTime? _lastCacheDate;
   List<Habit>? _cachedActiveTodayHabits;
+  DateTime? _frameNowSnapshot;
+
+  DateTime get _frameNow => _frameNowSnapshot ?? DateTime.now();
+  DateTime get _frameTodayKey {
+    final snapshot = _frameNow;
+    return DateTime(snapshot.year, snapshot.month, snapshot.day);
+  }
 
   List<Habit> get _activeTodayHabits {
     // Cache active habits per day to avoid recalculation
-    final today = DateTime.now();
-    final todayKey = DateTime(today.year, today.month, today.day);
+    final todayKey = _frameTodayKey;
     if (_lastCacheDate != todayKey || _cachedActiveTodayHabits == null) {
       _cachedActiveTodayHabits = widget.todayHabits.where((habit) => !habit.archived).toList();
       _lastCacheDate = todayKey;
@@ -264,8 +248,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(AppColors colors, AppTextStyles textStyles) {
-    final dateLabel = DateFormat('EEEE, MMM d').format(DateTime.now());
+  Widget _buildHeader(
+    AppColors colors,
+    AppTextStyles textStyles,
+    String dateLabel,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -347,13 +334,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int completed,
     AppColors colors,
     AppTextStyles textStyles,
+    DateTime today,
   ) {
     final activeHabits = _activeTodayHabits;
     final total = activeHabits.length;
     final totalStreak = _getTotalStreak();
     final weeklyCompletions = _getWeeklyCompletions();
     final progress = total == 0 ? 0.0 : completed / total;
-    final message = _getMotivationalMessage();
+    final message = _getMotivationalMessage(today);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -634,118 +622,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildAudioReflectionCard(AppColors colors, AppTextStyles textStyles) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colors.elevatedSurface, // Use theme elevatedSurface
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        border: Border.all(
-          color: colors.outline.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Voice journal', style: textStyles.captionUppercase),
-          const SizedBox(height: 6),
-          Text('Listen to your future self', style: textStyles.titleCard),
-          const SizedBox(height: 18),
-          _buildWaveformBars(colors),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              _buildPlayButton(colors),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                      child: LinearProgressIndicator(
-                        value: 0.35,
-                        minHeight: 6,
-                        backgroundColor: colors.surface.withValues(
-                          alpha: 0.3,
-                        ), // Use theme surface
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '00:42',
-                          style: textStyles.caption.copyWith(
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          '02:00',
-                          style: textStyles.caption.copyWith(
-                            color: colors.textPrimary.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaveformBars(AppColors colors) {
-    return SizedBox(
-      height: 56,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: _waveformHeights
-            .map(
-              (height) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                  child: Container(
-                    height: height,
-                    decoration: BoxDecoration(
-                      color: height % 2 == 0
-                          ? colors.textPrimary
-                          : colors.textTertiary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _buildPlayButton(AppColors colors) {
-    return GestureDetector(
-      onTap: _handlePlaySample,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: colors.textPrimary,
-          shape: BoxShape.circle,
-          boxShadow: AppShadows.cardStrong(null),
-        ),
-        child: Icon(Icons.play_arrow_rounded),
-      ),
-    );
-  }
 
   Widget _buildQuickStatItem(
     AppColors colors,
@@ -912,7 +788,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Use cached value if available
     if (_cachedWeeklyCompletions != null) return _cachedWeeklyCompletions!;
     
-    final now = DateTime.now();
+    final now = _frameNow;
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     int count = 0;
     final activeHabits = _activeTodayHabits;
@@ -928,11 +804,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return count;
   }
 
-  String _getMotivationalMessage() {
+  String _getMotivationalMessage(DateTime today) {
     final activeHabits = _activeTodayHabits;
-    final completedToday = activeHabits
-        .where((h) => h.isCompletedOn(DateTime.now()))
-        .length;
+    final completedToday =
+        activeHabits.where((h) => h.isCompletedOn(today)).length;
     final total = activeHabits.length;
     final progress = total > 0 ? completedToday / total : 0.0;
 
@@ -950,7 +825,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool _isNewHabit(Habit habit) {
-    final daysSinceCreation = DateTime.now().difference(habit.createdAt).inDays;
+    final daysSinceCreation = _frameNow.difference(habit.createdAt).inDays;
     return daysSinceCreation <= 1; // Only show for 1 day
   }
 
@@ -971,7 +846,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Use cached value if available
     if (_cachedWeekRangeLabel != null) return _cachedWeekRangeLabel!;
     
-    final now = DateTime.now();
+    final now = _frameNow;
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekEnd = weekStart.add(const Duration(days: 6));
     final formatter = DateFormat('MMM d');
@@ -979,42 +854,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return _cachedWeekRangeLabel!;
   }
 
-  void _handlePlaySample() {
-    HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice journaling is coming soon.'),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
+    _frameNowSnapshot = DateTime.now();
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final today = DateTime.now();
+    final today = _frameTodayKey;
+    final dateLabel = DateFormat('EEEE, MMM d').format(today);
     final todayActiveHabits = _activeTodayHabits;
-    final completedToday = todayActiveHabits
-        .where((h) => h.isCompletedOn(today))
-        .length;
+    final completedToday =
+        todayActiveHabits.where((h) => h.isCompletedOn(today)).length;
+    final mediaQuery = MediaQuery.of(context);
+    final viewPadding = mediaQuery.padding;
     final horizontalPadding = context.horizontalGutter;
 
     final slivers = <Widget>[
       SliverPadding(
         padding: EdgeInsets.fromLTRB(
           horizontalPadding,
-          MediaQuery.of(context).padding.top + 24,
+          viewPadding.top + 24,
           horizontalPadding,
           20,
         ),
-        sliver: SliverToBoxAdapter(child: _buildHeader(colors, textStyles)),
+        sliver: SliverToBoxAdapter(
+          child: _buildHeader(colors, textStyles, dateLabel),
+        ),
       ),
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
-          child: _buildHeroProgressCard(completedToday, colors, textStyles),
+          child: _buildHeroProgressCard(
+            completedToday,
+            colors,
+            textStyles,
+            today,
+          ),
         ),
       ),
     ];
@@ -1101,23 +976,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             sliver: _buildHabitListSliver(colors, textStyles),
           ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            32,
-            horizontalPadding,
-            0,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: _buildAudioReflectionCard(colors, textStyles),
-          ),
-        ),
       ]);
     }
 
     slivers.add(
       SliverToBoxAdapter(
-        child: SizedBox(height: 120 + MediaQuery.of(context).padding.bottom),
+        child: SizedBox(height: 120 + viewPadding.bottom),
       ),
     );
 

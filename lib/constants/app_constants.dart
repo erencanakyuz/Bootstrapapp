@@ -86,6 +86,7 @@ class AppConfig {
 class AppShadows {
   const AppShadows._();
 
+  // TODO(perf): Explore lighter elevation tokens (or turning them off on low-end devices) to avoid Canvas.saveLayer() hits from large blur radii.
   // cardSoft: blurRadius 24, offsetY 10, color shadowSoft (rgba(0,0,0,0.07))
   static List<BoxShadow> cardSoft(Color? baseColor) => [
     BoxShadow(
