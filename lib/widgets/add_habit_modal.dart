@@ -697,16 +697,19 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
           key: ValueKey('color_${color.value}'),
           child: GestureDetector(
             onTap: () => setState(() => _selectedColor = color),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
               width: 48,
               height: 48,
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
-                border: isSelected
-                    ? Border.all(color: colors.textPrimary, width: 3)
-                    : null,
-                boxShadow: isSelected ? AppShadows.colored(color) : null,
+                border: Border.all(
+                  color: isSelected
+                      ? colors.textPrimary
+                      : Colors.transparent,
+                  width: isSelected ? 3 : 0,
+                ),
               ),
               child: isSelected
                   ? const Icon(Icons.check, color: Colors.white)

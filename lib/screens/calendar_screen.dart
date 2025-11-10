@@ -32,6 +32,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime? _cachedWeekStart;
   AppColors? _cachedColors;
   AppTextStyles? _cachedTextStyles;
+  ProfileSettings? _profileSettingsSnapshot;
+
+  void _refreshProfileSettingsSnapshot() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    settingsAsync.maybeWhen(
+      data: (settings) => _profileSettingsSnapshot = settings,
+      orElse: () {},
+    );
+  }
+
+  ProfileSettings? get _profileSettings {
+    final snapshot = _profileSettingsSnapshot;
+    if (snapshot != null) return snapshot;
+    final settingsAsync = ref.read(profileSettingsProvider);
+    return settingsAsync.maybeWhen(
+      data: (settings) {
+        _profileSettingsSnapshot = settings;
+        return settings;
+      },
+      orElse: () => null,
+    );
+  }
 
   @override
   void initState() {
@@ -58,11 +80,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _previousWeek() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.selectionClick();
     }
@@ -73,11 +91,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _nextWeek() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.selectionClick();
     }
@@ -88,11 +102,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _goToCurrentWeek() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.mediumImpact();
     }
@@ -104,11 +114,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Future<void> _toggleHabitCompletion(Habit habit, DateTime date) async {
     // Haptic feedback
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final settings = settingsAsync.maybeWhen(
-      data: (s) => s,
-      orElse: () => null,
-    );
+    final settings = _profileSettings;
 
     if (settings?.hapticsEnabled ?? true) {
       HapticFeedback.lightImpact();
@@ -142,6 +148,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     _cachedTextStyles ??= AppTextStyles(_cachedColors!);
     final colors = _cachedColors!;
     final textStyles = _cachedTextStyles!;
+    _refreshProfileSettingsSnapshot();
     final horizontalPadding = context.horizontalGutter;
 
     return Scaffold(
@@ -167,11 +174,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          final settingsAsync = ref.read(profileSettingsProvider);
-                          final hapticsEnabled = settingsAsync.maybeWhen(
-                            data: (settings) => settings.hapticsEnabled,
-                            orElse: () => true,
-                          );
+                          final hapticsEnabled =
+                              _profileSettings?.hapticsEnabled ?? true;
                           if (hapticsEnabled) {
                             HapticFeedback.lightImpact();
                           }
@@ -388,11 +392,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return GestureDetector(
       onLongPress: () {
-        final settingsAsync = ref.read(profileSettingsProvider);
-        final hapticsEnabled = settingsAsync.maybeWhen(
-          data: (settings) => settings.hapticsEnabled,
-          orElse: () => true,
-        );
+        final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
         if (hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
@@ -476,12 +476,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
             const SizedBox(height: 16),
             // Week days grid
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: weekDays.asMap().entries.map((entry) {
-                final index = entry.key;
-                final date = entry.value;
-                return _DayCell(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: weekDays.asMap().entries.map((entry) {
+              final index = entry.key;
+              final date = entry.value;
+              // TODO(perf): Swap Row→ListView/Grid builder so only visible day cells rebuild when a single habit changes.
+              return _DayCell(
                   key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
                   index: index,
                   date: date,
@@ -583,155 +584,92 @@ class _DayCell extends StatelessWidget {
     final dayName = DateFormat('E').format(date).substring(0, 1);
     final dayNumber = date.day;
 
+    Widget status;
+    if (isCompleted) {
+      status = Icon(
+        Icons.check,
+        size: 18,
+        color: colors.surface,
+      );
+    } else if (isMissed) {
+      status = Icon(
+        Icons.warning_amber_rounded,
+        size: 18,
+        color: colors.statusIncomplete,
+      );
+    } else {
+      status = Text(
+        dayNumber.toString(),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+          color: colors.textPrimary,
+        ),
+      );
+    }
+
+    final borderColor = isCompleted
+        ? habit.color
+        : isToday
+            ? colors.textPrimary
+            : colors.outline.withValues(alpha: 0.3);
+
     return Expanded(
-      child: GestureDetector(
-        onTap: isActive ? onTap : null,
-        child: Opacity(
-          opacity: isActive ? 1.0 : 0.4,
-          child: Container(
-            margin: EdgeInsets.only(
-              left: index > 0 ? 4 : 0,
-              right: index < 6 ? 4 : 0,
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: isCompleted
-                  ? habit.color.withValues(alpha: 0.15)
-                  : (isToday
-                        ? colors.outline.withValues(alpha: 0.08)
-                        : Colors.transparent),
-              borderRadius: BorderRadius.circular(12),
-              border: isToday
-                  ? Border.all(color: colors.textPrimary, width: 2)
-                  : null,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  dayName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isToday
-                        ? colors.textPrimary
-                        : colors.textTertiary,
+      child: RepaintBoundary(
+        child: GestureDetector(
+          onTap: isActive ? onTap : null,
+          child: Opacity(
+            opacity: isActive ? 1.0 : 0.35,
+            child: Container(
+              margin: EdgeInsets.only(
+                left: index > 0 ? 4 : 0,
+                right: index < 6 ? 4 : 0,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: isToday
+                    ? colors.outline.withValues(alpha: 0.08)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: isToday
+                    ? Border.all(color: colors.textPrimary, width: 2)
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    dayName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isToday
+                          ? colors.textPrimary
+                          : colors.textTertiary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? habit.color
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
                       color: isCompleted
                           ? habit.color
-                          : (isToday
-                                ? colors.textPrimary
-                                : colors.outline.withValues(alpha: 0.3)),
-                      width: isToday ? 2.5 : 2,
+                          : Colors.transparent,
+                      border: Border.all(
+                        color: borderColor,
+                        width: isToday ? 2.5 : 2,
+                      ),
                     ),
-                    boxShadow: isCompleted
-                        ? [
-                            BoxShadow(
-                              color: habit.color.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
+                    child: Center(child: status),
                   ),
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: isCompleted
-                          ? Icon(
-                              Icons.check,
-                              size: 20,
-                              color: colors.surface,
-                              key: const ValueKey('check'),
-                            )
-                          : isMissed
-                              ? CustomPaint(
-                                  size: const Size(16, 16),
-                                  painter: _TriangleWarningPainter(
-                                    color: colors.statusIncomplete,
-                                  ),
-                                  key: const ValueKey('warning'),
-                                )
-                              : Text(
-                                  dayNumber.toString(),
-                                  key: ValueKey('day'),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isToday
-                                        ? FontWeight.w800
-                                        : FontWeight.w600,
-                                    color: colors.textPrimary,
-                                  ),
-                                ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-/// Custom painter for triangle warning icon
-class _TriangleWarningPainter extends CustomPainter {
-  final Color color;
-
-  _TriangleWarningPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    // Draw upward-pointing triangle (warning symbol)
-    path.moveTo(size.width / 2, 0); // Top point
-    path.lineTo(0, size.height); // Bottom left
-    path.lineTo(size.width, size.height); // Bottom right
-    path.close();
-
-    canvas.drawPath(path, paint);
-
-    // Draw exclamation mark inside triangle
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: '!',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        (size.width - textPainter.width) / 2,
-        (size.height - textPainter.height) / 2 - size.height * 0.05,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_TriangleWarningPainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }

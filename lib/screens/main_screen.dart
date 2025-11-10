@@ -62,13 +62,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return habitsAsync.when(
       loading: () => _buildLoadingState(colors),
       error: (error, stack) => _buildErrorState(colors, error),
-      data: (habits) => _buildContent(colors, habits),
+      data: (habits) => _buildContent(colors, habits, ref),
     );
   }
 
   Widget _buildContent(
     AppColors colors,
     List<Habit> habits,
+    WidgetRef ref,
   ) {
     // Build only the active screen to prevent unnecessary rebuilds
     // IndexedStack will maintain the widget tree but inactive screens won't rebuild
@@ -76,17 +77,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     switch (_currentIndex) {
       case 0:
         activeScreen = _KeepAliveWrapper(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final todayHabits = ref.watch(filteredHabitsProvider);
-              return HomeScreen(
-                habits: habits,
-                todayHabits: todayHabits,
-                onAddHabit: _handleAddHabit,
-                onUpdateHabit: _handleUpdateHabit,
-                onDeleteHabit: _handleDeleteHabit,
-              );
-            },
+          child: HomeScreen(
+            habits: habits,
+            todayHabits: ref.watch(
+              filteredHabitsProvider.select((habits) => habits),
+            ),
+            onAddHabit: _handleAddHabit,
+            onUpdateHabit: _handleUpdateHabit,
+            onDeleteHabit: _handleDeleteHabit,
           ),
         );
         break;

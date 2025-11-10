@@ -28,6 +28,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   bool _isFullScreen = false;
   List<int>? _cachedMonthDays;
   DateTime? _cachedMonthKey;
+  ProfileSettings? _profileSettingsSnapshot;
   AppColors? _cachedColors;
   final TransformationController _monthlyTableController = TransformationController();
   final TransformationController _yearlyTableController = TransformationController();
@@ -60,6 +61,27 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     _cachedMonthDays = List<int>.generate(lastDay.day, (index) => index + 1);
     _cachedMonthKey = DateTime(_selectedMonth.year, _selectedMonth.month);
     return _cachedMonthDays!;
+  }
+
+  void _refreshProfileSettingsSnapshot() {
+    final settingsAsync = ref.read(profileSettingsProvider);
+    settingsAsync.maybeWhen(
+      data: (settings) => _profileSettingsSnapshot = settings,
+      orElse: () {},
+    );
+  }
+
+  ProfileSettings? get _profileSettings {
+    final snapshot = _profileSettingsSnapshot;
+    if (snapshot != null) return snapshot;
+    final settingsAsync = ref.read(profileSettingsProvider);
+    return settingsAsync.maybeWhen(
+      data: (settings) {
+        _profileSettingsSnapshot = settings;
+        return settings;
+      },
+      orElse: () => null,
+    );
   }
 
   @override
@@ -149,11 +171,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 
   void _toggleFullScreen() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.mediumImpact();
     }
@@ -178,11 +196,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 
   void _previousPeriod() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.selectionClick();
     }
@@ -210,11 +224,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 
   void _nextPeriod() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.selectionClick();
     }
@@ -242,11 +252,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 
   void _goToCurrentPeriod() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.mediumImpact();
     }
@@ -264,11 +270,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 
   void _toggleViewMode() {
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final hapticsEnabled = settingsAsync.maybeWhen(
-      data: (settings) => settings.hapticsEnabled,
-      orElse: () => true,
-    );
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
     if (hapticsEnabled) {
       HapticFeedback.lightImpact();
     }
@@ -289,11 +291,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
 
   Future<void> _toggleCalendarCell(Habit habit, DateTime date) async {
     // Haptic feedback
-    final settingsAsync = ref.read(profileSettingsProvider);
-    final settings = settingsAsync.maybeWhen(
-      data: (s) => s,
-      orElse: () => null,
-    );
+    final settings = _profileSettings;
 
     if (settings?.hapticsEnabled ?? true) {
       HapticFeedback.lightImpact();
@@ -383,6 +381,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     // Cache colors to prevent unnecessary rebuilds
     _cachedColors ??= Theme.of(context).extension<AppColors>()!;
     final colors = _cachedColors!;
+    _refreshProfileSettingsSnapshot();
     final completedDates = _getAllCompletedDates();
     final now = DateTime.now();
 
@@ -1309,6 +1308,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
               ],
             ),
             ..._getHabits().map((habit) {
+              // TODO(perf): Replace Table with lazy List/Grid builders so a single cell interaction doesn’t force ~days*habits rebuilds.
               return TableRow(
                 key: ValueKey('habit_row_${habit.id}'),
                 children: [
