@@ -659,24 +659,27 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
       runSpacing: AppSizes.paddingM,
       children: HabitIconLibrary.icons.map((icon) {
         final isSelected = icon == _selectedIcon;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedIcon = icon),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? _selectedColor.withValues(alpha: 0.2)
-                  : colors.surface,
-              border: Border.all(
-                color: isSelected ? _selectedColor : colors.outline,
-                width: isSelected ? 2 : 1,
+        return RepaintBoundary(
+          key: ValueKey('icon_$icon'),
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedIcon = icon),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? _selectedColor.withValues(alpha: 0.2)
+                    : colors.surface,
+                border: Border.all(
+                  color: isSelected ? _selectedColor : colors.outline,
+                  width: isSelected ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(AppSizes.radiusM),
               ),
-              borderRadius: BorderRadius.circular(AppSizes.radiusM),
-            ),
-            child: Icon(
-              icon,
-              color: isSelected ? _selectedColor : colors.textSecondary,
+              child: Icon(
+                icon,
+                color: isSelected ? _selectedColor : colors.textSecondary,
+              ),
             ),
           ),
         );
@@ -690,22 +693,25 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
       runSpacing: AppSizes.paddingM,
       children: _colors.map((color) {
         final isSelected = color == _selectedColor;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedColor = color),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: isSelected
-                  ? Border.all(color: colors.textPrimary, width: 3)
+        return RepaintBoundary(
+          key: ValueKey('color_${color.value}'),
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedColor = color),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: isSelected
+                    ? Border.all(color: colors.textPrimary, width: 3)
+                    : null,
+                boxShadow: isSelected ? AppShadows.colored(color) : null,
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white)
                   : null,
-              boxShadow: isSelected ? AppShadows.colored(color) : null,
             ),
-            child: isSelected
-                ? const Icon(Icons.check, color: Colors.white)
-                : null,
           ),
         );
       }).toList(),

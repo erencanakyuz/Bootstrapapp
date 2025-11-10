@@ -28,6 +28,10 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedWeekStart = _getWeekStart(DateTime.now());
+  List<DateTime>? _cachedWeekDays;
+  DateTime? _cachedWeekStart;
+  AppColors? _cachedColors;
+  AppTextStyles? _cachedTextStyles;
 
   @override
   void initState() {
@@ -64,6 +68,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     setState(() {
       _selectedWeekStart = _selectedWeekStart.subtract(const Duration(days: 7));
+      _cachedWeekDays = null; // Clear cache
     });
   }
 
@@ -78,6 +83,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     setState(() {
       _selectedWeekStart = _selectedWeekStart.add(const Duration(days: 7));
+      _cachedWeekDays = null; // Clear cache
     });
   }
 
@@ -92,6 +98,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     setState(() {
       _selectedWeekStart = _getWeekStart(DateTime.now());
+      _cachedWeekDays = null; // Clear cache
     });
   }
 
@@ -116,16 +123,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   List<DateTime> _getWeekDays() {
-    return List.generate(
+    // Cache week days to avoid recalculating on every build
+    if (_cachedWeekDays != null && _cachedWeekStart == _selectedWeekStart) {
+      return _cachedWeekDays!;
+    }
+    _cachedWeekStart = _selectedWeekStart;
+    _cachedWeekDays = List.generate(
       7,
       (index) => _selectedWeekStart.add(Duration(days: index)),
     );
+    return _cachedWeekDays!;
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final textStyles = AppTextStyles(colors);
+    // Cache colors and text styles to prevent unnecessary rebuilds
+    _cachedColors ??= Theme.of(context).extension<AppColors>()!;
+    _cachedTextStyles ??= AppTextStyles(_cachedColors!);
+    final colors = _cachedColors!;
+    final textStyles = _cachedTextStyles!;
     final horizontalPadding = context.horizontalGutter;
 
     return Scaffold(
@@ -216,18 +232,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (widget.habits.isEmpty)
                       _buildEmptyState(colors, horizontalPadding)
                     else
-                      ...widget.habits
-                          .where((habit) {
-                            // Filter habits: only show if active on at least one day in the selected week
-                            final weekDays = _getWeekDays();
-                            return weekDays.any((date) => habit.isActiveOnDate(date));
-                          })
-                          .map(
-                            (habit) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _buildHabitCard(colors, habit),
-                            ),
-                          ),
+                      ..._buildFilteredHabits(colors),
                   ],
                 ),
               ),
@@ -341,6 +346,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildFilteredHabits(AppColors colors) {
+    final weekDays = _getWeekDays();
+    // Cache filtered habits to avoid recalculation on every build
+    final filteredHabits = widget.habits.where((habit) {
+      // Filter habits: only show if active on at least one day in the selected week
+      return weekDays.any((date) => habit.isActiveOnDate(date));
+    }).toList();
+    
+    return filteredHabits.map((habit) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: RepaintBoundary(
+          key: ValueKey('habit_${habit.id}_${_selectedWeekStart.millisecondsSinceEpoch}'),
+          child: _buildHabitCard(colors, habit),
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildHabitCard(AppColors colors, Habit habit) {
@@ -457,138 +481,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               children: weekDays.asMap().entries.map((entry) {
                 final index = entry.key;
                 final date = entry.value;
-                final isActive = habit.isActiveOnDate(date);
-                final isCompleted = habit.isCompletedOn(date);
-                final isToday =
-                    date.year == now.year &&
-                    date.month == now.month &&
-                    date.day == now.day;
-                    // Check if habit was missed: active but not completed, date is in the past,
-                    // and date is not before habit creation date (don't show warnings for days before habit existed)
-                    final normalizedDate = DateTime(date.year, date.month, date.day);
-                    final normalizedToday = DateTime(now.year, now.month, now.day);
-                    final normalizedCreatedAt = DateTime(
-                      habit.createdAt.year,
-                      habit.createdAt.month,
-                      habit.createdAt.day,
-                    );
-                    final isMissed = isActive && 
-                        !isCompleted && 
-                        normalizedDate.isBefore(normalizedToday) &&
-                        !normalizedDate.isBefore(normalizedCreatedAt);
-                final dayName = DateFormat(
-                  'E',
-                ).format(date).substring(0, 1); // First letter
-                final dayNumber = date.day;
-
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: isActive ? () => _toggleHabitCompletion(habit, date) : null,
-                    child: Opacity(
-                      opacity: isActive ? 1.0 : 0.4,
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          left: index > 0 ? 4 : 0,
-                          right: index < 6 ? 4 : 0,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isCompleted
-                              ? habit.color.withValues(alpha: 0.15)
-                              : (isToday
-                                    ? colors.outline.withValues(alpha: 0.08)
-                                    : Colors.transparent),
-                          borderRadius: BorderRadius.circular(12),
-                          border: isToday
-                              ? Border.all(color: colors.textPrimary, width: 2)
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              dayName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isToday
-                                    ? colors.textPrimary
-                                    : colors.textTertiary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOut,
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: isCompleted
-                                    ? habit.color
-                                    : Colors.transparent,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isCompleted
-                                      ? habit.color
-                                      : (isToday
-                                            ? colors.textPrimary
-                                            : colors.outline.withValues(
-                                                alpha: 0.3,
-                                              )),
-                                  width: isToday ? 2.5 : 2,
-                                ),
-                                boxShadow: isCompleted
-                                    ? [
-                                        BoxShadow(
-                                          color: habit.color.withValues(
-                                            alpha: 0.3,
-                                          ),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Center(
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 200),
-                                  child: isCompleted
-                                      ? Icon(
-                                          Icons.check,
-                                          size: 20,
-                                          color:
-                                              colors.surface, // Use theme surface
-                                          key: const ValueKey('check'),
-                                        )
-                                      : isMissed
-                                          ? CustomPaint(
-                                              size: const Size(16, 16),
-                                              painter: _TriangleWarningPainter(
-                                                color: colors.statusIncomplete,
-                                              ),
-                                              key: const ValueKey('warning'),
-                                            )
-                                          : Text(
-                                              dayNumber.toString(),
-                                              key: ValueKey('day'),
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: isToday
-                                                    ? FontWeight.w800
-                                                    : FontWeight.w600,
-                                                color: isToday
-                                                    ? colors.textPrimary
-                                                    : colors.textPrimary,
-                                              ),
-                                            ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                return _DayCell(
+                  key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
+                  index: index,
+                  date: date,
+                  habit: habit,
+                  colors: colors,
+                  now: now,
+                  onTap: () => _toggleHabitCompletion(habit, date),
                 );
               }).toList(),
             ),
@@ -633,6 +533,156 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Optimized day cell widget to reduce rebuilds
+class _DayCell extends StatelessWidget {
+  final int index;
+  final DateTime date;
+  final Habit habit;
+  final AppColors colors;
+  final DateTime now;
+  final VoidCallback? onTap;
+
+  const _DayCell({
+    super.key,
+    required this.index,
+    required this.date,
+    required this.habit,
+    required this.colors,
+    required this.now,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = habit.isActiveOnDate(date);
+    final isCompleted = habit.isCompletedOn(date);
+    final isToday =
+        date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    
+    // Check if habit was missed: active but not completed, date is in the past,
+    // and date is not before habit creation date
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final normalizedToday = DateTime(now.year, now.month, now.day);
+    final normalizedCreatedAt = DateTime(
+      habit.createdAt.year,
+      habit.createdAt.month,
+      habit.createdAt.day,
+    );
+    final isMissed = isActive && 
+        !isCompleted && 
+        normalizedDate.isBefore(normalizedToday) &&
+        !normalizedDate.isBefore(normalizedCreatedAt);
+    
+    final dayName = DateFormat('E').format(date).substring(0, 1);
+    final dayNumber = date.day;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: isActive ? onTap : null,
+        child: Opacity(
+          opacity: isActive ? 1.0 : 0.4,
+          child: Container(
+            margin: EdgeInsets.only(
+              left: index > 0 ? 4 : 0,
+              right: index < 6 ? 4 : 0,
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isCompleted
+                  ? habit.color.withValues(alpha: 0.15)
+                  : (isToday
+                        ? colors.outline.withValues(alpha: 0.08)
+                        : Colors.transparent),
+              borderRadius: BorderRadius.circular(12),
+              border: isToday
+                  ? Border.all(color: colors.textPrimary, width: 2)
+                  : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  dayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isToday
+                        ? colors.textPrimary
+                        : colors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? habit.color
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isCompleted
+                          ? habit.color
+                          : (isToday
+                                ? colors.textPrimary
+                                : colors.outline.withValues(alpha: 0.3)),
+                      width: isToday ? 2.5 : 2,
+                    ),
+                    boxShadow: isCompleted
+                        ? [
+                            BoxShadow(
+                              color: habit.color.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: isCompleted
+                          ? Icon(
+                              Icons.check,
+                              size: 20,
+                              color: colors.surface,
+                              key: const ValueKey('check'),
+                            )
+                          : isMissed
+                              ? CustomPaint(
+                                  size: const Size(16, 16),
+                                  painter: _TriangleWarningPainter(
+                                    color: colors.statusIncomplete,
+                                  ),
+                                  key: const ValueKey('warning'),
+                                )
+                              : Text(
+                                  dayNumber.toString(),
+                                  key: ValueKey('day'),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isToday
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -26,6 +26,9 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   DateTime _selectedMonth = DateTime.now();
   CalendarViewMode _viewMode = CalendarViewMode.monthly;
   bool _isFullScreen = false;
+  List<int>? _cachedMonthDays;
+  DateTime? _cachedMonthKey;
+  AppColors? _cachedColors;
   final TransformationController _monthlyTableController = TransformationController();
   final TransformationController _yearlyTableController = TransformationController();
   final GlobalKey _shareRepaintBoundaryKey = GlobalKey();
@@ -41,6 +44,23 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   static const int _referenceHabitRows = 8;
   static const double _habitRowHeight = 50.0;
   static const double _tableHeaderHeight = 60.0;
+
+  void _invalidateMonthCache() {
+    _cachedMonthDays = null;
+    _cachedMonthKey = null;
+  }
+
+  List<int> _getMonthDays() {
+    if (_cachedMonthDays != null &&
+        _cachedMonthKey?.year == _selectedMonth.year &&
+        _cachedMonthKey?.month == _selectedMonth.month) {
+      return _cachedMonthDays!;
+    }
+    final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+    _cachedMonthDays = List<int>.generate(lastDay.day, (index) => index + 1);
+    _cachedMonthKey = DateTime(_selectedMonth.year, _selectedMonth.month);
+    return _cachedMonthDays!;
+  }
 
   @override
   void initState() {
@@ -172,6 +192,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
           _selectedMonth.year,
           _selectedMonth.month - 1,
         );
+        _invalidateMonthCache();
         _monthlyTableController.value = Matrix4.identity();
         if (_isFullScreen) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -203,6 +224,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
           _selectedMonth.year,
           _selectedMonth.month + 1,
         );
+        _invalidateMonthCache();
         _monthlyTableController.value = Matrix4.identity();
         if (_isFullScreen) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -230,6 +252,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     }
     setState(() {
       _selectedMonth = DateTime.now();
+      _invalidateMonthCache();
       _monthlyTableController.value = Matrix4.identity();
       _yearlyTableController.value = Matrix4.identity();
       if (_viewMode == CalendarViewMode.monthly && _isFullScreen) {
@@ -357,7 +380,9 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    // Cache colors to prevent unnecessary rebuilds
+    _cachedColors ??= Theme.of(context).extension<AppColors>()!;
+    final colors = _cachedColors!;
     final completedDates = _getAllCompletedDates();
     final now = DateTime.now();
 
@@ -543,9 +568,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     Set<DateTime> completedDates,
     DateTime now,
   ) {
-    final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-    final daysInMonth = lastDay.day;
-    final days = List.generate(daysInMonth, (index) => index + 1);
+    final days = _getMonthDays();
+    final daysInMonth = days.length;
     final tableWidth = _calculateTableWidth(daysInMonth);
     final habitCount = _getHabits().length;
 
@@ -596,9 +620,8 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     Set<DateTime> completedDates,
     DateTime now,
   ) {
-    final lastDay = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-    final daysInMonth = lastDay.day;
-    final days = List.generate(daysInMonth, (index) => index + 1);
+    final days = _getMonthDays();
+    final daysInMonth = days.length;
 
     final monthCompletedDates = completedDates
         .where(
@@ -1204,37 +1227,41 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     DateTime now,
     double tableWidth,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
-      child: SizedBox(
-        width: tableWidth,
-        child: Table(
-          border: TableBorder.all(color: Colors.transparent, width: 0),
-          columnWidths: {
-            0: const FixedColumnWidth(200),
-            for (int i = 1; i <= daysInMonth; i++) i: const FixedColumnWidth(40),
-          },
-          children: [
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
+          boxShadow: AppShadows.cardSoft(null),
+        ),
+        child: SizedBox(
+          width: tableWidth,
+          child: Table(
+            border: TableBorder.all(color: Colors.transparent, width: 0),
+            columnWidths: {
+              0: const FixedColumnWidth(200),
+              for (int i = 1; i <= daysInMonth; i++) i: const FixedColumnWidth(40),
+            },
+            children: [
             TableRow(
               decoration: BoxDecoration(
                 color: colors.outline.withValues(alpha: 0.08),
               ),
               children: [
                 TableCell(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'HABIT',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: colors.textPrimary,
-                        letterSpacing: 1,
+                  key: const ValueKey('header_habit'),
+                  child: RepaintBoundary(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        'HABIT',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: colors.textPrimary,
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
                   ),
@@ -1250,26 +1277,29 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                       date.day == now.day;
                   final isCompleted = monthCompletedDates.contains(date);
                   return TableCell(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isToday
-                            ? colors.outline.withValues(alpha: 0.1)
-                            : isCompleted
-                                ? colors.textPrimary.withValues(alpha: 0.04)
-                                : null,
-                      ),
-                      child: Center(
-                        child: Text(
-                          day.toString(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight:
-                                isToday ? FontWeight.w800 : FontWeight.w600,
-                            color: colors.textPrimary,
+                    key: ValueKey('header_day_${date.millisecondsSinceEpoch}'),
+                    child: RepaintBoundary(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isToday
+                              ? colors.outline.withValues(alpha: 0.1)
+                              : isCompleted
+                                  ? colors.textPrimary.withValues(alpha: 0.04)
+                                  : null,
+                        ),
+                        child: Center(
+                          child: Text(
+                            day.toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight:
+                                  isToday ? FontWeight.w800 : FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ),
@@ -1280,51 +1310,55 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
             ),
             ..._getHabits().map((habit) {
               return TableRow(
+                key: ValueKey('habit_row_${habit.id}'),
                 children: [
                   TableCell(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: habit.color,
-                              borderRadius: BorderRadius.circular(2),
+                    key: ValueKey('habit_name_${habit.id}'),
+                    child: RepaintBoundary(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: habit.color,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  habit.title,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: colors.textPrimary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    habit.title,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  habit.category.label.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: colors.textSecondary,
-                                    letterSpacing: 0.5,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    habit.category.label.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.textSecondary,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1353,56 +1387,26 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                         normalizedDate.isBefore(normalizedToday) &&
                         !normalizedDate.isBefore(normalizedCreatedAt);
                     return TableCell(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 4,
-                          horizontal: 2,
-                        ),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: isToday
-                                  ? colors.textPrimary.withValues(alpha: 0.7)
-                                  : colors.outline.withValues(alpha: 0.5),
-                              width: isToday ? 2.0 : 1.5,
-                            ),
-                            color: isCompleted
-                                ? habit.color.withValues(alpha: 0.08)
-                                : Colors.transparent,
+                      key: ValueKey('cell_${habit.id}_${date.millisecondsSinceEpoch}'),
+                      child: RepaintBoundary(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 2,
                           ),
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: InkWell(
-                              onTap: () => _toggleCalendarCell(habit, date),
-                              borderRadius: BorderRadius.circular(6),
-                              child: Center(
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 200),
-                                  child: isCompleted
-                                      ? Text(
-                                          '✕',
-                                          key: const ValueKey('completed'),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w800,
-                                            color: habit.color,
-                                            height: 1.0,
-                                          ),
-                                        )
-                                      : isMissed
-                                          ? CustomPaint(
-                                              size: const Size(16, 16),
-                                              painter: _TriangleWarningPainter(
-                                                color: colors.statusIncomplete,
-                                              ),
-                                              key: const ValueKey('warning'),
-                                            )
-                                          : const SizedBox.shrink(key: ValueKey('empty')),
-                                ),
-                              ),
+                          child: _MonthDayCell(
+                            key: ValueKey(
+                              'monthdaycell_${habit.id}_${date.millisecondsSinceEpoch}',
                             ),
+                            isActive: isActive,
+                            isCompleted: isCompleted,
+                            isToday: isToday,
+                            isMissed: isMissed,
+                            habitColor: habit.color,
+                            textColor: colors.textPrimary,
+                            outlineColor: colors.outline,
+                            warningColor: colors.statusIncomplete,
+                            onTap: () => _toggleCalendarCell(habit, date),
                           ),
                         ),
                       ),
@@ -1413,6 +1417,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
             }),
           ],
         ),
+      ),
       ),
     );
   }
@@ -2039,51 +2044,81 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
   }
 }
 
-/// Custom painter for triangle warning icon (shared with calendar_screen)
-class _TriangleWarningPainter extends CustomPainter {
-  final Color color;
+class _MonthDayCell extends StatelessWidget {
+  const _MonthDayCell({
+    super.key,
+    required this.isActive,
+    required this.isCompleted,
+    required this.isToday,
+    required this.isMissed,
+    required this.habitColor,
+    required this.textColor,
+    required this.outlineColor,
+    required this.warningColor,
+    required this.onTap,
+  });
 
-  _TriangleWarningPainter({required this.color});
+  final bool isActive;
+  final bool isCompleted;
+  final bool isToday;
+  final bool isMissed;
+  final Color habitColor;
+  final Color textColor;
+  final Color outlineColor;
+  final Color warningColor;
+  final VoidCallback? onTap;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+  Widget build(BuildContext context) {
+    final borderColor = isToday
+        ? textColor
+        : outlineColor.withValues(alpha: 0.5);
+    final backgroundColor = isCompleted
+        ? habitColor.withValues(alpha: 0.08)
+        : Colors.transparent;
+    final opacity = isActive ? 1.0 : 0.35;
 
-    final path = Path();
-    // Draw upward-pointing triangle (warning symbol)
-    path.moveTo(size.width / 2, 0); // Top point
-    path.lineTo(0, size.height); // Bottom left
-    path.lineTo(size.width, size.height); // Bottom right
-    path.close();
-
-    canvas.drawPath(path, paint);
-
-    // Draw exclamation mark inside triangle
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: '!',
+    Widget status;
+    if (isCompleted) {
+      status = Text(
+        '✕',
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: habitColor,
+          height: 1.0,
+        ),
+      );
+    } else if (isMissed) {
+      status = Icon(
+        Icons.warning_amber_rounded,
+        size: 16,
+        color: warningColor,
+      );
+    } else {
+      status = const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: isActive ? onTap : null,
+      child: Opacity(
+        opacity: opacity,
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: borderColor,
+                width: isToday ? 2.0 : 1.5,
+              ),
+              color: backgroundColor,
+            ),
+            child: Center(child: status),
+          ),
         ),
       ),
     );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        (size.width - textPainter.width) / 2,
-        (size.height - textPainter.height) / 2 - size.height * 0.05,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_TriangleWarningPainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }
 
