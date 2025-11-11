@@ -205,10 +205,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         
         return Padding(
           padding: EdgeInsets.only(
-            top: topPadding + 20, // Status bar + küçük boşluk (drag için erişilebilir)
-            // bottom padding kaldırıldı - klavye overlay olacak
+            top: topPadding + 20,
           ),
-          child: AddHabitModal(habitToEdit: habitToEdit),
+          child: AddHabitModal(
+            habitToEdit: habitToEdit,
+            onHabitCreated: widget.onAddHabit,
+          ),
         );
       },
     );
@@ -785,9 +787,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final dateLabel = DateFormat('EEEE, MMM d').format(today);
     final todayActiveHabits = ref.watch(todayActiveHabitsProvider);
     final visibleHabits = _filterHabits(todayActiveHabits);
-    final completedToday = ref.watch(completedTodayCountProvider);
-    final totalStreak = ref.watch(totalStreakProvider);
-    final weeklyCompletions = ref.watch(weeklyCompletionsProvider);
     final mediaQuery = MediaQuery.of(context);
     final viewPadding = mediaQuery.padding;
     final horizontalPadding = context.horizontalGutter;
@@ -807,16 +806,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
-          child: RepaintBoundary(
-            child: _buildHeroProgressCard(
-              completedToday,
-              colors,
-              textStyles,
-              today,
-              todayActiveHabits,
-              totalStreak,
-              weeklyCompletions,
-            ),
+          child: Consumer(
+            builder: (context, ref, _) {
+              final completedToday =
+                  ref.watch(completedTodayCountProvider);
+              final totalStreak = ref.watch(totalStreakProvider);
+              final weeklyCompletions =
+                  ref.watch(weeklyCompletionsProvider);
+              return RepaintBoundary(
+                child: _buildHeroProgressCard(
+                  completedToday,
+                  colors,
+                  textStyles,
+                  today,
+                  todayActiveHabits,
+                  totalStreak,
+                  weeklyCompletions,
+                ),
+              );
+            },
           ),
         ),
       ),
