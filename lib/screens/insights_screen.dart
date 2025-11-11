@@ -380,6 +380,8 @@ class InsightsScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -392,19 +394,27 @@ class InsightsScreen extends StatelessWidget {
                           : colors.textTertiary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      '$streak day streak',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colors.textSecondary,
+                    Flexible(
+                      child: Text(
+                        '$streak day streak',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: AppSizes.paddingL),
-                    Text(
-                      '${completionRate.toStringAsFixed(0)}% weekly',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colors.textSecondary,
+                    Flexible(
+                      child: Text(
+                        '${completionRate.toStringAsFixed(0)}% weekly',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -412,6 +422,7 @@ class InsightsScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: AppSizes.paddingS), // Spacing ekle
           Text(
             '${habit.totalCompletions}',
             style: TextStyle(
