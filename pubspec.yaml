@@ -1,5 +1,5 @@
 name: bootstrap_app
-description: "Daily habits and goals tracking app"
+description: "Habit Tracker Pro - Bootstrap Your life - Daily habits and goals tracking app"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -41,6 +41,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.15.0
   build_runner: ^2.4.12
+  flutter_launcher_icons: ^0.13.1
 
 dependency_overrides:
   # Removed analyzer overrides - drift_dev needs compatible versions
@@ -71,3 +72,12 @@ flutter:
       fonts:
         # Variable font (tüm weight'leri tek dosyada)
         - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"  # Icon dosyanızın yolu
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"  # Beyaz arka plan
+  adaptive_icon_foreground: "assets/app_icon.png"  # Icon'unuz

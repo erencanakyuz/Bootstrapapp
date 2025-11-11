@@ -1,11 +1,11 @@
 {
-    "name": "bootstrap_app",
-    "short_name": "bootstrap_app",
+    "name": "Habit Tracker Pro - Bootstrap Your life",
+    "short_name": "Habit Tracker Pro",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Habit Tracker Pro - Bootstrap Your life - Daily habits and goals tracking app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

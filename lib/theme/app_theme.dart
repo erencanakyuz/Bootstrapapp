@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// Google Fonts paketi kaldırıldı - font'lar bundle'a dahil edildi
-// import 'package:google_fonts/google_fonts.dart';
 
 /// Theme palettes for bootstrap motivation app
 /// Only modern (light) is active, dark is reserved for future use
@@ -275,39 +273,39 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     chipOutline: Color(0xFFD7C9BA), // chipOutline - RefactorUi.md
   ),
   AppPalette.dark: AppColors(
-    // Dark theme - Fully implemented with muted palette
-    // Bej tonlarına çevrildi - app'in doğasıyla uyumlu
-    primary: Color(0xFFC9A882), // Warm beige-orange for dark mode
+    // Airbnb-style dark mode: Deep black with subtle elevations
+    // Professional, elegant, and easy on the eyes
+    primary: Color(0xFFC9A882), // Warm beige-orange accent (keeps brand identity)
     primaryDark: Color(0xFFB8966A), // Darker warm beige
-    primarySoft: Color(0xFF2A2D26), // Dark soft beige
+    primarySoft: Color(0xFF1A1A1A), // Soft dark for subtle elements
     accentGreen: Color(0xFFC9A882), // Warm beige-orange
-    accentBlue: Color(0xFF6B8FA3), // Muted blue-gray (same as light)
-    accentAmber: Color(0xFFC9A882), // Muted warm beige-orange (same as light)
-    background: Color(0xFF1A1C18), // Very dark background
-    surface: Color(0xFF242622), // Dark surface
-    elevatedSurface: Color(0xFF2A2D26), // Elevated dark surface
-    outline: Color(0xFF3A3D36), // Dark outline
-    textPrimary: Color(0xFFE8E5E0), // Light text
-    textSecondary: Color(0xFF9AA3B2), // Muted light text
-    textTertiary: Color(0xFF6B7280), // Very muted light text
+    accentBlue: Color(0xFF6B8FA3), // Muted blue-gray (softer for dark mode)
+    accentAmber: Color(0xFFC9A882), // Warm beige-orange
+    background: Color(0xFF000000), // Pure black background (Airbnb style)
+    surface: Color(0xFF0A0A0A), // Almost black surface (slight elevation)
+    elevatedSurface: Color(0xFF1A1A1A), // Card background (subtle elevation)
+    outline: Color(0xFF2A2A2A), // Very subtle outline/border
+    textPrimary: Color(0xFFF5F5F5), // High contrast white (Airbnb style)
+    textSecondary: Color(0xFFB3B3B3), // Medium contrast gray
+    textTertiary: Color(0xFF808080), // Low contrast gray
     statusComplete: Color(0xFFC9A882), // Warm beige-orange
-    statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
-    statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose (same as light)
-    // Dark theme gradients - muted palette
-    brandAccentPurple: Color(0xFF9B8FA8), // Muted dusty lavender (same as light)
-    brandAccentPurpleSoft: Color(0xFF7A6F8B), // Darker muted lavender
-    brandAccentPeach: Color(0xFFD4A882), // Darker muted peach
-    brandAccentPeachSoft: Color(0xFFB8967A), // Darker soft peach
-    brandMutedIcon: Color(0xFF6B7280), // Muted icon color
-    gradientPeachStart: Color(0xFF2A2D26), // Dark peach gradient start
-    gradientPeachEnd: Color(0xFF1A1C18), // Dark peach gradient end
-    gradientPurpleStart: Color(0xFF7A6F8B), // Dark purple gradient start
-    gradientPurpleEnd: Color(0xFF9B8FA8), // Dark purple gradient end
-    gradientPurpleLighterStart: Color(0xFF3A3D36), // Dark purple lighter start
-    gradientPurpleLighterEnd: Color(0xFF2A2D26), // Dark purple lighter end
-    gradientBlueAudioStart: Color(0xFF3A3D36), // Dark blue audio start
-    gradientBlueAudioEnd: Color(0xFF2A2D26), // Dark blue audio end
-    chipOutline: Color(0xFF6B7280), // Dark theme chip outline
+    statusProgress: Color(0xFFC9A882), // Warm beige-orange
+    statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose (softer for dark)
+    // Dark theme gradients - minimal and elegant
+    brandAccentPurple: Color(0xFF8B7FA0), // Softer muted lavender
+    brandAccentPurpleSoft: Color(0xFF6A5F7A), // Darker muted lavender
+    brandAccentPeach: Color(0xFFC4A082), // Softer muted peach
+    brandAccentPeachSoft: Color(0xFFA6896A), // Darker soft peach
+    brandMutedIcon: Color(0xFF666666), // Muted icon color
+    gradientPeachStart: Color(0xFF1A1A1A), // Subtle dark gradient start
+    gradientPeachEnd: Color(0xFF0A0A0A), // Subtle dark gradient end
+    gradientPurpleStart: Color(0xFF1A1A1A), // Subtle dark purple start
+    gradientPurpleEnd: Color(0xFF0A0A0A), // Subtle dark purple end
+    gradientPurpleLighterStart: Color(0xFF2A2A2A), // Lighter dark purple start
+    gradientPurpleLighterEnd: Color(0xFF1A1A1A), // Lighter dark purple end
+    gradientBlueAudioStart: Color(0xFF2A2A2A), // Dark blue audio start
+    gradientBlueAudioEnd: Color(0xFF1A1A1A), // Dark blue audio end
+    chipOutline: Color(0xFF2A2A2A), // Dark theme chip outline
   ),
 };
 

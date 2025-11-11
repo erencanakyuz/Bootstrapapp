@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_constants.dart';
@@ -8,6 +9,7 @@ import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../services/habit_plan_generator.dart';
 import '../theme/app_theme.dart';
+import '../widgets/modern_button.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -28,178 +30,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _commitmentLevel = 5;
   bool _isCreatingPlan = false;
 
-  // Comprehensive feature slides covering all app features
+  // Streamlined slides - focused on key features
   final List<_OnboardingSlide> _slides = const [
-    // Welcome
     _OnboardingSlide(
-      title: 'Welcome to Bootstrap Your Life',
-      subtitle: 'Transform your daily routines into powerful habits with our comprehensive tracking system.',
-      asset: null, // Placeholder for image
+      title: 'Welcome to Habit Tracker Pro',
+      subtitle: 'Transform your daily routines into powerful habits. Build consistency, track progress, and achieve your goals with our comprehensive tracking system.',
+      illustration: 'assets/illustrations/onboarding_flow.svg',
       icon: Icons.auto_awesome,
       featureType: FeatureType.welcome,
     ),
-    // Home Screen Features
     _OnboardingSlide(
       title: 'Smart Habit Tracking',
-      subtitle: 'Track your habits with beautiful cards, streaks, and real-time progress. Quick actions let you complete habits instantly.',
-      asset: null,
+      subtitle: 'Track habits with beautiful cards, streaks, and real-time progress. Quick actions let you complete habits instantly. Get smart suggestions tailored to your goals.',
+      illustration: null,
       icon: Icons.check_circle_outline,
-      featureType: FeatureType.homeTracking,
+      featureType: FeatureType.tracking,
     ),
     _OnboardingSlide(
-      title: 'Search & Filter',
-      subtitle: 'Find habits instantly with powerful search. Filter by category, time block, or tags. Organize your life effortlessly.',
-      asset: null,
-      icon: Icons.search,
-      featureType: FeatureType.searchFilter,
+      title: 'Visual Progress & Analytics',
+      subtitle: 'See your progress at a glance with beautiful calendars, heatmaps, and insights. Track completions, streaks, and patterns over time. Export reports and celebrate milestones.',
+      illustration: null,
+      icon: Icons.insights,
+      featureType: FeatureType.progress,
     ),
     _OnboardingSlide(
-      title: 'Daily Motivation',
-      subtitle: 'Get inspired every day with personalized motivational quotes. Refresh anytime to discover new insights.',
-      asset: null,
-      icon: Icons.psychology,
-      featureType: FeatureType.motivation,
-    ),
-    _OnboardingSlide(
-      title: 'Habit Suggestions',
-      subtitle: 'Discover new habits tailored to your goals. Our smart engine suggests habits based on your current patterns.',
-      asset: null,
-      icon: Icons.lightbulb_outline,
-      featureType: FeatureType.suggestions,
-    ),
-    // Calendar Features
-    _OnboardingSlide(
-      title: 'Visual Calendar',
-      subtitle: 'See your progress at a glance with beautiful calendar views. Track completions, streaks, and patterns over time.',
-      asset: null,
-      icon: Icons.calendar_today,
-      featureType: FeatureType.calendar,
-    ),
-    _OnboardingSlide(
-      title: 'Full Calendar View',
-      subtitle: 'Dive deep into your monthly progress. Share beautiful calendar images with friends and celebrate your consistency.',
-      asset: null,
-      icon: Icons.calendar_month,
-      featureType: FeatureType.fullCalendar,
-    ),
-    // Habit Details
-    _OnboardingSlide(
-      title: 'Habit Chain Visualization',
-      subtitle: 'See your consistency with visual habit chains. Track dependencies and build powerful habit sequences.',
-      asset: null,
-      icon: Icons.link,
-      featureType: FeatureType.habitChain,
-    ),
-    _OnboardingSlide(
-      title: 'Streak Heatmap',
-      subtitle: 'GitHub-style annual heatmap shows your entire year at a glance. Celebrate your consistency and identify patterns.',
-      asset: null,
-      icon: Icons.local_fire_department,
-      featureType: FeatureType.heatmap,
-    ),
-    _OnboardingSlide(
-      title: 'Notes & Tasks',
-      subtitle: 'Add daily notes and to-do tasks to each habit. Reflect on your journey and break habits into actionable steps.',
-      asset: null,
-      icon: Icons.note_add,
-      featureType: FeatureType.notesTasks,
-    ),
-    // Templates & Quick Start
-    _OnboardingSlide(
-      title: 'Habit Templates',
-      subtitle: 'Start quickly with pre-made habit templates. Browse by category and customize to fit your lifestyle.',
-      asset: null,
+      title: 'Templates & Quick Start',
+      subtitle: 'Start quickly with 20+ pre-made habit templates. Browse by category, customize to fit your lifestyle, and get personalized suggestions based on your goals.',
+      illustration: null,
       icon: Icons.auto_awesome_motion,
       featureType: FeatureType.templates,
     ),
     _OnboardingSlide(
-      title: 'Quick Actions',
-      subtitle: 'Complete habits instantly from your home screen. Quick actions show your most important habits for today.',
-      asset: null,
-      icon: Icons.flash_on,
-      featureType: FeatureType.quickActions,
-    ),
-    // Smart Features
-    _OnboardingSlide(
-      title: 'Smart Notifications',
-      subtitle: 'Get intelligent reminders that adapt to your schedule. Notifications learn your patterns and remind you at optimal times.',
-      asset: null,
-      icon: Icons.notifications_active,
-      featureType: FeatureType.smartNotifications,
-    ),
-    _OnboardingSlide(
-      title: 'Habit Dependencies',
-      subtitle: 'Build powerful habit chains. Some habits unlock only after completing others, creating natural sequences.',
-      asset: null,
-      icon: Icons.account_tree,
-      featureType: FeatureType.dependencies,
-    ),
-    // Insights & Analytics
-    _OnboardingSlide(
-      title: 'Insights & Analytics',
-      subtitle: 'Understand your patterns with detailed analytics. See completion rates, streaks, and trends over time.',
-      asset: null,
-      icon: Icons.insights,
-      featureType: FeatureType.insights,
-    ),
-    _OnboardingSlide(
-      title: 'Reports & Export',
-      subtitle: 'Export your data as JSON or CSV. Generate weekly and monthly reports to track your progress.',
-      asset: null,
-      icon: Icons.assessment,
-      featureType: FeatureType.reports,
-    ),
-    // Settings & Customization
-    _OnboardingSlide(
-      title: 'Dark Mode',
-      subtitle: 'Switch between light and dark themes. Customize your experience with beautiful color palettes.',
-      asset: null,
-      icon: Icons.dark_mode,
-      featureType: FeatureType.darkMode,
-    ),
-    _OnboardingSlide(
-      title: 'Home Widgets',
-      subtitle: 'Track your habits from your home screen. Add widgets to see progress without opening the app.',
-      asset: null,
+      title: 'Home Widgets & Customization',
+      subtitle: 'Track habits from your home screen with customizable widgets. Personalize everything: sounds, haptics, confetti, animations, and themes. Make it truly yours.',
+      illustration: null,
       icon: Icons.widgets,
       featureType: FeatureType.widgets,
     ),
     _OnboardingSlide(
-      title: 'Customization',
-      subtitle: 'Personalize everything: sounds, haptics, confetti, animations. Make the app truly yours.',
-      asset: null,
-      icon: Icons.settings,
-      featureType: FeatureType.customization,
-    ),
-    // Advanced Features
-    _OnboardingSlide(
-      title: 'Freeze Feature',
-      subtitle: 'Take breaks without breaking streaks. Freeze habits when life gets busy and resume when ready.',
-      asset: null,
-      icon: Icons.pause_circle_outline,
-      featureType: FeatureType.freeze,
-    ),
-    _OnboardingSlide(
-      title: 'Weekly & Monthly Targets',
-      subtitle: 'Set goals for each habit. Track progress toward weekly and monthly targets with visual indicators.',
-      asset: null,
-      icon: Icons.track_changes,
-      featureType: FeatureType.targets,
-    ),
-    _OnboardingSlide(
-      title: 'Categories & Tags',
-      subtitle: 'Organize habits by categories and tags. Filter, search, and group related habits together.',
-      asset: null,
-      icon: Icons.label_outline,
-      featureType: FeatureType.categories,
-    ),
-    // Celebration
-    _OnboardingSlide(
-      title: 'Celebrate Your Wins',
-      subtitle: 'Confetti animations, streak celebrations, and achievement unlocks make every completion feel special.',
-      asset: null,
-      icon: Icons.celebration,
-      featureType: FeatureType.celebration,
+      title: 'Smart Notifications & Features',
+      subtitle: 'Get intelligent reminders that adapt to your schedule. Build habit chains, freeze without breaking streaks, set weekly/monthly targets, and organize with categories.',
+      illustration: 'assets/illustrations/onboarding_focus.svg',
+      icon: Icons.notifications_active,
+      featureType: FeatureType.smart,
     ),
   ];
 
@@ -224,28 +97,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.paddingXXL,
-                  vertical: AppSizes.paddingM,
+                  vertical: AppSizes.paddingS,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${_currentIndex + 1} of ${_slides.length}',
+                      '${_currentIndex + 1} / ${_slides.length}',
                       style: textStyles.caption.copyWith(
                         color: colors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
                       ),
                     ),
                     TextButton(
                       onPressed: _completeOnboarding,
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                       ),
                       child: Text(
                         'Skip',
-                        style: TextStyle(color: colors.textSecondary),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -269,7 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
             
-            const SizedBox(height: AppSizes.paddingL),
+            const SizedBox(height: AppSizes.paddingS),
             
             Expanded(
               child: PageView.builder(
@@ -293,17 +172,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             
             // Page indicators
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingM),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingS),
               child: Wrap(
                 alignment: WrapAlignment.center,
-                spacing: 8,
+                spacing: 6,
                 children: List.generate(
                   _slides.length + 1,
                   (index) => AnimatedContainer(
                     duration: AppAnimations.normal,
                     curve: Curves.easeInOut,
-                    width: _currentIndex == index ? 24 : 8,
-                    height: 8,
+                    width: _currentIndex == index ? 20 : 6,
+                    height: 6,
                     decoration: BoxDecoration(
                       color: _currentIndex == index
                           ? colors.textPrimary
@@ -321,7 +200,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 AppSizes.paddingXXL,
                 0,
                 AppSizes.paddingXXL,
-                AppSizes.paddingXL,
+                AppSizes.paddingM,
               ),
               child: SizedBox(
                 width: double.infinity,
@@ -337,8 +216,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             ),
                           ),
                         )
-                      : ElevatedButton(
+                      : ModernButton(
                           key: const ValueKey('button'),
+                          text: _currentIndex == _slides.length
+                              ? 'Create My Plan'
+                              : 'Continue',
                           onPressed: _canProceed()
                               ? () {
                                   if (_currentIndex == _slides.length) {
@@ -350,28 +232,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     );
                                   }
                                 }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: colors.textPrimary,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor:
-                                colors.outline.withValues(alpha: 0.3),
-                            disabledForegroundColor: colors.textSecondary,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSizes.radiusXL),
-                            ),
-                          ),
-                          child: Text(
-                            _currentIndex == _slides.length
-                                ? 'Create My Plan'
-                                : 'Next',
-                            style: GoogleFonts.fraunces(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                              : () {}, // Empty function instead of null
+                          backgroundColor: colors.textPrimary,
+                          textColor: colors.surface,
+                          playSound: false,
                         ),
                 ),
               ),
@@ -393,45 +257,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     AppTextStyles textStyles,
     _OnboardingSlide slide,
   ) {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 20),
-          // Icon badge
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: colors.textPrimary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              slide.icon,
-              size: 40,
-              color: colors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.paddingXL),
+          const SizedBox(height: 8),
           
-          // Feature-specific illustration (placeholder for image)
-          _buildFeatureIllustration(colors, slide.featureType),
+          // Illustration or Icon badge
+          slide.illustration != null
+              ? _buildSVGIllustration(slide.illustration!, colors)
+              : _buildIconBadge(colors, slide.icon),
           
-          const SizedBox(height: AppSizes.paddingXXXL),
+          const SizedBox(height: AppSizes.paddingM),
           
           // Title
           Text(
             slide.title,
             textAlign: TextAlign.center,
             style: GoogleFonts.fraunces(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
               height: 1.2,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: AppSizes.paddingL),
+          const SizedBox(height: AppSizes.paddingS),
           
           // Subtitle
           Text(
@@ -439,29 +291,93 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: textStyles.body.copyWith(
               color: colors.textSecondary,
-              height: 1.6,
+              height: 1.4,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(height: 20),
+          
+          const SizedBox(height: AppSizes.paddingM),
+          
+          // Feature-specific UI preview
+          _buildFeaturePreview(colors, slide.featureType),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureIllustration(AppColors colors, FeatureType featureType) {
-    // Placeholder for images - will be replaced later
-    // For now, create UI-based illustrations
+  Widget _buildSVGIllustration(String assetPath, AppColors colors) {
     return Container(
-      height: 200,
+      height: 180,
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingL),
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+      child: SvgPicture.asset(
+        assetPath,
+        fit: BoxFit.contain,
+        colorFilter: ColorFilter.mode(
+          colors.textPrimary.withValues(alpha: 0.8),
+          BlendMode.srcIn,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconBadge(AppColors colors, IconData icon) {
+    return Container(
+      width: 70,
+      height: 70,
       decoration: BoxDecoration(
-        color: colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.gradientPeachStart,
+            colors.gradientPeachEnd,
+          ],
+        ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Icon(
+        icon,
+        size: 36,
+        color: colors.textPrimary,
+      ),
+    );
+  }
+
+  Widget _buildFeaturePreview(AppColors colors, FeatureType featureType) {
+    return Container(
+      height: 120,
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.elevatedSurface,
+            colors.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusM),
         border: Border.all(
-          color: colors.outline.withValues(alpha: 0.3),
+          color: colors.outline.withValues(alpha: 0.2),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: _buildFeatureUI(colors, featureType),
     );
@@ -471,660 +387,444 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     switch (featureType) {
       case FeatureType.welcome:
         return _buildWelcomeUI(colors);
-      case FeatureType.homeTracking:
-        return _buildHomeTrackingUI(colors);
-      case FeatureType.searchFilter:
-        return _buildSearchFilterUI(colors);
-      case FeatureType.motivation:
-        return _buildMotivationUI(colors);
-      case FeatureType.suggestions:
-        return _buildSuggestionsUI(colors);
-      case FeatureType.calendar:
-        return _buildCalendarUI(colors);
-      case FeatureType.fullCalendar:
-        return _buildFullCalendarUI(colors);
-      case FeatureType.habitChain:
-        return _buildHabitChainUI(colors);
-      case FeatureType.heatmap:
-        return _buildHeatmapUI(colors);
-      case FeatureType.notesTasks:
-        return _buildNotesTasksUI(colors);
+      case FeatureType.tracking:
+        return _buildTrackingUI(colors);
+      case FeatureType.progress:
+        return _buildProgressUI(colors);
       case FeatureType.templates:
         return _buildTemplatesUI(colors);
-      case FeatureType.quickActions:
-        return _buildQuickActionsUI(colors);
-      case FeatureType.smartNotifications:
-        return _buildSmartNotificationsUI(colors);
-      case FeatureType.dependencies:
-        return _buildDependenciesUI(colors);
-      case FeatureType.insights:
-        return _buildInsightsUI(colors);
-      case FeatureType.reports:
-        return _buildReportsUI(colors);
-      case FeatureType.darkMode:
-        return _buildDarkModeUI(colors);
       case FeatureType.widgets:
         return _buildWidgetsUI(colors);
-      case FeatureType.customization:
-        return _buildCustomizationUI(colors);
-      case FeatureType.freeze:
-        return _buildFreezeUI(colors);
-      case FeatureType.targets:
-        return _buildTargetsUI(colors);
-      case FeatureType.categories:
-        return _buildCategoriesUI(colors);
-      case FeatureType.celebration:
-        return _buildCelebrationUI(colors);
+      case FeatureType.smart:
+        return _buildSmartUI(colors);
     }
   }
 
-  // UI Illustrations for each feature
   Widget _buildWelcomeUI(AppColors colors) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.auto_awesome, size: 64, color: colors.primary),
-          const SizedBox(height: 16),
-          Text(
-            '🚀',
-            style: TextStyle(fontSize: 48),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHomeTrackingUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildMiniCard(colors, 'Exercise', true),
-              _buildMiniCard(colors, 'Read', true),
-              _buildMiniCard(colors, 'Meditate', false),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.local_fire_department, size: 20, color: colors.accentAmber),
-              const SizedBox(width: 4),
-              Text('7 day streak', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchFilterUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, size: 16, color: colors.textSecondary),
-                const SizedBox(width: 8),
-                Text('Search habits...', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _buildMiniChip(colors, 'Health', true),
-              _buildMiniChip(colors, 'Productivity', false),
-              _buildMiniChip(colors, 'Learning', false),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMotivationUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
-          ),
-          borderRadius: BorderRadius.circular(8),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildFeatureIcon(colors, Icons.check_circle, true),
+            _buildFeatureIcon(colors, Icons.local_fire_department, true),
+            _buildFeatureIcon(colors, Icons.trending_up, false),
+          ],
         ),
-        child: Column(
+        const SizedBox(height: 8),
+        Text(
+          'Start your journey today',
+          style: TextStyle(
+            fontSize: 11,
+            color: colors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrackingUI(AppColors colors) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildHabitCard(colors, 'Exercise', true, 7),
+            _buildHabitCard(colors, 'Read', true, 3),
+            _buildHabitCard(colors, 'Meditate', false, 0),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.format_quote, size: 24, color: colors.textPrimary),
-            const SizedBox(height: 8),
+            Icon(Icons.flash_on, size: 12, color: colors.accentAmber),
+            const SizedBox(width: 4),
             Text(
-              '"Every day is a fresh start"',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: colors.textPrimary, fontStyle: FontStyle.italic),
+              'Quick actions available',
+              style: TextStyle(
+                fontSize: 10,
+                color: colors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildSuggestionsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lightbulb_outline, size: 32, color: colors.accentAmber),
-          const SizedBox(height: 12),
-          _buildMiniCard(colors, 'Suggested: Morning Walk', false),
-          const SizedBox(height: 8),
-          Text('Based on your goals', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalendarUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(7, (i) => _buildMiniDay(colors, i < 5)),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(7, (i) => _buildMiniDay(colors, i < 3)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFullCalendarUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('📅', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 8),
-          Text('Share your progress', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHabitChainUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Wrap(
-            spacing: 4,
-            runSpacing: 4,
-            children: List.generate(20, (i) => Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: i < 15 ? colors.accentGreen : colors.outline.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            )),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.link, size: 16, color: colors.textSecondary),
-              const SizedBox(width: 4),
-              Text('15 day chain', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeatmapUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Wrap(
-            spacing: 2,
-            runSpacing: 2,
-            children: List.generate(52, (i) => Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: i % 4 == 0 ? colors.accentGreen : colors.outline.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            )),
-          ),
-          const SizedBox(height: 8),
-          Text('Year overview', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotesTasksUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Column(
-                children: [
-                  Icon(Icons.note, size: 24, color: colors.accentBlue),
-                  const SizedBox(height: 4),
-                  Text('Notes', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
-                ],
-              ),
-              Column(
-                children: [
-                  Icon(Icons.checklist, size: 24, color: colors.accentGreen),
-                  const SizedBox(height: 4),
-                  Text('Tasks', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
+  Widget _buildProgressUI(AppColors colors) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStatCard(colors, '85%', 'Completion'),
+            _buildStatCard(colors, '12', 'Day Streak'),
+            _buildStatCard(colors, '42', 'Total'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(7, (i) => _buildCalendarDay(colors, i < 5)),
+        ),
+      ],
     );
   }
 
   Widget _buildTemplatesUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildMiniCard(colors, 'Template', false),
-              _buildMiniCard(colors, 'Template', false),
-              _buildMiniCard(colors, 'Template', false),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text('Browse & customize', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildQuickActionButton(colors, '✓', true),
-              _buildQuickActionButton(colors, '✓', true),
-              _buildQuickActionButton(colors, '○', false),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text('Quick complete', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmartNotificationsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildTemplateChip(colors, 'Health', true),
+            _buildTemplateChip(colors, 'Productivity', false),
+            _buildTemplateChip(colors, 'Learning', false),
+            _buildTemplateChip(colors, 'Mindfulness', false),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_awesome, size: 12, color: colors.accentAmber),
+            const SizedBox(width: 4),
+            Text(
+              '70+ templates available',
+              style: TextStyle(
+                fontSize: 10,
+                color: colors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.notifications, size: 16, color: colors.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Smart reminder',
-                        style: TextStyle(fontSize: 11, color: colors.textPrimary, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Time to complete "Exercise"',
-                  style: TextStyle(fontSize: 10, color: colors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDependenciesUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildMiniCard(colors, 'Habit 1', true),
-              Icon(Icons.arrow_forward, size: 16, color: colors.textSecondary),
-              _buildMiniCard(colors, 'Habit 2', false),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text('Build chains', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors.accentGreen.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Center(
-              child: Text('85%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.accentGreen)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Completion rate', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReportsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Icon(Icons.file_download, size: 24, color: colors.accentBlue),
-              Icon(Icons.assessment, size: 24, color: colors.accentGreen),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text('Export & analyze', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDarkModeUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Icon(Icons.light_mode, size: 20, color: colors.textPrimary),
-          ),
-          Icon(Icons.swap_horiz, size: 24, color: colors.textSecondary),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Icon(Icons.dark_mode, size: 20, color: colors.textPrimary),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildWidgetsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Text('2/5', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.textPrimary)),
-                const SizedBox(width: 8),
-                Text('habits today', style: TextStyle(fontSize: 10, color: colors.textSecondary)),
-              ],
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: colors.outline.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 4),
-            LinearProgressIndicator(
-              value: 0.4,
-              backgroundColor: colors.outline.withValues(alpha: 0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(colors.accentGreen),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Today\'s Progress',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '3/5',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: 0.6,
+                  backgroundColor: colors.outline.withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.accentGreen),
+                  minHeight: 5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.widgets, size: 12, color: colors.primary),
+            const SizedBox(width: 4),
+            Text(
+              'Add to home screen',
+              style: TextStyle(
+                fontSize: 10,
+                color: colors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildCustomizationUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Icon(Icons.volume_up, size: 20, color: colors.textSecondary),
-          Icon(Icons.vibration, size: 20, color: colors.textSecondary),
-          Icon(Icons.celebration, size: 20, color: colors.textSecondary),
-          Icon(Icons.animation, size: 20, color: colors.textSecondary),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFreezeUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.pause_circle_outline, size: 32, color: colors.accentAmber),
-          const SizedBox(height: 8),
-          Text('Pause without penalty', style: TextStyle(fontSize: 10, color: colors.textTertiary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTargetsUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  Widget _buildSmartUI(AppColors colors) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                colors.gradientPurpleStart.withValues(alpha: 0.1),
+                colors.gradientPurpleEnd.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: colors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
             children: [
-              Column(
+              Row(
                 children: [
-                  Text('5/7', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
-                  Text('Weekly', style: TextStyle(fontSize: 9, color: colors.textTertiary)),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('18/20', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
-                  Text('Monthly', style: TextStyle(fontSize: 9, color: colors.textTertiary)),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.notifications_active,
+                      size: 16,
+                      color: colors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Smart Reminder',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Time to complete "Exercise"',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoriesUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        alignment: WrapAlignment.center,
-        children: [
-          _buildMiniChip(colors, 'Health', true),
-          _buildMiniChip(colors, 'Productivity', false),
-          _buildMiniChip(colors, 'Learning', false),
-          _buildMiniChip(colors, 'Mindfulness', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCelebrationUI(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('🎉', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: 8),
-          Text('Celebrate wins!', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildFeatureBadge(colors, Icons.link, 'Chains'),
+            _buildFeatureBadge(colors, Icons.pause_circle_outline, 'Freeze'),
+            _buildFeatureBadge(colors, Icons.track_changes, 'Targets'),
+          ],
+        ),
+      ],
     );
   }
 
   // Helper widgets
-  Widget _buildMiniCard(AppColors colors, String title, bool completed) {
+  Widget _buildFeatureIcon(AppColors colors, IconData icon, bool active) {
     return Container(
-      width: 50,
-      height: 30,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
-        color: completed ? colors.accentGreen.withValues(alpha: 0.2) : colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(6),
+        color: active
+            ? colors.accentGreen.withValues(alpha: 0.15)
+            : colors.elevatedSurface,
+        shape: BoxShape.circle,
         border: Border.all(
-          color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
-          width: 1,
+          color: active ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
+          width: 2,
         ),
       ),
-      child: Center(
-        child: completed
-            ? Icon(Icons.check, size: 14, color: colors.accentGreen)
-            : Text(title.substring(0, 1), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+      child: Icon(
+        icon,
+        size: 24,
+        color: active ? colors.accentGreen : colors.textSecondary,
       ),
     );
   }
 
-  Widget _buildMiniChip(AppColors colors, String label, bool selected) {
+  Widget _buildHabitCard(AppColors colors, String title, bool completed, int streak) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: 70,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: selected ? colors.primary.withValues(alpha: 0.15) : colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(12),
+        color: completed
+            ? colors.accentGreen.withValues(alpha: 0.15)
+            : colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: selected ? colors.primary : colors.outline.withValues(alpha: 0.3),
-          width: 1,
+          color: completed
+              ? colors.accentGreen
+              : colors.outline.withValues(alpha: 0.3),
+          width: completed ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            completed ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 20,
+            color: completed ? colors.accentGreen : colors.textSecondary,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (streak > 0) ...[
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.local_fire_department, size: 10, color: colors.accentAmber),
+                const SizedBox(width: 2),
+                Text(
+                  '$streak',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(AppColors colors, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.fraunces(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: colors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            color: colors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarDay(AppColors colors, bool completed) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: completed
+            ? colors.accentGreen
+            : colors.outline.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
+
+  Widget _buildTemplateChip(AppColors colors, String label, bool selected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: selected
+            ? colors.primary.withValues(alpha: 0.15)
+            : colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: selected
+              ? colors.primary
+              : colors.outline.withValues(alpha: 0.3),
+          width: selected ? 2 : 1,
         ),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 9, color: selected ? colors.primary : colors.textSecondary),
-      ),
-    );
-  }
-
-  Widget _buildMiniDay(AppColors colors, bool completed) {
-    return Container(
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(
-        color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton(AppColors colors, String icon, bool completed) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: completed ? colors.accentGreen : colors.elevatedSurface,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: completed ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
-          width: 2,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          color: selected ? colors.primary : colors.textSecondary,
         ),
       ),
-      child: Center(
-        child: Text(icon, style: TextStyle(fontSize: 16, color: completed ? Colors.white : colors.textSecondary)),
+    );
+  }
+
+  Widget _buildFeatureBadge(AppColors colors, IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: colors.textSecondary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: colors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1135,51 +835,68 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           
-          // Header with icon
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: colors.textPrimary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.psychology,
-                  color: colors.textPrimary,
-                  size: 24,
-                ),
+          // Header with illustration
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colors.gradientPeachStart.withValues(alpha: 0.1),
+                  colors.gradientPeachEnd.withValues(alpha: 0.1),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Let\'s create your plan',
-                      style: GoogleFonts.fraunces(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                      ),
+              borderRadius: BorderRadius.circular(AppSizes.radiusM),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'We\'ll personalize it just for you',
-                      style: textStyles.body.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.psychology,
+                    color: colors.textPrimary,
+                    size: 20,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Let\'s create your plan',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'We\'ll personalize it just for you',
+                        style: textStyles.body.copyWith(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           
           // Questions
           _buildQuestion(
@@ -1206,7 +923,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             },
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           
           _buildQuestion(
             colors,
@@ -1227,7 +944,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             singleSelect: true,
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           
           _buildQuestion(
             colors,
@@ -1253,7 +970,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             },
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           
           _buildQuestion(
             colors,
@@ -1276,14 +993,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             required: true,
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           
           // Commitment level
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(AppSizes.radiusL),
+              borderRadius: BorderRadius.circular(AppSizes.radiusM),
               border: Border.all(
                 color: colors.outline.withValues(alpha: 0.3),
               ),
@@ -1293,21 +1010,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.track_changes,
-                      size: 20,
-                      color: colors.textPrimary,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.track_changes,
+                        size: 16,
+                        color: colors.primary,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'How many habits to start?',
-                      style: textStyles.bodyBold.copyWith(
-                        color: colors.textPrimary,
+                    Expanded(
+                      child: Text(
+                        'How many habits to start?',
+                        style: textStyles.bodyBold.copyWith(
+                          color: colors.textPrimary,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -1327,21 +1054,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: colors.textPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
                         child: Text(
                           '$_commitmentLevel',
                           style: GoogleFonts.fraunces(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
+                            color: colors.surface,
                           ),
                         ),
                       ),
@@ -1352,7 +1081,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -1378,6 +1107,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               question,
               style: textStyles.bodyBold.copyWith(
                 color: colors.textPrimary,
+                fontSize: 14,
               ),
             ),
             if (required)
@@ -1386,21 +1116,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 style: TextStyle(
                   color: colors.statusIncomplete,
                   fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           hint,
           style: textStyles.caption.copyWith(
             color: colors.textSecondary,
+            fontSize: 11,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 8,
+          runSpacing: 8,
           children: options.map((option) {
             final isSelected = selected.contains(option.label);
             return _buildOptionChip(
@@ -1435,17 +1167,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: AnimatedContainer(
             duration: AppAnimations.normal,
             padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+              horizontal: 12,
+              vertical: 8,
             ),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? colors.textPrimary.withValues(alpha: 0.15)
-                  : colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(12),
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [
+                        colors.gradientPeachStart.withValues(alpha: 0.2),
+                        colors.gradientPeachEnd.withValues(alpha: 0.2),
+                      ],
+                    )
+                  : null,
+              color: isSelected ? null : colors.elevatedSurface,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isSelected
-                    ? colors.textPrimary
+                    ? colors.primary
                     : colors.outline.withValues(alpha: 0.3),
                 width: isSelected ? 2 : 1,
               ),
@@ -1455,16 +1193,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: [
                 Icon(
                   option.icon,
-                  size: 18,
+                  size: 16,
                   color: isSelected
-                      ? colors.textPrimary
+                      ? colors.primary
                       : colors.textSecondary,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   option.label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? colors.textPrimary
@@ -1472,11 +1210,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 if (isSelected) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Icon(
                     Icons.check_circle,
-                    size: 16,
-                    color: colors.textPrimary,
+                    size: 14,
+                    color: colors.primary,
                   ),
                 ],
               ],
@@ -1581,41 +1319,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
 enum FeatureType {
   welcome,
-  homeTracking,
-  searchFilter,
-  motivation,
-  suggestions,
-  calendar,
-  fullCalendar,
-  habitChain,
-  heatmap,
-  notesTasks,
+  tracking,
+  progress,
   templates,
-  quickActions,
-  smartNotifications,
-  dependencies,
-  insights,
-  reports,
-  darkMode,
   widgets,
-  customization,
-  freeze,
-  targets,
-  categories,
-  celebration,
+  smart,
 }
 
 class _OnboardingSlide {
   final String title;
   final String subtitle;
-  final String? asset; // Placeholder for image - null for now
+  final String? illustration;
   final IconData icon;
   final FeatureType featureType;
 
   const _OnboardingSlide({
     required this.title,
     required this.subtitle,
-    this.asset,
+    this.illustration,
     required this.icon,
     required this.featureType,
   });

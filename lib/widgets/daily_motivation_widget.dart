@@ -29,6 +29,8 @@ class _DailyMotivationWidgetState extends ConsumerState<DailyMotivationWidget> {
 
     if (_quote == null) return const SizedBox.shrink();
 
+    final isDarkMode = colors.background.computeLuminance() < 0.5;
+    
     return Container(
       decoration: BoxDecoration(
         color: colors.elevatedSurface,
@@ -37,13 +39,16 @@ class _DailyMotivationWidgetState extends ConsumerState<DailyMotivationWidget> {
           color: colors.outline.withValues(alpha: 0.15),
           width: 0.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        // No shadows in dark mode
+        boxShadow: isDarkMode
+            ? []
+            : [
+                BoxShadow(
+                  color: colors.textPrimary.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,

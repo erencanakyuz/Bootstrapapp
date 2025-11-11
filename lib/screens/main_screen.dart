@@ -117,6 +117,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   /// Bottom Navigation - Reference image style: white bar with rounded top corners
   Widget _buildBottomNavigation(AppColors colors) {
     final textStyles = AppTextStyles(colors);
+    final isDarkMode = colors.background.computeLuminance() < 0.5;
 
     return Container(
       decoration: BoxDecoration(
@@ -124,15 +125,27 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20), // Rounded top corners
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.textPrimary.withValues(
-              alpha: 0.05,
-            ), // Use theme textPrimary
-            blurRadius: 10,
-            offset: const Offset(0, -2), // Shadow on top edge
-          ),
-        ],
+        // No shadows in dark mode
+        boxShadow: isDarkMode
+            ? []
+            : [
+                BoxShadow(
+                  color: colors.textPrimary.withValues(
+                    alpha: 0.05,
+                  ), // Use theme textPrimary
+                  blurRadius: 10,
+                  offset: const Offset(0, -2), // Shadow on top edge
+                ),
+              ],
+        // Add border in dark mode for better visibility
+        border: isDarkMode
+            ? Border(
+                top: BorderSide(
+                  color: colors.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              )
+            : null,
       ),
       child: SafeArea(
         top: false,

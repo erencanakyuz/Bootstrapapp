@@ -300,7 +300,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             color: colors.outline.withValues(alpha: 0.5),
             width: 1,
           ),
-          boxShadow: AppShadows.cardSoft(null),
+          boxShadow: AppShadows.cardSoft(colors.background),
         ),
         child: Row(
           children: [
@@ -355,13 +355,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
       margin: const EdgeInsets.only(bottom: AppSizes.paddingL),
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF9),
+        color: colors.elevatedSurface,
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
           width: 1,
         ),
-        boxShadow: AppShadows.cardSoft(null),
+        boxShadow: AppShadows.cardSoft(colors.background),
       ),
       child: Row(
         children: [
@@ -470,7 +470,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           color: colors.outline.withValues(alpha: 0.3),
           width: 1,
         ),
-        boxShadow: AppShadows.cardSoft(null),
+        boxShadow: AppShadows.cardSoft(colors.background),
       ),
       child: Column(
         children: [
