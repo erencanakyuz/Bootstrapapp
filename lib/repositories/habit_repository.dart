@@ -5,12 +5,13 @@ import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
-import '../services/habit_storage.dart';
+import '../storage/habit_storage_interface.dart';
+import '../exceptions/storage_exception.dart';
 
 class HabitRepository {
   HabitRepository(this._storage);
 
-  final HabitStorage _storage;
+  final HabitStorageInterface _storage;
 
   List<Habit> _cache = const [];
   bool _initialized = false;

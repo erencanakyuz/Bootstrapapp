@@ -2,22 +2,15 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/habit.dart';
+import '../storage/habit_storage_interface.dart';
+import '../exceptions/storage_exception.dart';
 
-/// Exception thrown when storage operations fail
-class StorageException implements Exception {
-  final String message;
-
-  StorageException(this.message);
-
-  @override
-  String toString() => 'StorageException: $message';
-}
-
-class HabitStorage {
+class HabitStorage implements HabitStorageInterface {
   static const String _habitsKey = 'habits_data';
 
   /// Save habits to local storage
   /// Throws [StorageException] if save fails
+  @override
   Future<void> saveHabits(List<Habit> habits) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -38,6 +31,7 @@ class HabitStorage {
   /// Load habits from local storage
   /// Returns default habits if no data exists
   /// Throws [StorageException] if loading fails
+  @override
   Future<List<Habit>> loadHabits() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -63,6 +57,7 @@ class HabitStorage {
 
   /// Clear all habit data
   /// Throws [StorageException] if clearing fails
+  @override
   Future<void> clearAllData() async {
     try {
       final prefs = await SharedPreferences.getInstance();

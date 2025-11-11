@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/app_constants.dart';
 import '../exceptions/habit_validation_exception.dart';
+import '../exceptions/storage_exception.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
-import '../services/habit_storage.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
@@ -108,6 +108,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, // Klavye açıldığında arka planı yeniden render etme
       body: activeScreen,
       bottomNavigationBar: _buildBottomNavigation(colors),
     );
@@ -225,6 +226,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   Widget _buildLoadingState(AppColors colors) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: colors.background,
       body: const SafeArea(child: HabitListSkeleton()),
     );

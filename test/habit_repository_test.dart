@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bootstrap_app/models/habit.dart';
 import 'package:bootstrap_app/repositories/habit_repository.dart';
-import 'package:bootstrap_app/services/habit_storage.dart';
+import 'package:bootstrap_app/storage/habit_storage_interface.dart';
+import 'package:bootstrap_app/exceptions/storage_exception.dart';
 
 // Helper function to create test habits
 Habit createTestHabit({
@@ -31,7 +32,7 @@ Habit createTestHabit({
   );
 }
 
-class MockHabitStorage implements HabitStorage {
+class MockHabitStorage implements HabitStorageInterface {
   List<Habit> _storage = [];
   bool shouldThrowOnSave = false;
   bool shouldThrowOnLoad = false;

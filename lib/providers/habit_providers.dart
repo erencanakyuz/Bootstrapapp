@@ -6,12 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
 import '../repositories/habit_repository.dart';
-import '../services/habit_storage.dart';
 import 'app_settings_providers.dart';
 import 'notification_provider.dart';
+import 'storage_providers.dart';
 
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {
-  final repository = HabitRepository(HabitStorage());
+  final storage = ref.watch(habitStorageProvider);
+  final repository = HabitRepository(storage);
   ref.onDispose(repository.dispose);
   return repository;
 });

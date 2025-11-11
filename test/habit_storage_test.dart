@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 import 'package:bootstrap_app/models/habit.dart';
 import 'package:bootstrap_app/services/habit_storage.dart';
+import 'package:bootstrap_app/exceptions/storage_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Helper function to create test habits
