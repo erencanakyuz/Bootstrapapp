@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,15 +9,21 @@ import 'screens/main_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/home_widget_service.dart';
+import 'services/habit_storage.dart';
+import 'storage/migration_service.dart';
+import 'storage/app_database.dart';
+import 'storage/drift_habit_storage.dart';
 
 // Global navigator key for notification tap handling
 final navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize home widget service
-  HomeWidgetService.initialize();
+  // Initialize home widget service (not supported on web)
+  if (!kIsWeb) {
+    await HomeWidgetService.initialize();
+  }
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -26,11 +33,19 @@ void main() {
     ),
   );
 
-  // Lock to portrait by default - prevent automatic rotation
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // Lock to portrait by default - prevent automatic rotation (not on web)
+  if (!kIsWeb) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
+  // Prepare storage so future migrations can run safely
+  // Skip migration on web (uses SharedPreferences directly)
+  if (!kIsWeb) {
+    await _runStorageMigrations();
+  }
 
   runApp(const ProviderScope(child: BootstrapApp()));
 }
@@ -91,5 +106,23 @@ class BootstrapApp extends ConsumerWidget {
         home: completed ? const MainScreen() : const OnboardingScreen(),
       ),
     );
+  }
+}
+
+Future<void> _runStorageMigrations() async {
+  final legacyStorage = HabitStorage();
+  final db = AppDatabase();
+  final driftStorage = DriftHabitStorage(db);
+  final migrationService = HabitMigrationService(legacyStorage);
+  try {
+    await migrationService.migrateIfNeeded(
+      writeBatch: (habits) async {
+        await driftStorage.saveHabits(habits);
+        return true;
+      },
+      onCleanupLegacy: legacyStorage.clearAllData,
+    );
+  } finally {
+    await db.close();
   }
 }
