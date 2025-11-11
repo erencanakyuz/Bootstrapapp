@@ -476,22 +476,34 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
             const SizedBox(height: 16),
             // Week days grid
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: weekDays.asMap().entries.map((entry) {
-              final index = entry.key;
-              final date = entry.value;
-              // TODO(perf): Swap Row→ListView/Grid builder so only visible day cells rebuild when a single habit changes.
-              return _DayCell(
-                  key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
-                  index: index,
-                  date: date,
-                  habit: habit,
-                  colors: colors,
-                  now: now,
-                  onTap: () => _toggleHabitCompletion(habit, date),
-                );
-              }).toList(),
+            SizedBox(
+              height: 110,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final cellWidth = constraints.maxWidth / weekDays.length;
+                  return ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: weekDays.length,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) {
+                      final date = weekDays[index];
+                      return SizedBox(
+                        width: cellWidth,
+                        child: _DayCell(
+                          key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
+                          index: index,
+                          date: date,
+                          habit: habit,
+                          colors: colors,
+                          now: now,
+                          onTap: () => _toggleHabitCompletion(habit, date),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -614,58 +626,53 @@ class _DayCell extends StatelessWidget {
             ? colors.textPrimary
             : colors.outline.withValues(alpha: 0.3);
 
-    return Expanded(
-      child: RepaintBoundary(
-        child: GestureDetector(
-          onTap: isActive ? onTap : null,
-          child: Opacity(
-            opacity: isActive ? 1.0 : 0.35,
-            child: Container(
-              margin: EdgeInsets.only(
-                left: index > 0 ? 4 : 0,
-                right: index < 6 ? 4 : 0,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isToday
-                    ? colors.outline.withValues(alpha: 0.08)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: isToday
-                    ? Border.all(color: colors.textPrimary, width: 2)
-                    : null,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    dayName,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isToday
-                          ? colors.textPrimary
-                          : colors.textTertiary,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: isActive ? onTap : null,
+        child: Opacity(
+          opacity: isActive ? 1.0 : 0.35,
+          child: Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: index == 0 || index == 6 ? 2 : 4,
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isToday
+                  ? colors.outline.withValues(alpha: 0.08)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: isToday
+                  ? Border.all(color: colors.textPrimary, width: 2)
+                  : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  dayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        isToday ? colors.textPrimary : colors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        isCompleted ? habit.color : Colors.transparent,
+                    border: Border.all(
+                      color: borderColor,
+                      width: isToday ? 2.5 : 2,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isCompleted
-                          ? habit.color
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: borderColor,
-                        width: isToday ? 2.5 : 2,
-                      ),
-                    ),
-                    child: Center(child: status),
-                  ),
-                ],
-              ),
+                  child: Center(child: status),
+                ),
+              ],
             ),
           ),
         ),
