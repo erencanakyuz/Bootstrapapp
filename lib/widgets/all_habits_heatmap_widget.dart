@@ -484,14 +484,17 @@ class _HeatmapCell extends StatelessWidget {
   /// Renk çok açık mı veya gri tonlarında mı kontrol et
   bool _isColorTooLightOrGray(Color color) {
     // Brightness kontrolü (0-255 arası)
-    final brightness = (color.red * 0.299 + color.green * 0.587 + color.blue * 0.114);
+    final r = (color.r * 255.0).round();
+    final g = (color.g * 255.0).round();
+    final b = (color.b * 255.0).round();
+    final brightness = (r * 0.299 + g * 0.587 + b * 0.114);
     if (brightness > 180) {
       return true; // Çok açık
     }
     
     // Saturation kontrolü - gri renklerin saturation'ı düşüktür
-    final max = [color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b);
-    final min = [color.red, color.green, color.blue].reduce((a, b) => a < b ? a : b);
+    final max = [r, g, b].reduce((a, b) => a > b ? a : b);
+    final min = [r, g, b].reduce((a, b) => a < b ? a : b);
     final saturation = max == 0 ? 0 : (max - min) / max;
     
     // Saturation çok düşükse (gri tonları) veya brightness çok yüksekse
@@ -502,9 +505,9 @@ class _HeatmapCell extends StatelessWidget {
   Color _blendColors(List<Habit> habits) {
     double r = 0, g = 0, b = 0;
     for (final habit in habits) {
-      r += habit.color.red;
-      g += habit.color.green;
-      b += habit.color.blue;
+      r += (habit.color.r * 255.0).round();
+      g += (habit.color.g * 255.0).round();
+      b += (habit.color.b * 255.0).round();
     }
     r /= habits.length;
     g /= habits.length;

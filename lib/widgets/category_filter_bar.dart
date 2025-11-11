@@ -129,24 +129,34 @@ class _CategoryChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radiusM),
-        child: Container(
-          height: 38,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSizes.paddingL,
-            vertical: isSelected ? 9 : 8,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 40,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 8,
           ),
           decoration: BoxDecoration(
             color: isSelected
-                ? colors.primary.withValues(alpha: 0.15)
+                ? colors.textPrimary
                 : colors.elevatedSurface,
-            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? colors.primary
-                  : colors.outline.withValues(alpha: 0.3),
-              width: isSelected ? 1.5 : 1,
+                  ? colors.textPrimary
+                  : colors.outline.withValues(alpha: 0.15),
+              width: 0.5,
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: colors.textPrimary.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -158,10 +168,10 @@ class _CategoryChip extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: Colors.black,
-                    letterSpacing: 0.0,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? colors.surface : colors.textPrimary,
+                    letterSpacing: -0.1,
                     height: 1.2,
                   ),
                   maxLines: 1,
@@ -171,21 +181,23 @@ class _CategoryChip extends StatelessWidget {
               const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 3,
+                  horizontal: 6,
+                  vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
+                  color: isSelected
+                      ? colors.surface.withValues(alpha: 0.2)
+                      : colors.textPrimary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   count.toString(),
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                    letterSpacing: 0.0,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? colors.surface : colors.textPrimary,
+                    letterSpacing: 0,
                     height: 1.2,
                   ),
                 ),

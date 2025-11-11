@@ -11,20 +11,22 @@ class HabitChainWidget extends ConsumerWidget {
   final Habit habit;
   final int daysToShow;
   final bool showFutureDays;
+  final DateTime? today;
 
   const HabitChainWidget({
     super.key,
     required this.habit,
     this.daysToShow = 30,
     this.showFutureDays = false,
+    this.today,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final today = DateTime.now();
-    final chainData = _buildChainData(today);
+    final currentDate = today ?? DateTime.now();
+    final chainData = _buildChainData(currentDate);
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingL),
@@ -76,6 +78,7 @@ class HabitChainWidget extends ConsumerWidget {
               habit: habit,
               colors: colors,
               textStyles: textStyles,
+              today: currentDate,
             ),
           ],
         ],
@@ -186,11 +189,13 @@ class _DependencyChain extends ConsumerWidget {
   final Habit habit;
   final AppColors colors;
   final AppTextStyles textStyles;
+  final DateTime today;
 
   const _DependencyChain({
     required this.habit,
     required this.colors,
     required this.textStyles,
+    required this.today,
   });
 
   @override
@@ -228,7 +233,6 @@ class _DependencyChain extends ConsumerWidget {
               spacing: 8,
               runSpacing: 8,
               children: dependencies.map((dep) {
-                final today = DateTime.now();
                 final depCompleted = dep.isCompletedOn(today);
                 return Container(
                   padding: const EdgeInsets.symmetric(

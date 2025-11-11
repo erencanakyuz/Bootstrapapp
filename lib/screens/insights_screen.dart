@@ -10,24 +10,38 @@ import '../widgets/all_habits_heatmap_widget.dart';
 import 'achievements_screen.dart';
 import 'analytics_dashboard_screen.dart';
 
-class InsightsScreen extends StatelessWidget {
+class InsightsScreen extends StatefulWidget {
   final List<Habit> habits;
 
   const InsightsScreen({super.key, required this.habits});
 
-  int get _totalHabits => habits.length;
+  @override
+  State<InsightsScreen> createState() => _InsightsScreenState();
+}
+
+class _InsightsScreenState extends State<InsightsScreen> {
+  late final DateTime _today;
+  late final DateTime _now;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _today = DateTime(_now.year, _now.month, _now.day);
+  }
+
+  int get _totalHabits => widget.habits.length;
 
   int get _completedToday {
-    final today = DateTime.now();
-    return habits.where((h) => h.isCompletedOn(today)).length;
+    return widget.habits.where((h) => h.isCompletedOn(_today)).length;
   }
 
   int get _currentStreak {
-    if (habits.isEmpty) return 0;
+    if (widget.habits.isEmpty) return 0;
 
     // Calculate longest current streak
     int maxStreak = 0;
-    for (final habit in habits) {
+    for (final habit in widget.habits) {
       final streak = habit.getCurrentStreak();
       if (streak > maxStreak) {
         maxStreak = streak;
@@ -37,21 +51,21 @@ class InsightsScreen extends StatelessWidget {
   }
 
   int get _totalCompletions {
-    return habits.fold(0, (sum, habit) => sum + habit.totalCompletions);
+    return widget.habits.fold(0, (sum, habit) => sum + habit.totalCompletions);
   }
 
   double get _completionRate {
-    if (habits.isEmpty) return 0;
-    final daysActive = habits
+    if (widget.habits.isEmpty) return 0;
+    final daysActive = widget.habits
         .map((h) {
           final daysSinceCreation =
-              DateTime.now().difference(h.createdAt).inDays + 1;
+              _now.difference(h.createdAt).inDays + 1;
           return daysSinceCreation;
         })
         .reduce((a, b) => a + b);
 
     if (daysActive == 0) return 0;
-    return (_totalCompletions / (habits.length * 7)) * 100; // Weekly rate
+    return (_totalCompletions / (widget.habits.length * 7)) * 100; // Weekly rate
   }
 
   @override
@@ -173,7 +187,7 @@ class InsightsScreen extends StatelessWidget {
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               sliver: SliverToBoxAdapter(
-                child: AllHabitsHeatmapWidget(habits: habits),
+                child: AllHabitsHeatmapWidget(habits: widget.habits),
               ),
             ),
             SliverPadding(
@@ -242,8 +256,8 @@ class InsightsScreen extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) =>
-                      _buildHabitPerformanceCard(habits[index], colors),
-                  childCount: habits.length,
+                      _buildHabitPerformanceCard(widget.habits[index], colors),
+                  childCount: widget.habits.length,
                   addAutomaticKeepAlives: false,
                   addRepaintBoundaries: true,
                   addSemanticIndexes: false,
@@ -445,7 +459,7 @@ class InsightsScreen extends StatelessWidget {
       "The only way to do great work is to love what you do.",
     ];
 
-    final quote = quotes[DateTime.now().day % quotes.length];
+    final quote = quotes[_today.day % quotes.length];
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingXXL),
