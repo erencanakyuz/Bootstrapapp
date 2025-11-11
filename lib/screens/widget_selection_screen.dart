@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/app_constants.dart';
-import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../services/home_widget_service.dart';
