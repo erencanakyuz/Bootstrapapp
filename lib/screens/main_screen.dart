@@ -79,9 +79,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         activeScreen = _KeepAliveWrapper(
           child: HomeScreen(
             habits: habits,
-            todayHabits: ref.watch(
-              filteredHabitsProvider.select((habits) => habits),
-            ),
             onAddHabit: _handleAddHabit,
             onUpdateHabit: _handleUpdateHabit,
             onDeleteHabit: _handleDeleteHabit,

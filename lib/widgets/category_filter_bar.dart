@@ -7,7 +7,7 @@ import '../constants/app_constants.dart';
 /// Category filter chips for filtering habits
 class CategoryFilterBar extends StatefulWidget {
   final List<Habit> habits;
-  final Function(List<Habit>) onFilterChanged;
+  final ValueChanged<HabitCategory?> onFilterChanged;
   final HabitCategory? initialCategory;
 
   const CategoryFilterBar({
@@ -28,24 +28,11 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
-    // Defer callback to next frame to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _applyFilter();
+        widget.onFilterChanged(_selectedCategory);
       }
     });
-  }
-
-  void _applyFilter() {
-    List<Habit> filtered;
-    if (_selectedCategory == null) {
-      filtered = widget.habits;
-    } else {
-      filtered = widget.habits
-          .where((habit) => habit.category == _selectedCategory)
-          .toList();
-    }
-    widget.onFilterChanged(filtered);
   }
 
   void _onCategorySelected(HabitCategory? category) {
@@ -53,7 +40,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
     setState(() {
       _selectedCategory = category == _selectedCategory ? null : category;
     });
-    _applyFilter();
+    widget.onFilterChanged(_selectedCategory);
   }
 
   @override
@@ -61,10 +48,9 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialCategory != widget.initialCategory) {
       _selectedCategory = widget.initialCategory;
-      // Defer callback to next frame to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _applyFilter();
+          widget.onFilterChanged(_selectedCategory);
         }
       });
     }

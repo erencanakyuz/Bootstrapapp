@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../constants/app_constants.dart';
 import '../exceptions/habit_validation_exception.dart';
 import '../models/habit.dart';
 import '../repositories/habit_repository.dart';
@@ -18,24 +17,49 @@ final habitRepositoryProvider = Provider<HabitRepository>((ref) {
 });
 
 class HabitsNotifier extends AsyncNotifier<List<Habit>> {
-  StreamSubscription<List<Habit>>? _subscription;
+  HabitRepository get _repository => ref.read(habitRepositoryProvider);
+
+  void _syncState(HabitRepository repository) {
+    state = AsyncData(repository.current);
+  }
+
+  void _emitError(
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    state = AsyncValue<List<Habit>>.error(
+      error,
+      stackTrace,
+    );
+  }
+
+  Future<void> _runMutation(
+    Future<void> Function(HabitRepository repository) operation, {
+    Future<void> Function()? onSuccess,
+  }) async {
+    final repository = _repository;
+    try {
+      await operation(repository);
+      _syncState(repository);
+      if (onSuccess != null) {
+        await onSuccess();
+      }
+    } catch (e, stackTrace) {
+      _emitError(e, stackTrace);
+      rethrow;
+    }
+  }
 
   @override
   Future<List<Habit>> build() async {
-    final repository = ref.read(habitRepositoryProvider);
-    await repository.ensureInitialized();
-    
-    // Start subscription immediately for reactive updates
-    _subscription ??= repository.watch().listen((habits) {
-      state = AsyncData(habits);
-    });
-    ref.onDispose(() => _subscription?.cancel());
-    
+    final repository = _repository;
+    final habits = await repository.ensureInitialized();
+
     // Schedule notifications in background to avoid blocking UI
     // Use unawaited to prevent blocking the build method
-    _scheduleNotificationsInBackground(repository.current);
-    
-    return repository.current;
+    _scheduleNotificationsInBackground(habits);
+
+    return habits;
   }
 
   /// Schedule notifications in background without blocking the main thread
@@ -92,156 +116,109 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> refresh() async {
+    final repository = _repository;
     state = const AsyncLoading();
-    final repository = ref.read(habitRepositoryProvider);
-    state = await AsyncValue.guard(repository.ensureInitialized);
+    try {
+      final habits = await repository.ensureInitialized();
+      state = AsyncData(habits);
+      _scheduleNotificationsInBackground(habits);
+    } catch (e, stackTrace) {
+      _emitError(e, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> addHabit(Habit habit) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      
-      // Update reminder weekdays to match habit's active weekdays
-      // This ensures reminders only fire on days when the habit is active
-      final updatedReminders = habit.reminders.map((reminder) {
-        return reminder.copyWith(
-          weekdays: List<int>.from(habit.activeWeekdays),
-        );
-      }).toList();
-      
-      // Create habit with synchronized reminder weekdays
-      final habitWithUpdatedReminders = habit.copyWith(
-        reminders: updatedReminders,
+    // Update reminder weekdays to match habit's active weekdays
+    // This ensures reminders only fire on days when the habit is active
+    final updatedReminders = habit.reminders.map((reminder) {
+      return reminder.copyWith(
+        weekdays: List<int>.from(habit.activeWeekdays),
       );
-      
-      await repository.upsertHabit(habitWithUpdatedReminders);
-      await _rescheduleReminders(habitWithUpdatedReminders);
-    } on HabitValidationException catch (e) {
-      // Validation errors are shown in UI but don't change state
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    } on StorageException catch (e) {
-      // Set error state for UI to display
-      state = AsyncError(e, StackTrace.current);
-      // Restore previous state after delay
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    }).toList();
+
+    // Create habit with synchronized reminder weekdays
+    final habitWithUpdatedReminders = habit.copyWith(
+      reminders: updatedReminders,
+    );
+
+    await _runMutation(
+      (repository) async => repository.upsertHabit(habitWithUpdatedReminders),
+      onSuccess: () => _rescheduleReminders(habitWithUpdatedReminders),
+    );
   }
 
   Future<void> updateHabit(Habit habit) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
+    // Get setting for allowing past dates before creation
+    final settingsAsync = ref.read(profileSettingsProvider);
+    final allowPastDates = settingsAsync.maybeWhen(
+      data: (settings) => settings.allowPastDatesBeforeCreation,
+      orElse: () => false,
+    );
 
-      // Get setting for allowing past dates before creation
-      final settingsAsync = ref.read(profileSettingsProvider);
-      final allowPastDates = settingsAsync.maybeWhen(
-        data: (settings) => settings.allowPastDatesBeforeCreation,
-        orElse: () => false,
+    // Update reminder weekdays to match habit's active weekdays
+    // This ensures reminders only fire on days when the habit is active
+    final updatedReminders = habit.reminders.map((reminder) {
+      return reminder.copyWith(
+        weekdays: List<int>.from(habit.activeWeekdays),
       );
+    }).toList();
 
-      // Update reminder weekdays to match habit's active weekdays
-      // This ensures reminders only fire on days when the habit is active
-      final updatedReminders = habit.reminders.map((reminder) {
-        return reminder.copyWith(
-          weekdays: List<int>.from(habit.activeWeekdays),
-        );
-      }).toList();
-      
-      // Create habit with synchronized reminder weekdays
-      final habitWithUpdatedReminders = habit.copyWith(
-        reminders: updatedReminders,
-      );
+    // Create habit with synchronized reminder weekdays
+    final habitWithUpdatedReminders = habit.copyWith(
+      reminders: updatedReminders,
+    );
 
-      await repository.upsertHabit(
+    await _runMutation(
+      (repository) => repository.upsertHabit(
         habitWithUpdatedReminders,
         allowPastDatesBeforeCreation: allowPastDates,
-      );
-      await _rescheduleReminders(habitWithUpdatedReminders);
-    } on HabitValidationException catch (e) {
-      // Validation errors are shown in UI but don't change state
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+      ),
+      onSuccess: () => _rescheduleReminders(habitWithUpdatedReminders),
+    );
   }
 
   Future<void> deleteHabit(String habitId) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      final habit = repository.byId(habitId);
-      // Use hardDelete: true to actually delete, not archive
-      await repository.deleteHabit(habitId, hardDelete: true);
-      if (habit != null) {
-        await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
-      }
-      // Update state after deletion
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      // Set error state for UI to display
-      state = AsyncError(e, StackTrace.current);
-      // Restore previous state after delay
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    final repository = _repository;
+    final habit = repository.byId(habitId);
+    await _runMutation(
+      (repo) => repo.deleteHabit(habitId, hardDelete: true),
+      onSuccess: () async {
+        if (habit != null) {
+          await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+        }
+      },
+    );
   }
 
   Future<void> archiveHabit(String habitId) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      final habit = repository.byId(habitId);
-      await repository.deleteHabit(habitId, hardDelete: false);
-      if (habit != null) {
-        await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
-      }
-      // Update state after archiving
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    final repository = _repository;
+    final habit = repository.byId(habitId);
+    await _runMutation(
+      (repo) => repo.deleteHabit(habitId, hardDelete: false),
+      onSuccess: () async {
+        if (habit != null) {
+          await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
+        }
+      },
+    );
   }
 
   Future<void> restoreHabit(String habitId) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      await repository.restoreHabit(habitId);
-      final habit = repository.byId(habitId);
-      if (habit != null) {
-        await _rescheduleReminders(habit);
-      }
-      // Update state after restoration
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    final repository = _repository;
+    await _runMutation(
+      (repo) => repo.restoreHabit(habitId),
+      onSuccess: () async {
+        final habit = repository.byId(habitId);
+        if (habit != null) {
+          await _rescheduleReminders(habit);
+        }
+      },
+    );
   }
 
   Future<void> toggleCompletion(String habitId, DateTime date) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
+    await _runMutation((repository) async {
       final habit = repository.byId(habitId);
       if (habit == null) return;
 
@@ -265,59 +242,30 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         updatedHabit,
         allowPastDatesBeforeCreation: allowPastDates,
       );
-    } on HabitValidationException catch (e) {
-      // Validation errors are shown in UI but don't change state
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    });
   }
 
   Future<Map<String, dynamic>?> importHabits(
     String jsonString, {
     bool merge = true,
   }) async {
+    final repository = _repository;
     try {
-      final repository = ref.read(habitRepositoryProvider);
       final importedSettings = await repository.importHabits(
         jsonString,
         merge: merge,
       );
-      
+
       // Reschedule all reminders for imported habits
       final habits = repository.current;
       for (final habit in habits) {
         await _rescheduleReminders(habit);
       }
-      
-      // Update state after import
-      state = AsyncData(repository.current);
+
+      _syncState(repository);
       return importedSettings;
-    } on FormatException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    } on HabitValidationException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
+    } catch (e, stackTrace) {
+      _emitError(e, stackTrace);
       rethrow;
     }
   }
@@ -352,115 +300,60 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
   }
 
   Future<void> applyFreezeDay(String habitId) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      await repository.applyFreezeDay(habitId);
-      // Update state after freeze day application
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    await _runMutation((repository) => repository.applyFreezeDay(habitId));
   }
 
   Future<void> upsertNote({
     required String habitId,
     required HabitNote note,
   }) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      await repository.upsertNote(habitId: habitId, note: note);
-      // Update state after note upsert
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    await _runMutation(
+      (repository) => repository.upsertNote(habitId: habitId, note: note),
+    );
   }
 
   Future<void> addTask({
     required String habitId,
     required HabitTask task,
   }) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
+    await _runMutation((repository) async {
       final habit = repository.byId(habitId);
       if (habit == null) return;
       final updated = habit.addTask(task);
       await repository.upsertHabit(updated);
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    });
   }
 
   Future<void> toggleTask({
     required String habitId,
     required String taskId,
   }) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
+    await _runMutation((repository) async {
       final habit = repository.byId(habitId);
       if (habit == null) return;
       final updated = habit.toggleTask(taskId);
       await repository.upsertHabit(updated);
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    });
   }
 
   Future<void> removeTask({
     required String habitId,
     required String taskId,
   }) async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
+    await _runMutation((repository) async {
       final habit = repository.byId(habitId);
       if (habit == null) return;
       final updated = habit.removeTask(taskId);
       await repository.upsertHabit(updated);
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    });
   }
 
   Future<void> clearAll() async {
-    try {
-      final repository = ref.read(habitRepositoryProvider);
-      // Cancel all notifications before clearing data
-      // This prevents orphaned notifications after data is cleared
-      final notifier = ref.read(notificationServiceProvider);
-      await notifier.cancelAll();
-      await repository.clearAll();
-      // Update state after clearing
-      state = AsyncData(repository.current);
-    } on StorageException catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      await Future.delayed(AppAnimations.errorDisplay);
-      final repository = ref.read(habitRepositoryProvider);
-      state = AsyncData(repository.current);
-      rethrow;
-    }
+    // Cancel all notifications before clearing data
+    // This prevents orphaned notifications after data is cleared
+    final notifier = ref.read(notificationServiceProvider);
+    await notifier.cancelAll();
+    await _runMutation((repository) => repository.clearAll());
   }
 
   Future<void> _rescheduleReminders(Habit habit) async {
@@ -600,4 +493,62 @@ final archivedHabitsProvider = Provider<List<Habit>>((ref) {
     data: (habits) => habits.where((habit) => habit.archived).toList(),
     orElse: () => const [],
   );
+});
+
+/// Active, non-archived habits scheduled for today.
+final todayActiveHabitsProvider = Provider<List<Habit>>((ref) {
+  final habitsAsync = ref.watch(habitsProvider);
+  return habitsAsync.maybeWhen(
+    data: (habits) {
+      final today = DateTime.now();
+      return habits
+          .where(
+            (habit) => !habit.archived && habit.isActiveOnDate(today),
+          )
+          .toList();
+    },
+    orElse: () => const [],
+  );
+});
+
+/// Count of habits completed today.
+final completedTodayCountProvider = Provider<int>((ref) {
+  final todayHabits = ref.watch(todayActiveHabitsProvider);
+  final today = DateTime.now();
+  return todayHabits.where((habit) => habit.isCompletedOn(today)).length;
+});
+
+/// Highest streak value among today's active habits.
+final totalStreakProvider = Provider<int>((ref) {
+  final todayHabits = ref.watch(todayActiveHabitsProvider);
+  if (todayHabits.isEmpty) return 0;
+
+  var maxStreak = 0;
+  for (final habit in todayHabits) {
+    final streak = habit.getCurrentStreak();
+    if (streak > maxStreak) {
+      maxStreak = streak;
+    }
+  }
+  return maxStreak;
+});
+
+/// Weekly completion count for the current week.
+final weeklyCompletionsProvider = Provider<int>((ref) {
+  final todayHabits = ref.watch(todayActiveHabitsProvider);
+  if (todayHabits.isEmpty) return 0;
+
+  final now = DateTime.now();
+  final weekStart = now.subtract(Duration(days: now.weekday - 1));
+
+  var count = 0;
+  for (final habit in todayHabits) {
+    for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+      final date = weekStart.add(Duration(days: dayOffset));
+      if (habit.isActiveOnDate(date) && habit.isCompletedOn(date)) {
+        count++;
+      }
+    }
+  }
+  return count;
 });

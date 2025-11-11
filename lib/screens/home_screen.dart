@@ -10,6 +10,7 @@ import 'dart:math' as math;
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../providers/app_settings_providers.dart';
+import '../providers/habit_providers.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/page_transitions.dart';
@@ -28,7 +29,6 @@ import 'onboarding_screen.dart';
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
 class HomeScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
-  final List<Habit> todayHabits;
   final Function(Habit) onAddHabit;
   final Function(Habit) onUpdateHabit;
   final Function(String) onDeleteHabit;
@@ -36,7 +36,6 @@ class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
     required this.habits,
-    required this.todayHabits,
     required this.onAddHabit,
     required this.onUpdateHabit,
     required this.onDeleteHabit,
@@ -53,36 +52,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   HabitDifficulty? _currentHabitDifficulty; // Store the difficulty of the completed habit
   int _confettiPaletteSeed = 0; // Forces ConfettiWidget to rebuild with new colors
 
-  // Cache for expensive computations
-  int? _cachedTotalStreak;
-  int? _cachedWeeklyCompletions;
-  String? _cachedWeekRangeLabel;
-  DateTime? _lastCacheDate;
-  List<Habit>? _cachedActiveTodayHabits;
-  DateTime? _frameNowSnapshot;
-  
   // Filtering
-  List<Habit> _filteredHabits = [];
   HabitCategory? _selectedCategory;
 
-  DateTime get _frameNow => _frameNowSnapshot ?? DateTime.now();
-  DateTime get _frameTodayKey {
-    final snapshot = _frameNow;
-    return DateTime(snapshot.year, snapshot.month, snapshot.day);
+  List<Habit> _currentTodayHabits() {
+    return List<Habit>.from(ref.read(todayActiveHabitsProvider));
   }
 
-  List<Habit> get _activeTodayHabits {
-    // Cache active habits per day to avoid recalculation
-    final todayKey = _frameTodayKey;
-    if (_lastCacheDate != todayKey || _cachedActiveTodayHabits == null) {
-      _cachedActiveTodayHabits = widget.todayHabits.where((habit) => !habit.archived).toList();
-      _lastCacheDate = todayKey;
-      // Invalidate cached computations when habits change
-      _cachedTotalStreak = null;
-      _cachedWeeklyCompletions = null;
-      _cachedWeekRangeLabel = null;
+  List<Habit> _filterHabits(List<Habit> habits) {
+    if (_selectedCategory == null) {
+      return habits;
     }
-    return _cachedActiveTodayHabits!;
+    return habits
+        .where((habit) => habit.category == _selectedCategory)
+        .toList();
   }
 
   @override
@@ -91,18 +74,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 2),
     );
-    _filteredHabits = widget.todayHabits;
-  }
-
-  @override
-  void didUpdateWidget(HomeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Invalidate cache when habits change
-    if (oldWidget.todayHabits != widget.todayHabits) {
-      _cachedActiveTodayHabits = null;
-      _cachedTotalStreak = null;
-      _cachedWeeklyCompletions = null;
-    }
   }
 
   @override
@@ -111,15 +82,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  void _onCategoryFilterChanged(List<Habit> results) {
+  void _onCategoryFilterChanged(HabitCategory? category) {
     setState(() {
-      // Store the category that was selected
-      if (results.isEmpty || results.length == widget.todayHabits.length) {
-        _selectedCategory = null;
-      } else {
-        _selectedCategory = results.first.category;
-      }
-      _filteredHabits = results;
+      _selectedCategory = category;
     });
   }
 
@@ -156,32 +121,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final updatedHabit = habit.toggleCompletion(today);
     widget.onUpdateHabit(updatedHabit);
 
-    // Update filtered habits list to reflect the change immediately
-    setState(() {
-      final index = _filteredHabits.indexWhere((h) => h.id == habit.id);
-      if (index != -1) {
-        _filteredHabits[index] = updatedHabit;
-      }
-      // Also update the main list cache
-      final activeIndex = _activeTodayHabits.indexWhere((h) => h.id == habit.id);
-      if (activeIndex != -1) {
-        _cachedActiveTodayHabits![activeIndex] = updatedHabit;
-      }
-    });
-
-    // Invalidate cache when habit completion changes
-    _cachedTotalStreak = null;
-    _cachedWeeklyCompletions = null;
-
     // Update home widget
-    final activeHabits = _activeTodayHabits;
+    final activeHabits = _currentTodayHabits();
     final completedToday = activeHabits.where((h) => h.isCompletedOn(today)).length;
     final totalToday = activeHabits.length;
     final topHabit = activeHabits.isNotEmpty ? activeHabits.first : null;
     HomeWidgetService.updateWidget(
       completedToday: completedToday,
       totalToday: totalToday,
-      currentStreak: _getTotalStreak(),
+      currentStreak: ref.read(totalStreakProvider),
       topHabitTitle: topHabit?.title ?? '',
       topHabitColor: topHabit?.color ?? Colors.green,
     );
@@ -395,13 +343,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColors colors,
     AppTextStyles textStyles,
     DateTime today,
+    List<Habit> todayHabits,
+    int totalStreak,
+    int weeklyCompletions,
   ) {
-    final activeHabits = _activeTodayHabits;
-    final total = activeHabits.length;
-    final totalStreak = _getTotalStreak();
-    final weeklyCompletions = _getWeeklyCompletions();
+    final total = todayHabits.length;
     final progress = total == 0 ? 0.0 : completed / total;
-    final message = _getMotivationalMessage(today);
+    final message = _getMotivationalMessage(todayHabits, today);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -585,8 +533,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildDailyFocusSection(AppColors colors, AppTextStyles textStyles) {
-    final activeHabits = _activeTodayHabits;
+  Widget _buildDailyFocusSection(
+    AppColors colors,
+    AppTextStyles textStyles,
+    List<Habit> activeHabits,
+  ) {
     if (activeHabits.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -603,9 +554,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHabitListSliver(AppColors colors, AppTextStyles textStyles) {
-    final activeHabits = _selectedCategory != null ? _filteredHabits : _activeTodayHabits;
-    
+  Widget _buildHabitListSliver(
+    AppColors colors,
+    AppTextStyles textStyles,
+    List<Habit> activeHabits,
+  ) {
     if (activeHabits.isEmpty && _selectedCategory != null) {
       return SliverToBoxAdapter(
         child: Padding(
@@ -758,46 +711,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  int _getTotalStreak() {
-    // Use cached value if available
-    if (_cachedTotalStreak != null) return _cachedTotalStreak!;
-    
-    final activeHabits = _activeTodayHabits;
-    if (activeHabits.isEmpty) {
-      _cachedTotalStreak = 0;
-      return 0;
-    }
-    int maxStreak = 0;
-    for (final habit in activeHabits) {
-      final streak = habit.getCurrentStreak();
-      if (streak > maxStreak) maxStreak = streak;
-    }
-    _cachedTotalStreak = maxStreak;
-    return maxStreak;
-  }
-
-  int _getWeeklyCompletions() {
-    // Use cached value if available
-    if (_cachedWeeklyCompletions != null) return _cachedWeeklyCompletions!;
-    
-    final now = _frameNow;
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    int count = 0;
-    final activeHabits = _activeTodayHabits;
-    for (final habit in activeHabits) {
-      for (int i = 0; i < 7; i++) {
-        final date = weekStart.add(Duration(days: i));
-        if (habit.isActiveOnDate(date) && habit.isCompletedOn(date)) {
-          count++;
-        }
-      }
-    }
-    _cachedWeeklyCompletions = count;
-    return count;
-  }
-
-  String _getMotivationalMessage(DateTime today) {
-    final activeHabits = _activeTodayHabits;
+  String _getMotivationalMessage(List<Habit> activeHabits, DateTime today) {
     final completedToday =
         activeHabits.where((h) => h.isCompletedOn(today)).length;
     final total = activeHabits.length;
@@ -817,33 +731,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool _isNewHabit(Habit habit) {
-    final daysSinceCreation = _frameNow.difference(habit.createdAt).inDays;
+    final daysSinceCreation = DateTime.now().difference(habit.createdAt).inDays;
     return daysSinceCreation <= 1; // Only show for 1 day
   }
 
   String _weekRangeLabel() {
-    // Use cached value if available
-    if (_cachedWeekRangeLabel != null) return _cachedWeekRangeLabel!;
-    
-    final now = _frameNow;
+    final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekEnd = weekStart.add(const Duration(days: 6));
     final formatter = DateFormat('MMM d');
-    _cachedWeekRangeLabel = '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
-    return _cachedWeekRangeLabel!;
+    return '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
   }
 
 
   @override
   Widget build(BuildContext context) {
-    _frameNowSnapshot = DateTime.now();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final today = _frameTodayKey;
     final dateLabel = DateFormat('EEEE, MMM d').format(today);
-    final todayActiveHabits = _activeTodayHabits;
-    final completedToday =
-        todayActiveHabits.where((h) => h.isCompletedOn(today)).length;
+    final todayActiveHabits = ref.watch(todayActiveHabitsProvider);
+    final visibleHabits = _filterHabits(todayActiveHabits);
+    final completedToday = ref.watch(completedTodayCountProvider);
+    final totalStreak = ref.watch(totalStreakProvider);
+    final weeklyCompletions = ref.watch(weeklyCompletionsProvider);
     final mediaQuery = MediaQuery.of(context);
     final viewPadding = mediaQuery.padding;
     final horizontalPadding = context.horizontalGutter;
@@ -868,6 +780,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             colors,
             textStyles,
             today,
+            todayActiveHabits,
+            totalStreak,
+            weeklyCompletions,
           ),
         ),
       ),
@@ -947,11 +862,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDailyFocusSection(colors, textStyles),
+                _buildDailyFocusSection(
+                  colors,
+                  textStyles,
+                  todayActiveHabits,
+                ),
                 if (todayActiveHabits.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   CategoryFilterBar(
-                    habits: widget.todayHabits,
+                    habits: todayActiveHabits,
                     onFilterChanged: _onCategoryFilterChanged,
                     initialCategory: _selectedCategory,
                   ),
@@ -980,7 +899,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               horizontalPadding,
               0,
             ),
-            sliver: _buildHabitListSliver(colors, textStyles),
+            sliver: _buildHabitListSliver(
+              colors,
+              textStyles,
+              visibleHabits,
+            ),
           ),
         // Daily Motivation Widget - moved to bottom
         SliverPadding(

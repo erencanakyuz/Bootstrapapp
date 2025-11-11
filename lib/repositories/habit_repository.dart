@@ -11,8 +11,6 @@ class HabitRepository {
   HabitRepository(this._storage);
 
   final HabitStorage _storage;
-  final StreamController<List<Habit>> _controller =
-      StreamController<List<Habit>>.broadcast();
 
   List<Habit> _cache = const [];
   bool _initialized = false;
@@ -45,18 +43,10 @@ class HabitRepository {
     }
 
     _initialized = true;
-    _controller.add(List.unmodifiable(_cache));
     return _cache;
   }
 
   List<Habit> get current => List.unmodifiable(_cache);
-
-  Stream<List<Habit>> watch() {
-    if (_initialized) {
-      Future.microtask(() => _controller.add(List.unmodifiable(_cache)));
-    }
-    return _controller.stream;
-  }
 
   Habit? byId(String habitId) {
     try {
@@ -157,7 +147,6 @@ class HabitRepository {
   Future<void> clearAll() async {
     _cache = const [];
     await _storage.clearAllData();
-    _controller.add(_cache);
   }
 
   Future<void> archiveCompletedHabits(DateTime referenceDate) async {
@@ -642,7 +631,6 @@ class HabitRepository {
     while (attempts < AppConfig.maxSaveRetries) {
       try {
         await _storage.saveHabits(cacheSnapshot);
-        _controller.add(cacheSnapshot);
         return; // Success
       } on StorageException catch (e) {
         lastError = e;
@@ -666,7 +654,5 @@ class HabitRepository {
     }
   }
 
-  void dispose() {
-    _controller.close();
-  }
+  void dispose() {}
 }
