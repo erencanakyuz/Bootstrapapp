@@ -849,7 +849,7 @@ class HabitTemplates {
       title: 'Relaxing Bath',
       description: 'Take time for a relaxing bath',
       category: HabitCategory.wellness,
-      icon: PhosphorIconsRegular.wave,
+      icon: PhosphorIconsRegular.wind, // wave icon doesn't exist, using wind
       color: const Color(0xFF00BCD4),
       difficulty: HabitDifficulty.easy,
       timeBlock: HabitTimeBlock.evening,

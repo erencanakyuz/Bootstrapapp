@@ -12,7 +12,7 @@ class HabitIconLibrary {
     PhosphorIconsRegular.moon, // Sleep/Bedtime
     PhosphorIconsRegular.forkKnife, // Food/Restaurant
     PhosphorIconsRegular.heartbeat, // Health tracking
-    PhosphorIconsRegular.yoga, // Yoga/Stretching
+    PhosphorIconsRegular.leaf, // Yoga/Stretching (yoga icon doesn't exist, using leaf)
     PhosphorIconsRegular.bicycle, // Cycling
     PhosphorIconsRegular.swimmingPool, // Swimming
     PhosphorIconsRegular.tree, // Nature/Outdoor
@@ -25,8 +25,8 @@ class HabitIconLibrary {
     PhosphorIconsRegular.sparkle, // Self-care
     PhosphorIconsRegular.flower, // Calm
     PhosphorIconsRegular.campfire, // Relaxation
-    PhosphorIconsRegular.wave, // Peace
-    PhosphorIconsRegular.mountain, // Nature connection
+    PhosphorIconsRegular.heart, // Peace (wave icon doesn't exist, using heart)
+    PhosphorIconsRegular.tree, // Nature connection (mountain icon doesn't exist, using tree)
     
     // Learning & Productivity
     PhosphorIconsRegular.book, // Reading/Learning
