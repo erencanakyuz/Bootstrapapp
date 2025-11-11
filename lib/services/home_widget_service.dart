@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 
+import '../utils/color_extensions.dart';
+
 /// Home screen widget service for Android/iOS
 class HomeWidgetService {
   static const String _androidWidgetName = 'HabitTrackerWidget';
@@ -56,7 +58,7 @@ class HomeWidgetService {
       );
       await HomeWidget.saveWidgetData<String>(
         'top_habit_color',
-        '#${topHabitColor.toARGB32().toRadixString(16).substring(2)}',
+        topHabitColor.toRgbHex(includeHash: true),
       );
       await HomeWidget.saveWidgetData<String>(
         'last_updated',

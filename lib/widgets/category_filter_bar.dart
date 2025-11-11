@@ -30,7 +30,9 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
     _selectedCategory = widget.initialCategory;
     // Defer callback to next frame to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _applyFilter();
+      if (mounted) {
+        _applyFilter();
+      }
     });
   }
 
@@ -61,7 +63,9 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
       _selectedCategory = widget.initialCategory;
       // Defer callback to next frame to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _applyFilter();
+        if (mounted) {
+          _applyFilter();
+        }
       });
     }
   }
