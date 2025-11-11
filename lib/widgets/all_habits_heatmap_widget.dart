@@ -116,6 +116,7 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
                     return _HeatmapCell(
                       date: day.date,
                       completedHabits: day.completedHabits,
+                      allHabits: day.allHabits,
                       colors: colors,
                     );
                   }).toList(),
@@ -124,62 +125,46 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.paddingL),
-          // Legend - show habit colors
-          if (habits.isNotEmpty) ...[
-            Text(
-              'Habit Colors',
-              style: textStyles.caption.copyWith(
-                fontSize: 10,
-                color: colors.textTertiary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingS),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: habits.take(8).map((habit) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: habit.color,
-                        borderRadius: BorderRadius.circular(2),
-                        border: Border.all(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      habit.title.length > 12 
-                          ? '${habit.title.substring(0, 12)}...'
-                          : habit.title,
-                      style: textStyles.caption.copyWith(
-                        fontSize: 9,
-                        color: colors.textTertiary,
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-            if (habits.length > 8)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '+ ${habits.length - 8} more',
-                  style: textStyles.caption.copyWith(
-                    fontSize: 9,
-                    color: colors.textTertiary,
-                  ),
+          // Legend - show 3 states
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Activity States',
+                style: textStyles.caption.copyWith(
+                  fontSize: 10,
+                  color: colors.textTertiary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-          ],
+              const SizedBox(height: AppSizes.paddingS),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildLegendItem(
+                    'No activity',
+                    colors.outline.withValues(alpha: 0.1),
+                    colors,
+                    textStyles,
+                  ),
+                  _buildLegendItem(
+                    'Some completed',
+                    colors.accentGreen.withValues(alpha: 0.8), // Daha belirgin yeşil
+                    colors,
+                    textStyles,
+                  ),
+                  _buildLegendItem(
+                    'Perfect day',
+                    null, // Gradient için null
+                    colors,
+                    textStyles,
+                    isPerfect: true,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -198,13 +183,24 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
       days.add(_HeatmapDay(
         date: startDate.subtract(Duration(days: daysToAdd - i)),
         completedHabits: [],
+        allHabits: habits,
       ));
     }
     
     // Add all days of the year
     for (var date = startDate; date.isBefore(endDate.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
-      final completedHabits = habits.where((habit) => habit.isCompletedOn(date)).toList();
-      days.add(_HeatmapDay(date: date, completedHabits: completedHabits));
+      // O gün için aktif olan habit'leri bul (o tarihte var olan habit'ler)
+      final activeHabitsOnDate = habits.where((habit) {
+        final habitStartDate = DateTime(habit.createdAt.year, habit.createdAt.month, habit.createdAt.day);
+        return date.isAfter(habitStartDate.subtract(const Duration(days: 1)));
+      }).toList();
+      
+      final completedHabits = activeHabitsOnDate.where((habit) => habit.isCompletedOn(date)).toList();
+      days.add(_HeatmapDay(
+        date: date,
+        completedHabits: completedHabits,
+        allHabits: activeHabitsOnDate,
+      ));
     }
     
     // Add padding to complete weeks
@@ -214,90 +210,233 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
         days.add(_HeatmapDay(
           date: endDate.add(Duration(days: i + 1)),
           completedHabits: [],
+          allHabits: habits,
         ));
       }
     }
     
     return days;
   }
+
+  Widget _buildLegendItem(
+    String label,
+    Color? color,
+    AppColors colors,
+    AppTextStyles textStyles, {
+    bool isPerfect = false,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 11,
+          height: 11,
+          decoration: BoxDecoration(
+            color: isPerfect
+                ? null
+                : color,
+            gradient: isPerfect
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colors.accentGreen.withValues(alpha: 0.9),
+                      colors.accentAmber.withValues(alpha: 0.9),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(2),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: isPerfect
+              ? Center(
+                  child: Icon(
+                    Icons.star_rounded,
+                    size: 7,
+                    color: Colors.white,
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: textStyles.caption.copyWith(
+            fontSize: 9,
+            color: colors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _HeatmapDay {
   final DateTime date;
   final List<Habit> completedHabits;
+  final List<Habit> allHabits; // Tüm habit'lerin listesi
 
   _HeatmapDay({
     required this.date,
     required this.completedHabits,
+    required this.allHabits,
   });
+  
+  /// O gün tüm habit'ler tamamlandı mı?
+  bool get allCompleted => allHabits.isNotEmpty && completedHabits.length == allHabits.length;
 }
 
 class _HeatmapCell extends StatelessWidget {
   final DateTime date;
   final List<Habit> completedHabits;
+  final List<Habit> allHabits;
   final AppColors colors;
 
   const _HeatmapCell({
     required this.date,
     required this.completedHabits,
+    required this.allHabits,
     required this.colors,
   });
-
-  Color _blendColors(List<Color> colors) {
-    if (colors.isEmpty) {
-      return this.colors.outline.withValues(alpha: 0.1);
-    }
-    if (colors.length == 1) {
-      return colors.first.withValues(alpha: 0.7);
-    }
-    
-    // Multiple colors - blend them together
-    // Calculate average RGB values
-    double r = 0, g = 0, b = 0;
-    for (final color in colors) {
-      r += color.red;
-      g += color.green;
-      b += color.blue;
-    }
-    r /= colors.length;
-    g /= colors.length;
-    b /= colors.length;
-    
-    // Increase opacity based on number of habits (more habits = more intense)
-    final alpha = 0.5 + (colors.length.clamp(0, 5) * 0.1).clamp(0.0, 0.5);
-    
-    return Color.fromRGBO(
-      r.round(),
-      g.round(),
-      b.round(),
-      alpha,
-    );
-  }
+  
+  bool get allCompleted => allHabits.isNotEmpty && completedHabits.length == allHabits.length;
 
   @override
   Widget build(BuildContext context) {
-    final habitColors = completedHabits.map((h) => h.color).toList();
-    final cellColor = _blendColors(habitColors);
     final habitNames = completedHabits.map((h) => h.title).join(', ');
 
     return Tooltip(
       message: DateFormat('MMM d, yyyy').format(date) +
           (completedHabits.isEmpty 
               ? '\nNo completions' 
-              : '\n${completedHabits.length} habit${completedHabits.length > 1 ? 's' : ''}: $habitNames'),
+              : allCompleted
+                  ? '\nPerfect day! All ${allHabits.length} habits completed'
+                  : '\n${completedHabits.length}/${allHabits.length} habits completed: $habitNames'),
       child: Container(
         width: 11,
         height: 11,
         decoration: BoxDecoration(
-          color: cellColor,
           borderRadius: BorderRadius.circular(2),
           border: Border.all(
             color: Colors.black.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
+        child: _buildCellContent(),
       ),
     );
   }
-}
 
+  /// 3 durum: Hiç tamamlanmadıysa, En az 1 tamamlandıysa, Hepsi tamamlandıysa
+  Widget _buildCellContent() {
+    // Durum 1: Hiç tamamlanmadıysa
+    if (completedHabits.isEmpty) {
+      return Container(
+        color: colors.outline.withValues(alpha: 0.1),
+      );
+    }
+    
+    // Durum 2: Hepsi tamamlandıysa (Perfect day)
+    if (allCompleted) {
+      return _buildPerfectDayIndicator();
+    }
+    
+    // Durum 3: En az 1 tamamlandıysa (renkli göster)
+    return _buildSomeCompletedIndicator();
+  }
+
+  /// Tüm habit'ler tamamlandığında gösterilecek özel işaret
+  Widget _buildPerfectDayIndicator() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.accentGreen.withValues(alpha: 0.9),
+            colors.accentAmber.withValues(alpha: 0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.star_rounded,
+          size: 7,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// En az 1 habit tamamlandığında gösterilecek renkli gösterim
+  Widget _buildSomeCompletedIndicator() {
+    // Eğer tek habit tamamlandıysa, o habit'in rengini kullan
+    if (completedHabits.length == 1) {
+      final habitColor = completedHabits.first.color;
+      // Renk çok açıksa, gri tonlarındaysa veya saturation düşükse, accentGreen kullan
+      if (_isColorTooLightOrGray(habitColor)) {
+        return Container(
+          color: colors.accentGreen.withValues(alpha: 0.8),
+        );
+      }
+      return Container(
+        color: habitColor.withValues(alpha: 0.85),
+      );
+    }
+    
+    // Birden fazla habit tamamlandıysa renkleri karıştır
+    final blendedColor = _blendColors(completedHabits);
+    
+    // Karışık renk çok açıksa veya gri tonlarındaysa, accentGreen kullan
+    if (_isColorTooLightOrGray(blendedColor)) {
+      return Container(
+        color: colors.accentGreen.withValues(alpha: 0.8),
+      );
+    }
+    
+    return Container(
+      color: blendedColor.withValues(alpha: 0.85),
+    );
+  }
+
+  /// Renk çok açık mı veya gri tonlarında mı kontrol et
+  bool _isColorTooLightOrGray(Color color) {
+    // Brightness kontrolü (0-255 arası)
+    final brightness = (color.red * 0.299 + color.green * 0.587 + color.blue * 0.114);
+    if (brightness > 180) {
+      return true; // Çok açık
+    }
+    
+    // Saturation kontrolü - gri renklerin saturation'ı düşüktür
+    final max = [color.red, color.green, color.blue].reduce((a, b) => a > b ? a : b);
+    final min = [color.red, color.green, color.blue].reduce((a, b) => a < b ? a : b);
+    final saturation = max == 0 ? 0 : (max - min) / max;
+    
+    // Saturation çok düşükse (gri tonları) veya brightness çok yüksekse
+    return saturation < 0.2 || brightness > 150;
+  }
+
+  /// Renkleri karıştır ve Color döndür
+  Color _blendColors(List<Habit> habits) {
+    double r = 0, g = 0, b = 0;
+    for (final habit in habits) {
+      r += habit.color.red;
+      g += habit.color.green;
+      b += habit.color.blue;
+    }
+    r /= habits.length;
+    g /= habits.length;
+    b /= habits.length;
+    
+    return Color.fromRGBO(
+      r.round(),
+      g.round(),
+      b.round(),
+      1.0, // Full opacity - alpha sonra ayarlanacak
+    );
+  }
+}
