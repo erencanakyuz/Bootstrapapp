@@ -85,9 +85,10 @@ class HabitSuggestionsWidget extends ConsumerWidget {
               ),
               const SizedBox(height: AppSizes.paddingM),
               SizedBox(
-                height: 100,
+                height: 130,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(right: AppSizes.paddingL),
                   itemCount: suggestions.length,
                   itemBuilder: (context, index) {
                     final template = suggestions[index];
@@ -113,7 +114,7 @@ class HabitSuggestionsWidget extends ConsumerWidget {
   }
 }
 
-class _SuggestionCard extends StatelessWidget {
+class _SuggestionCard extends StatefulWidget {
   final HabitTemplate template;
   final VoidCallback onTap;
   final AppColors colors;
@@ -127,90 +128,174 @@ class _SuggestionCard extends StatelessWidget {
   });
 
   @override
+  State<_SuggestionCard> createState() => _SuggestionCardState();
+}
+
+class _SuggestionCardState extends State<_SuggestionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _animationController.reverse();
+  }
+
+  void _handleTapCancel() {
+    _animationController.reverse();
+  }
+
+  void _handleTap() {
+    HapticFeedback.lightImpact();
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
+      width: 180,
       margin: const EdgeInsets.only(right: AppSizes.paddingM),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
+      child: Container(
+        height: 130,
+        padding: const EdgeInsets.all(AppSizes.paddingL),
+        decoration: BoxDecoration(
+          color: widget.colors.elevatedSurface,
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
-          child: Container(
-            padding: const EdgeInsets.all(AppSizes.paddingL),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  template.color.withValues(alpha: 0.1),
-                  template.color.withValues(alpha: 0.05),
+          border: Border.all(
+            color: widget.colors.outline.withValues(alpha: 0.12),
+            width: 1,
+          ),
+          boxShadow: AppShadows.cardSoft(null),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Title and description section
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title with accent color indicator
+                  Row(
+                    children: [
+                      Container(
+                        width: 3,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: widget.template.color,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          widget.template.title,
+                          style: widget.textStyles.titleCard.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Description
+                  Expanded(
+                    child: Text(
+                      widget.template.description,
+                      style: widget.textStyles.bodySecondary.copyWith(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: widget.colors.textSecondary,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppSizes.radiusL),
-              border: Border.all(
-                color: template.color.withValues(alpha: 0.3),
-                width: 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            // Bottom section with difficulty badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  template.icon,
-                  color: template.color,
-                  size: 24,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.template.difficulty.badgeColor
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    widget.template.difficulty.label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: widget.template.difficulty.badgeColor,
+                      letterSpacing: 0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const SizedBox(height: AppSizes.paddingM),
-                Text(
-                  template.title,
-                  style: textStyles.titleCard.copyWith(fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  template.description,
-                  style: textStyles.bodySecondary.copyWith(fontSize: 11),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
+                GestureDetector(
+                  onTapDown: _handleTapDown,
+                  onTapUp: _handleTapUp,
+                  onTapCancel: _handleTapCancel,
+                  onTap: _handleTap,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Container(
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
-                        color: template.difficulty.badgeColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
+                        color: widget.colors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        template.difficulty.label,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: template.difficulty.badgeColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: widget.colors.primary,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.add_circle_outline,
-                      size: 16,
-                      color: colors.textSecondary,
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

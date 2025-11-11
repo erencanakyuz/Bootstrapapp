@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -8,6 +9,7 @@ class HomeWidgetService {
   static const String _iosWidgetName = 'HabitTrackerWidget';
   
   static bool get isSupported {
+    if (kIsWeb) return false;
     if (Platform.isAndroid || Platform.isIOS) {
       return true;
     }
