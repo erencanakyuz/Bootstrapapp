@@ -29,6 +29,7 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  double _dragStartY = 0.0;
 
   late Color _selectedColor;
   late IconData _selectedIcon;
@@ -95,6 +96,7 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   }
   
   void _validateTitle() {
+    if (!mounted) return;
     final title = _titleController.text.trim();
     const errorText = 'Title cannot exceed 200 characters';
 
@@ -108,6 +110,7 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   }
   
   void _validateDescription() {
+    if (!mounted) return;
     final description = _descriptionController.text.trim();
     const errorText = 'Description cannot exceed 500 characters';
 
@@ -172,8 +175,17 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
 
   @override
   void dispose() {
-    _titleController.removeListener(_validateTitle);
-    _descriptionController.removeListener(_validateDescription);
+    // Listener'ları kaldır ve controller'ları dispose et
+    try {
+      _titleController.removeListener(_validateTitle);
+    } catch (e) {
+      // Listener zaten kaldırılmış olabilir
+    }
+    try {
+      _descriptionController.removeListener(_validateDescription);
+    } catch (e) {
+      // Listener zaten kaldırılmış olabilir
+    }
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -182,270 +194,293 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-    final bottomPadding = viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final availableHeight = screenHeight - topPadding - 20; // Ekran yüksekliği - status bar - üst boşluk
 
-    return AnimatedPadding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.easeOut,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.background,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppSizes.radiusXXL),
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.paddingXXL),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.outline,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  color: colors.textPrimary,
-                  splashRadius: 20,
-                  tooltip: 'Close',
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              Text(
-                widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: colors.textPrimary,
-                ),
-              ),
-              if (widget.habitToEdit == null) ...[
-                const SizedBox(height: AppSizes.paddingM),
-                TextButton.icon(
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await Future.delayed(const Duration(milliseconds: 300));
-                    if (!context.mounted) return;
-                    final selectedHabit = await Navigator.of(context).push(
-                      PageTransitions.slideFromRight(
-                        HabitTemplatesScreen(
-                          onTemplateSelected: (habit) => Navigator.of(context).pop(habit),
-                        ),
-                      ),
-                    ) as Habit?;
-                    if (selectedHabit != null && context.mounted) {
-                      Navigator.of(context).pop(selectedHabit);
-                    }
-                  },
-                  icon: Icon(Icons.auto_awesome, size: 18, color: colors.primary),
-                  label: Text(
-                    'Browse Templates',
-                    style: TextStyle(color: colors.primary),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.paddingL,
-                      vertical: AppSizes.paddingM,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSizes.paddingXXL),
-              // Error banner
-              if (_errorMessage != null) ...[
-                _buildErrorBanner(_errorMessage!, colors),
-                const SizedBox(height: AppSizes.paddingL),
-              ],
-              _buildTextField(
-                controller: _titleController,
-                label: 'Habit Title',
-                hint: 'e.g., Morning Meditation',
-                colors: colors,
-                maxLength: 200,
-                required: true,
-              ),
-            const SizedBox(height: AppSizes.paddingL),
-            _buildTextField(
-              controller: _descriptionController,
-              label: 'Description (optional)',
-              hint: 'e.g., 10 mindful minutes',
-              colors: colors,
-              maxLines: 2,
-              maxLength: 500,
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Category', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: HabitCategory.values.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final category = HabitCategory.values[index];
-                  final isSelected = category == _selectedCategory;
-                  return ChoiceChip(
-                    label: Text(category.label),
-                    selected: isSelected,
-                    avatar: SvgPicture.asset(
-                      category.iconAsset,
-                      width: 18,
-                      height: 18,
-                      colorFilter: ColorFilter.mode(
-                        isSelected ? colors.textPrimary : colors.textSecondary,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    onSelected: (selected) {
-                      if (!selected) return;
-                      setState(() => _selectedCategory = category);
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Time of day', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            Wrap(
-              spacing: AppSizes.paddingS,
-              children: HabitTimeBlock.values.map((block) {
-                final isSelected = block == _selectedTimeBlock;
-                return FilterChip(
-                  label: Text(block.label),
-                  avatar: Icon(block.icon, size: 16),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (!selected) return;
-                    setState(() => _selectedTimeBlock = block);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Difficulty', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            Wrap(
-              spacing: AppSizes.paddingS,
-              children: HabitDifficulty.values.map((difficulty) {
-                final isSelected = difficulty == _selectedDifficulty;
-                return ChoiceChip(
-                  label: Text(difficulty.label),
-                  selected: isSelected,
-                  selectedColor: difficulty.badgeColor.withValues(alpha: 0.15),
-                  onSelected: (selected) {
-                    if (!selected) return;
-                    setState(() => _selectedDifficulty = difficulty);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Weekly & Monthly Targets', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            _buildSlider(
-              label: 'Weekly target: $_weeklyTarget days',
-              value: _weeklyTarget.toDouble(),
-              min: 1.0,
-              max: _activeWeekdays.length.clamp(1, 7).toDouble(),
-              onChanged: (value) {
-                setState(() {
-                  _weeklyTarget = value.toInt();
-                  _validateTargets();
-                });
-              },
-            ),
-            _buildSlider(
-              label: 'Monthly target: $_monthlyTarget check-ins',
-              value: _monthlyTarget.toDouble(),
-              min: (_weeklyTarget * 2).toDouble(),
-              max: (_activeWeekdays.length * 31).clamp(10, 100).toDouble(),
-              onChanged: (value) {
-                setState(() {
-                  _monthlyTarget = value.toInt();
-                  _validateTargets();
-                });
-              },
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Active Days', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            _buildWeekdaySelector(colors),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Reminders', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            if (_reminders.isEmpty)
-              Text(
-                'No reminders yet. Add one to get nudged at the perfect time.',
-                style: TextStyle(color: colors.textSecondary),
-              )
-            else
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: _reminders
-                    .map(
-                      (reminder) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.alarm, color: colors.textPrimary),
-                        title: Text(
-                          _formatTimeOfDay(
-                            TimeOfDay(
-                              hour: reminder.hour,
-                              minute: reminder.minute,
-                            ),
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () =>
-                              setState(() => _reminders.remove(reminder)),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            const SizedBox(height: AppSizes.paddingS),
-            TextButton.icon(
-              onPressed: _addReminder,
-              icon: const Icon(Icons.add_alarm),
-              label: const Text('Add reminder'),
-            ),
-            const SizedBox(height: AppSizes.paddingXXL),
-            _buildSectionTitle('Icon & Accent Color', colors),
-            const SizedBox(height: AppSizes.paddingM),
-            _buildIconSelector(colors),
-            const SizedBox(height: AppSizes.paddingL),
-            _buildColorSelector(colors),
-            const SizedBox(height: AppSizes.paddingXXXL),
-            ModernButton(
-              text: widget.habitToEdit != null
-                  ? 'Save Changes'
-                  : 'Create Habit',
-              onPressed: _saveHabit,
-              icon: Icons.check,
-              width: double.infinity,
-            ),
-            const SizedBox(height: AppSizes.paddingM),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusXXL),
         ),
       ),
+      height: availableHeight,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          // Sürükleme alanı - geniş ve kolay erişilebilir
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragStart: (details) {
+              _dragStartY = details.globalPosition.dy;
+            },
+            onVerticalDragUpdate: (details) {
+              // Aşağı doğru sürükleme algılandığında modal'ı kapat
+              if (!mounted) return;
+              final dragDistance = details.globalPosition.dy - _dragStartY;
+              if (dragDistance > 30) { // 30px'den fazla sürüklendiğinde kapat
+                Navigator.of(context).maybePop();
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Center(
+                child: Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.black, // Siyah renk
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // İçerik alanı
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL, vertical: AppSizes.paddingXXL),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        color: colors.textPrimary,
+                        splashRadius: 20,
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.paddingL),
+                    Text(
+                      widget.habitToEdit != null ? 'Edit Habit' : 'New Habit',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    if (widget.habitToEdit == null) ...[
+                      const SizedBox(height: AppSizes.paddingM),
+                      TextButton.icon(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await Future.delayed(const Duration(milliseconds: 300));
+                          if (!context.mounted) return;
+                          final selectedHabit = await Navigator.of(context).push(
+                            PageTransitions.slideFromRight(
+                              HabitTemplatesScreen(
+                                onTemplateSelected: (habit) => Navigator.of(context).pop(habit),
+                              ),
+                            ),
+                          ) as Habit?;
+                          if (selectedHabit != null && context.mounted) {
+                            Navigator.of(context).pop(selectedHabit);
+                          }
+                        },
+                        icon: Icon(Icons.auto_awesome, size: 18, color: colors.primary),
+                        label: Text(
+                          'Browse Templates',
+                          style: TextStyle(color: colors.primary),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.paddingL,
+                            vertical: AppSizes.paddingM,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    // Error banner
+                    if (_errorMessage != null) ...[
+                      _buildErrorBanner(_errorMessage!, colors),
+                      const SizedBox(height: AppSizes.paddingL),
+                    ],
+                    _buildTextField(
+                      controller: _titleController,
+                      label: 'Habit Title',
+                      hint: 'e.g., Morning Meditation',
+                      colors: colors,
+                      maxLength: 200,
+                      required: true,
+                    ),
+                    const SizedBox(height: AppSizes.paddingL),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description (optional)',
+                      hint: 'e.g., 10 mindful minutes',
+                      colors: colors,
+                      maxLines: 2,
+                      maxLength: 500,
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Category', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    SizedBox(
+                      height: 42,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: HabitCategory.values.length,
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final category = HabitCategory.values[index];
+                          final isSelected = category == _selectedCategory;
+                          return ChoiceChip(
+                            label: Text(category.label),
+                            selected: isSelected,
+                            avatar: SvgPicture.asset(
+                              category.iconAsset,
+                              width: 18,
+                              height: 18,
+                              colorFilter: ColorFilter.mode(
+                                isSelected ? colors.textPrimary : colors.textSecondary,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            onSelected: (selected) {
+                              if (!selected) return;
+                              setState(() => _selectedCategory = category);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Time of day', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    Wrap(
+                      spacing: AppSizes.paddingS,
+                      children: HabitTimeBlock.values.map((block) {
+                        final isSelected = block == _selectedTimeBlock;
+                        return FilterChip(
+                          label: Text(block.label),
+                          avatar: Icon(block.icon, size: 16),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (!selected) return;
+                            setState(() => _selectedTimeBlock = block);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Difficulty', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    Wrap(
+                      spacing: AppSizes.paddingS,
+                      children: HabitDifficulty.values.map((difficulty) {
+                        final isSelected = difficulty == _selectedDifficulty;
+                        return ChoiceChip(
+                          label: Text(difficulty.label),
+                          selected: isSelected,
+                          selectedColor: difficulty.badgeColor.withValues(alpha: 0.15),
+                          onSelected: (selected) {
+                            if (!selected) return;
+                            setState(() => _selectedDifficulty = difficulty);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Weekly & Monthly Targets', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    _buildSlider(
+                      label: 'Weekly target: $_weeklyTarget days',
+                      value: _weeklyTarget.toDouble(),
+                      min: 1.0,
+                      max: _activeWeekdays.length.clamp(1, 7).toDouble(),
+                      onChanged: (value) {
+                        setState(() {
+                          _weeklyTarget = value.toInt();
+                          _validateTargets();
+                        });
+                      },
+                    ),
+                    _buildSlider(
+                      label: 'Monthly target: $_monthlyTarget check-ins',
+                      value: _monthlyTarget.toDouble(),
+                      min: (_weeklyTarget * 2).toDouble(),
+                      max: (_activeWeekdays.length * 31).clamp(10, 100).toDouble(),
+                      onChanged: (value) {
+                        setState(() {
+                          _monthlyTarget = value.toInt();
+                          _validateTargets();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Active Days', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    _buildWeekdaySelector(colors),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Reminders', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    if (_reminders.isEmpty)
+                      Text(
+                        'No reminders yet. Add one to get nudged at the perfect time.',
+                        style: TextStyle(color: colors.textSecondary),
+                      )
+                    else
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: _reminders
+                            .map(
+                              (reminder) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.alarm, color: colors.textPrimary),
+                                title: Text(
+                                  _formatTimeOfDay(
+                                    TimeOfDay(
+                                      hour: reminder.hour,
+                                      minute: reminder.minute,
+                                    ),
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () =>
+                                      setState(() => _reminders.remove(reminder)),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    const SizedBox(height: AppSizes.paddingS),
+                    TextButton.icon(
+                      onPressed: _addReminder,
+                      icon: const Icon(Icons.add_alarm),
+                      label: const Text('Add reminder'),
+                    ),
+                    const SizedBox(height: AppSizes.paddingXXL),
+                    _buildSectionTitle('Icon & Accent Color', colors),
+                    const SizedBox(height: AppSizes.paddingM),
+                    _buildIconSelector(colors),
+                    const SizedBox(height: AppSizes.paddingL),
+                    _buildColorSelector(colors),
+                    const SizedBox(height: AppSizes.paddingXXXL),
+                    ModernButton(
+                      text: widget.habitToEdit != null
+                          ? 'Save Changes'
+                          : 'Create Habit',
+                      onPressed: _saveHabit,
+                      icon: Icons.check,
+                      width: double.infinity,
+                    ),
+                    const SizedBox(height: AppSizes.paddingM),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -786,17 +821,21 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
   }
 
   void _saveHabit() async {
+    if (!mounted) return;
+    
     // Clear previous errors
     setState(() => _errorMessage = null);
     
     // Validate title
     final title = _titleController.text.trim();
     if (title.isEmpty) {
+      if (!mounted) return;
       setState(() => _errorMessage = 'Please enter a habit title');
       return;
     }
     
     if (title.length > 200) {
+      if (!mounted) return;
       setState(() => _errorMessage = 'Title cannot exceed 200 characters');
       return;
     }
@@ -804,24 +843,28 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
     // Validate description
     final description = _descriptionController.text.trim();
     if (description.length > 500) {
+      if (!mounted) return;
       setState(() => _errorMessage = 'Description cannot exceed 500 characters');
       return;
     }
     
     // Validate targets
     if (_weeklyTarget > _activeWeekdays.length) {
+      if (!mounted) return;
       setState(() => _errorMessage = 
         'Weekly target ($_weeklyTarget) cannot exceed active days (${_activeWeekdays.length})');
       return;
     }
     
     if (_monthlyTarget < _weeklyTarget * 2) {
+      if (!mounted) return;
       setState(() => _errorMessage = 
         'Monthly target should be at least ${_weeklyTarget * 2} (2x weekly target)');
       return;
     }
     
     if (_monthlyTarget > _activeWeekdays.length * 31) {
+      if (!mounted) return;
       setState(() => _errorMessage = 
         'Monthly target seems too high. Maximum recommended: ${_activeWeekdays.length * 31}');
       return;
@@ -829,11 +872,13 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
 
     if (_reminders.isNotEmpty) {
       final allowed = await _ensureNotificationsAllowedForReminders();
-      if (!allowed) {
+      if (!allowed || !mounted) {
         return;
       }
     }
 
+    if (!mounted) return;
+    
     final habit =
         widget.habitToEdit?.copyWith(
           title: _titleController.text.trim(),

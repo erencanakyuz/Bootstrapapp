@@ -30,13 +30,18 @@ class ProfileScreen extends ConsumerWidget {
 
     return settingsAsync.when(
       loading: () => Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: colors.background,
         body: const Center(child: CircularProgressIndicator()),
       ),
-      error: (error, _) => Scaffold(body: Center(child: Text('Error: $error'))),
+      error: (error, _) => Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Center(child: Text('Error: $error')),
+      ),
       data: (settings) {
         final archived = ref.watch(archivedHabitsProvider);
         return Scaffold(
+          resizeToAvoidBottomInset: false, // Klavye açıldığında arka planı yeniden render etme
           backgroundColor: colors.background,
           appBar: AppBar(
             backgroundColor: Colors.transparent,

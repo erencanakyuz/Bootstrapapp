@@ -241,6 +241,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: colors.background,
       body: Center(
         child: Column(

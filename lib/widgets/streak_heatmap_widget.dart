@@ -56,30 +56,33 @@ class StreakHeatmapWidget extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.paddingL),
           // Month labels
-          Row(
-            children: [
-              const SizedBox(width: 20), // Space for day labels
-              ...List.generate(12, (month) {
-                final monthStart = DateTime(targetYear, month + 1, 1);
-                final monthEnd = DateTime(targetYear, month + 2, 0);
-                final daysInMonth = monthEnd.difference(monthStart).inDays + 1;
-                final firstDayOfWeek = monthStart.weekday;
-                final startOffset = firstDayOfWeek == 7 ? 0 : firstDayOfWeek;
-                final width = (daysInMonth + startOffset) * 11.0 + startOffset * 2.0;
-                
-                return Container(
-                  width: width,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    DateFormat('MMM').format(monthStart),
-                    style: textStyles.caption.copyWith(
-                      fontSize: 10,
-                      color: colors.textTertiary,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const SizedBox(width: 20), // Space for day labels
+                ...List.generate(12, (month) {
+                  final monthStart = DateTime(targetYear, month + 1, 1);
+                  final monthEnd = DateTime(targetYear, month + 2, 0);
+                  final daysInMonth = monthEnd.difference(monthStart).inDays + 1;
+                  final firstDayOfWeek = monthStart.weekday;
+                  final startOffset = firstDayOfWeek == 7 ? 0 : firstDayOfWeek;
+                  final width = (daysInMonth + startOffset) * 11.0 + startOffset * 2.0;
+                  
+                  return Container(
+                    width: width,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      DateFormat('MMM').format(monthStart),
+                      style: textStyles.caption.copyWith(
+                        fontSize: 10,
+                        color: colors.textTertiary,
+                      ),
                     ),
-                  ),
-                );
-              }),
-            ],
+                  );
+                }),
+              ],
+            ),
           ),
           const SizedBox(height: AppSizes.paddingS),
           // Heatmap grid
@@ -244,9 +247,6 @@ class _HeatmapCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final normalizedIntensity = maxIntensity > 0 ? intensity / maxIntensity : 0.0;
     final cellColor = _getIntensityColor(normalizedIntensity, colors);
-    final isToday = date.year == DateTime.now().year &&
-        date.month == DateTime.now().month &&
-        date.day == DateTime.now().day;
 
     return Tooltip(
       message: DateFormat('MMM d, yyyy').format(date) +
@@ -257,12 +257,10 @@ class _HeatmapCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: cellColor,
           borderRadius: BorderRadius.circular(2),
-          border: isToday
-              ? Border.all(
-                  color: colors.primary,
-                  width: 1.5,
-                )
-              : null,
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.3), // Tüm kareler için siyah border (boş ve dolu)
+            width: 1,
+          ),
         ),
       ),
     );

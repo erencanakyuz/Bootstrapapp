@@ -9,7 +9,8 @@
       "Bash(dir:*)",
       "Bash(Get-ChildItem -Path assets -Recurse -File)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(flutter clean:*)"
+      "Bash(flutter clean:*)",
+      "Bash(flutter analyze:*)"
     ],
     "deny": [],
     "ask": []

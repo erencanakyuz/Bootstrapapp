@@ -187,13 +187,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted) return;
     final result = await showModalBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Tam ekran için scroll controlled
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      useSafeArea: true,
+      useSafeArea: false, // Manuel padding kontrolü için false
       isDismissible: true,
       enableDrag: true,
-      builder: (context) => AddHabitModal(habitToEdit: habitToEdit),
+      builder: (context) {
+        final topPadding = MediaQuery.of(context).padding.top;
+        // Klavye overlay olacak, içeriği yukarı itmeyecek
+        // Üst padding azaltıldı - drag handle daha erişilebilir olacak
+        
+        return Padding(
+          padding: EdgeInsets.only(
+            top: topPadding + 20, // Status bar + küçük boşluk (drag için erişilebilir)
+            // bottom padding kaldırıldı - klavye overlay olacak
+          ),
+          child: AddHabitModal(habitToEdit: habitToEdit),
+        );
+      },
     );
 
     if (result != null) {
@@ -913,6 +925,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, // Klavye açıldığında arka planı yeniden render etme
       backgroundColor: colors.background,
       body: SafeArea(
         top: true,
@@ -942,6 +955,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               boxShadow: AppShadows.floatingButton(null),
             ),
             child: FloatingActionButton(
+              heroTag: "template-button", // Unique hero tag
               onPressed: _showTemplatesScreen,
               backgroundColor: colors.elevatedSurface,
               shape: RoundedRectangleBorder(
@@ -969,6 +983,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 boxShadow: AppShadows.floatingButton(null),
               ),
               child: FloatingActionButton.extended(
+                heroTag: "add-habit-button", // Unique hero tag
                 onPressed: () {
                   _showAddHabitModal();
                 },
