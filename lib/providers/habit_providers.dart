@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../exceptions/habit_validation_exception.dart';
@@ -539,16 +539,63 @@ final weeklyCompletionsProvider = Provider<int>((ref) {
   if (todayHabits.isEmpty) return 0;
 
   final now = DateTime.now();
-  final weekStart = now.subtract(Duration(days: now.weekday - 1));
-
-  var count = 0;
-  for (final habit in todayHabits) {
-    for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
-      final date = weekStart.add(Duration(days: dayOffset));
-      if (habit.isActiveOnDate(date) && habit.isCompletedOn(date)) {
-        count++;
-      }
-    }
-  }
-  return count;
+  // OPTIMIZED: Use habit.getWeeklyProgress instead of manual loop
+  // This is more efficient, especially for habits with many completions
+  return todayHabits.fold<int>(
+    0,
+    (sum, habit) => sum + habit.getWeeklyProgress(now),
+  );
 });
+
+/// Confetti state for celebration animations
+class ConfettiState {
+  final Color? habitColor;
+  final HabitDifficulty? difficulty;
+  final int paletteSeed;
+
+  const ConfettiState({
+    this.habitColor,
+    this.difficulty,
+    this.paletteSeed = 0,
+  });
+
+  ConfettiState copyWith({
+    Color? habitColor,
+    HabitDifficulty? difficulty,
+    int? paletteSeed,
+  }) {
+    return ConfettiState(
+      habitColor: habitColor ?? this.habitColor,
+      difficulty: difficulty ?? this.difficulty,
+      paletteSeed: paletteSeed ?? this.paletteSeed,
+    );
+  }
+
+  static const ConfettiState initial = ConfettiState();
+}
+
+/// Notifier for confetti state - OPTIMIZED: Separated from HomeScreen to reduce rebuilds
+class ConfettiStateNotifier extends Notifier<ConfettiState> {
+  @override
+  ConfettiState build() => ConfettiState.initial;
+
+  void updateConfetti({
+    Color? habitColor,
+    HabitDifficulty? difficulty,
+  }) {
+    state = state.copyWith(
+      habitColor: habitColor,
+      difficulty: difficulty,
+      paletteSeed: state.paletteSeed + 1,
+    );
+  }
+
+  void clear() {
+    state = ConfettiState.initial;
+  }
+}
+
+/// Provider for confetti state - OPTIMIZED: Separated from HomeScreen to reduce rebuilds
+final confettiStateProvider = NotifierProvider<ConfettiStateNotifier, ConfettiState>(
+  ConfettiStateNotifier.new,
+);

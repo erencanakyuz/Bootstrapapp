@@ -13,6 +13,8 @@ class HabitCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final VoidCallback? onCompletionToggle;
   final bool showNewBadge;
+  final DateTime? weekStart; // OPTIMIZED: Pass weekStart from parent to avoid DateTime.now() in each card
+  final DateTime? today; // OPTIMIZED: Pass today from parent to avoid DateTime.now() in each card
 
   const HabitCard({
     super.key,
@@ -21,24 +23,23 @@ class HabitCard extends StatelessWidget {
     this.onLongPress,
     this.onCompletionToggle,
     this.showNewBadge = false,
+    this.weekStart,
+    this.today,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final today = DateTime.now();
+    
+    // OPTIMIZED: Use today from parent if provided, otherwise calculate once
+    final today = this.today ?? DateTime.now();
     final isCompletedToday = habit.isCompletedOn(today);
 
-    // Calculate weekly completions (this week) - optimized
-    final now = DateTime.now();
-    final weekStart = DateTime(now.year, now.month, now.day - now.weekday + 1);
-    int weeklyCompletions = 0;
-    for (int i = 0; i < 7; i++) {
-      if (habit.isCompletedOn(weekStart.add(Duration(days: i)))) {
-        weeklyCompletions++;
-      }
-    }
+    // Calculate weekly completions - OPTIMIZED: Use habit.getWeeklyProgress if weekStart provided
+    final weeklyCompletions = weekStart != null
+        ? habit.getWeeklyProgress(weekStart!)
+        : habit.getWeeklyProgress(DateTime.now());
 
     // RefactorUi.md promiseCard tokens
     // Professional shadow and border for beige theme
@@ -52,27 +53,22 @@ class HabitCard extends StatelessWidget {
           width: 1,
         ),
         boxShadow: [
-          // Strong outer shadow - very visible for testing
+          // OPTIMIZED: Reduced shadow count and blur radius for better CanvasKit performance
+          // Strong outer shadow - reduced blur from 32 to 24
           BoxShadow(
             color: colors.textPrimary.withValues(alpha: 0.15),
-            blurRadius: 32,
+            blurRadius: 24, // Reduced from 32
             spreadRadius: 0,
             offset: const Offset(0, 10),
           ),
-          // Additional depth shadow
+          // Additional depth shadow - reduced blur from 16 to 12
           BoxShadow(
             color: colors.textPrimary.withValues(alpha: 0.06),
-            blurRadius: 16,
+            blurRadius: 12, // Reduced from 16
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
-          // Subtle inner glow for depth
-          BoxShadow(
-            color: colors.surface.withValues(alpha: 0.95), // Use theme surface
-            blurRadius: 0,
-            spreadRadius: -1,
-            offset: const Offset(0, 1),
-          ),
+          // REMOVED: Inner glow shadow (minimal visual impact, significant performance cost)
         ],
       ),
       child: Material(
