@@ -54,6 +54,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Filtering
   HabitCategory? _selectedCategory;
+  
+  // Scroll controller for scrolling to Today's Flow section
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _todayFlowKey = GlobalKey();
 
   List<Habit> _currentTodayHabits() {
     // OPTIMIZED: Remove unnecessary List.from - provider already returns a new list
@@ -80,6 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _confettiController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -331,105 +336,143 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final progress = total == 0 ? 0.0 : completed / total;
     final message = _getMotivationalMessage(todayHabits, today);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          ref.read(soundServiceProvider).playClick();
+          // Scroll to Today's Flow section
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = _todayFlowKey.currentContext;
+            if (context != null) {
+              Scrollable.ensureVisible(
+                context,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+                alignment: 0.1, // Scroll to show section near top
+              );
+            }
+          });
+        },
         borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-        boxShadow: AppShadows.cardSoft(null),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Today',
-            style: textStyles.captionUppercase.copyWith(
-              color: colors.textPrimary.withValues(alpha: 0.7),
+        splashColor: colors.textPrimary.withValues(alpha: 0.1),
+        highlightColor: colors.textPrimary.withValues(alpha: 0.05),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
             ),
+            borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+            boxShadow: AppShadows.cardSoft(null),
           ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Stack(
             children: [
-              Text(
-                '$completed',
-                style: textStyles.displayLarge.copyWith(
-                  fontSize: 44,
-                  letterSpacing: -1.5,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 6, bottom: 6),
-                child: Text(
-                  '/ $total',
-                  style: textStyles.titleCard.copyWith(
-                    color: colors.textPrimary.withValues(alpha: 0.6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Today',
+                    style: textStyles.captionUppercase.copyWith(
+                      color: colors.textPrimary.withValues(alpha: 0.7),
+                    ),
                   ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$completed',
+                        style: textStyles.displayLarge.copyWith(
+                          fontSize: 44,
+                          letterSpacing: -1.5,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6, bottom: 6),
+                        child: Text(
+                          '/ $total',
+                          style: textStyles.titleCard.copyWith(
+                            color: colors.textPrimary.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: colors.surface.withValues(
+                        alpha: 0.4,
+                      ), // Use theme surface
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(message, style: textStyles.bodyBold),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickStatItem(
+                          colors,
+                          textStyles,
+                          Icons.check_circle_rounded,
+                          'Completions',
+                          completed.toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickStatItem(
+                          colors,
+                          textStyles,
+                          Icons.local_fire_department_rounded,
+                          'Best streak',
+                          '$totalStreak d',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickStatItem(
+                          colors,
+                          textStyles,
+                          Icons.calendar_view_week_rounded,
+                          'This week',
+                          '$weeklyCompletions',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Week ${_weekRangeLabel()}',
+                    style: textStyles.caption.copyWith(
+                      color: colors.textPrimary.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+              // Ok ikonu sağ üstte
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 28,
+                  color: Colors.black.withValues(alpha: 0.7),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radiusS),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: colors.surface.withValues(
-                alpha: 0.4,
-              ), // Use theme surface
-              valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(message, style: textStyles.bodyBold),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickStatItem(
-                  colors,
-                  textStyles,
-                  Icons.check_circle_rounded,
-                  'Completions',
-                  completed.toString(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickStatItem(
-                  colors,
-                  textStyles,
-                  Icons.local_fire_department_rounded,
-                  'Best streak',
-                  '$totalStreak d',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickStatItem(
-                  colors,
-                  textStyles,
-                  Icons.calendar_view_week_rounded,
-                  'This week',
-                  '$weeklyCompletions',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Week ${_weekRangeLabel()}',
-            style: textStyles.caption.copyWith(
-              color: colors.textPrimary.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -841,6 +884,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           sliver: SliverToBoxAdapter(
             child: Column(
+              key: _todayFlowKey, // Key for scrolling
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDailyFocusSection(
@@ -933,6 +977,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Stack(
           children: [
             CustomScrollView(
+              controller: _scrollController,
               physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics(),
               ),

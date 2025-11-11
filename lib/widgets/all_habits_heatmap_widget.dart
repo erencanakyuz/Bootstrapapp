@@ -6,7 +6,7 @@ import '../constants/app_constants.dart';
 
 /// Year Activity heatmap showing all habits with their colors
 /// When multiple habits are completed on the same day, colors blend
-class AllHabitsHeatmapWidget extends StatelessWidget {
+class AllHabitsHeatmapWidget extends StatefulWidget {
   final List<Habit> habits;
   final int year;
 
@@ -17,41 +17,118 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
   }) : year = year ?? DateTime.now().year;
 
   @override
+  State<AllHabitsHeatmapWidget> createState() => _AllHabitsHeatmapWidgetState();
+}
+
+class _AllHabitsHeatmapWidgetState extends State<AllHabitsHeatmapWidget> {
+  List<_HeatmapDay>? _cachedHeatmapData;
+  int? _cachedYear;
+  String? _cachedHabitsHash; // Habits listesinin hash'i için
+  String? _cachedCompletionsHash; // Completion verilerinin hash'i
+
+  String _getHabitsHash(List<Habit> habits) {
+    // Habits listesinin değişip değişmediğini kontrol etmek için hash
+    return habits.map((h) => '${h.id}:${h.createdAt.millisecondsSinceEpoch}').join('|');
+  }
+
+  /// Tüm habit'lerin completion verilerinin hash'ini hesapla
+  String _getCompletionsHash(List<Habit> habits, int year) {
+    // Her habit için o year içindeki completion'ları al ve birleştir
+    final allCompletions = <String>[];
+    for (final habit in habits) {
+      final yearCompletions = habit.completedDates.where((date) {
+        return date.year == year;
+      }).map((date) => '${habit.id}:${date.year}-${date.month}-${date.day}').toList();
+      allCompletions.addAll(yearCompletions);
+    }
+    allCompletions.sort();
+    return allCompletions.join('|');
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final targetYear = year;
-    final heatmapData = _generateHeatmapData(targetYear);
+    
+    // Cache kontrolü - year, habits veya completion verileri değiştiğinde yeniden hesapla
+    final habitsHash = _getHabitsHash(widget.habits);
+    final completionsHash = _getCompletionsHash(widget.habits, widget.year);
+    if (_cachedHeatmapData == null || 
+        _cachedYear != widget.year || 
+        _cachedHabitsHash != habitsHash ||
+        _cachedCompletionsHash != completionsHash) {
+      _cachedHeatmapData = _generateHeatmapData(widget.year);
+      _cachedYear = widget.year;
+      _cachedHabitsHash = habitsHash;
+      _cachedCompletionsHash = completionsHash;
+    }
+    
+    final heatmapData = _cachedHeatmapData!;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingL),
-      decoration: BoxDecoration(
-        color: colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
-        border: Border.all(
-          color: colors.outline.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$targetYear Activity',
-                style: textStyles.titleCard,
-              ),
-              Text(
-                '${habits.length} habits',
-                style: textStyles.bodySecondary.copyWith(
-                  color: colors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.paddingL),
+        decoration: BoxDecoration(
+          color: colors.elevatedSurface,
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.3),
+            width: 1,
           ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    '${widget.year} Activity',
+                    style: textStyles.titleCard,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${widget.habits.length} habits',
+                        style: textStyles.bodySecondary.copyWith(
+                          color: colors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        size: 18,
+                        color: colors.textSecondary,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          // Cache'i temizle ve yeniden hesapla
+                          _cachedHeatmapData = null;
+                          _cachedYear = null;
+                          _cachedHabitsHash = null;
+                          _cachedCompletionsHash = null;
+                        });
+                      },
+                      tooltip: 'Refresh',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           const SizedBox(height: AppSizes.paddingL),
           // Month labels
           SingleChildScrollView(
@@ -60,8 +137,8 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
               children: [
                 const SizedBox(width: 20), // Space for day labels
                 ...List.generate(12, (month) {
-                  final monthStart = DateTime(targetYear, month + 1, 1);
-                  final monthEnd = DateTime(targetYear, month + 2, 0);
+                  final monthStart = DateTime(widget.year, month + 1, 1);
+                  final monthEnd = DateTime(widget.year, month + 2, 0);
                   final daysInMonth = monthEnd.difference(monthStart).inDays + 1;
                   final firstDayOfWeek = monthStart.weekday;
                   final startOffset = firstDayOfWeek == 7 ? 0 : firstDayOfWeek;
@@ -167,6 +244,7 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -183,14 +261,14 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
       days.add(_HeatmapDay(
         date: startDate.subtract(Duration(days: daysToAdd - i)),
         completedHabits: [],
-        allHabits: habits,
+        allHabits: widget.habits,
       ));
     }
     
     // Add all days of the year
     for (var date = startDate; date.isBefore(endDate.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
       // O gün için aktif olan habit'leri bul (o tarihte var olan habit'ler)
-      final activeHabitsOnDate = habits.where((habit) {
+      final activeHabitsOnDate = widget.habits.where((habit) {
         final habitStartDate = DateTime(habit.createdAt.year, habit.createdAt.month, habit.createdAt.day);
         return date.isAfter(habitStartDate.subtract(const Duration(days: 1)));
       }).toList();
@@ -210,7 +288,7 @@ class AllHabitsHeatmapWidget extends StatelessWidget {
         days.add(_HeatmapDay(
           date: endDate.add(Duration(days: i + 1)),
           completedHabits: [],
-          allHabits: habits,
+          allHabits: widget.habits,
         ));
       }
     }
