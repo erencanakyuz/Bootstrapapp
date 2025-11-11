@@ -10,10 +10,13 @@ class HomeWidgetService {
   static const String _androidWidgetName = 'HabitTrackerWidget';
   static const String _iosWidgetName = 'HabitTrackerWidget';
   
+  // Widget'ın mevcut olup olmadığını kontrol etmek için flag
+  static bool _widgetAvailable = true;
+  
   static bool get isSupported {
     if (kIsWeb) return false;
     if (Platform.isAndroid || Platform.isIOS) {
-      return true;
+      return _widgetAvailable; // Widget mevcut değilse false döndür
     }
     return false;
   }
@@ -26,6 +29,7 @@ class HomeWidgetService {
       await HomeWidget.setAppGroupId('group.com.bootstrapapp.widget');
     } catch (e) {
       debugPrint('HomeWidget initialization error: $e');
+      _widgetAvailable = false; // Widget mevcut değilse flag'i false yap
     }
   }
 
@@ -37,7 +41,7 @@ class HomeWidgetService {
     required String topHabitTitle,
     required Color topHabitColor,
   }) async {
-    if (!isSupported) return;
+    if (!isSupported || !_widgetAvailable) return; // Widget mevcut değilse çık
 
     try {
       await HomeWidget.saveWidgetData<String>(
@@ -71,6 +75,19 @@ class HomeWidgetService {
         iOSName: _iosWidgetName,
       );
     } catch (e) {
+      // Widget bulunamadıysa (ClassNotFoundException), sessizce geç
+      // Sadece ilk hatada bir kez logla, sonra flag'i false yap
+      if (e.toString().contains('ClassNotFoundException') || 
+          e.toString().contains('No Widget found')) {
+        if (_widgetAvailable) {
+          // Sadece ilk hatada bir kez logla
+          debugPrint('HomeWidget not available: Native widget provider not found. Widget feature disabled.');
+          _widgetAvailable = false;
+        }
+        // Sessizce geç, tekrar deneme
+        return;
+      }
+      // Diğer hatalar için normal log
       debugPrint('HomeWidget update error: $e');
     }
   }

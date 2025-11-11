@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:uuid/uuid.dart';
@@ -269,31 +270,58 @@ class _AddHabitModalState extends ConsumerState<AddHabitModal> {
                     ),
                     if (widget.habitToEdit == null) ...[
                       const SizedBox(height: AppSizes.paddingM),
-                      TextButton.icon(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await Future.delayed(const Duration(milliseconds: 300));
-                          if (!context.mounted) return;
-                          final selectedHabit = await Navigator.of(context).push(
+                      InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          // Modal açıkken templates ekranını aç
+                          // Template seçildiğinde modal'ı kapat ve habit'i döndür
+                          Navigator.of(context).push(
                             PageTransitions.slideFromRight(
                               HabitTemplatesScreen(
-                                onTemplateSelected: (habit) => Navigator.of(context).pop(habit),
+                                onTemplateSelected: (habit) {
+                                  // Template seçildiğinde templates ekranını kapat
+                                  Navigator.of(context).pop();
+                                  // Sonra modal'ı kapat ve habit'i döndür
+                                  Navigator.of(context).pop(habit);
+                                },
                               ),
                             ),
-                          ) as Habit?;
-                          if (selectedHabit != null && context.mounted) {
-                            Navigator.of(context).pop(selectedHabit);
-                          }
+                          );
+                          // Eğer template seçilmediyse (geri butonuna basıldıysa), sadece templates ekranı kapanır
+                          // Modal açık kalır
                         },
-                        icon: Icon(Icons.auto_awesome, size: 18, color: colors.primary),
-                        label: Text(
-                          'Browse Templates',
-                          style: TextStyle(color: colors.primary),
-                        ),
-                        style: TextButton.styleFrom(
+                        borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.paddingL,
                             vertical: AppSizes.paddingM,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                            border: Border.all(
+                              color: colors.primary.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 18,
+                                color: colors.primary,
+                              ),
+                              const SizedBox(width: AppSizes.paddingS),
+                              Text(
+                                'Browse Templates',
+                                style: TextStyle(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

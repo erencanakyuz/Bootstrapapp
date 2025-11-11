@@ -832,20 +832,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        // Habit Suggestions
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            16,
-            horizontalPadding,
-            0,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: HabitSuggestionsWidget(
-              onSuggestionSelected: (habit) => widget.onAddHabit(habit),
-            ),
-          ),
-        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
@@ -903,6 +889,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               now, // OPTIMIZED: Pass now for _isNewHabit
             ),
           ),
+        // Habit Suggestions - moved above Daily Motivation
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            24,
+            horizontalPadding,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: HabitSuggestionsWidget(
+              onSuggestionSelected: (habit) => widget.onAddHabit(habit),
+            ),
+          ),
+        ),
         // Daily Motivation Widget - moved to bottom
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
@@ -944,67 +944,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Template button
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
+      floatingActionButton: AnimatedScale(
+        scale: 1.0,
+        duration: AppAnimations.normal,
+        curve: AppAnimations.spring,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+            boxShadow: AppShadows.floatingButton(null),
+          ),
+          child: FloatingActionButton.extended(
+            heroTag: "add-habit-button", // Unique hero tag
+            onPressed: () {
+              _showAddHabitModal();
+            },
+            backgroundColor: colors.textPrimary,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-              boxShadow: AppShadows.floatingButton(null),
             ),
-            child: FloatingActionButton(
-              heroTag: "template-button", // Unique hero tag
-              onPressed: _showTemplatesScreen,
-              backgroundColor: colors.elevatedSurface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                side: BorderSide(
-                  color: colors.outline.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                color: colors.textPrimary,
-                size: 20,
+            icon: Icon(
+              Icons.add_rounded,
+              color: colors.surface,
+            ),
+            label: Text(
+              'New Habit',
+              style: textStyles.buttonLabel.copyWith(
+                color: colors.surface,
               ),
             ),
           ),
-          // Add habit button
-          AnimatedScale(
-            scale: 1.0,
-            duration: AppAnimations.normal,
-            curve: AppAnimations.spring,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                boxShadow: AppShadows.floatingButton(null),
-              ),
-              child: FloatingActionButton.extended(
-                heroTag: "add-habit-button", // Unique hero tag
-                onPressed: () {
-                  _showAddHabitModal();
-                },
-                backgroundColor: colors.textPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                ),
-                icon: Icon(
-                  Icons.add_rounded,
-                  color: colors.surface,
-                ),
-                label: Text(
-                  'New Habit',
-                  style: textStyles.buttonLabel.copyWith(
-                    color: colors.surface,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
