@@ -121,6 +121,7 @@ Future<void> _runStorageMigrations() async {
         return true;
       },
       onCleanupLegacy: legacyStorage.clearAllData,
+      database: db, // Pass database for old schema migration
     );
   } finally {
     await db.close();
