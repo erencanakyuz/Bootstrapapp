@@ -30,6 +30,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       error: (error, stackTrace) =>
           Scaffold(body: Center(child: Text('Error: $error'))),
       data: (habits) {
+        final now = DateTime.now();
         final analytics = HabitAnalytics(habits);
         final categoryData = analytics.categoryTotals;
         final hasCategoryData =
@@ -43,8 +44,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
             )
             .join('|');
         final repository = ref.watch(habitRepositoryProvider);
-        final weeklyReport = repository.weeklyReport(DateTime.now());
-        final monthlyReport = repository.monthlyReport(DateTime.now());
+        final weeklyReport = repository.weeklyReport(now);
+        final monthlyReport = repository.monthlyReport(now);
         final bestHabits = [...habits]
           ..sort((a, b) => b.totalCompletions.compareTo(a.totalCompletions));
         final bestFive = bestHabits.take(5).toList();

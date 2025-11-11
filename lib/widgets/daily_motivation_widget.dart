@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/motivation_service.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_constants.dart';
 
-/// Daily motivation widget showing quote of the day
+/// Clean Apple-style daily motivation widget
 class DailyMotivationWidget extends ConsumerStatefulWidget {
   const DailyMotivationWidget({super.key});
 
@@ -23,34 +23,25 @@ class _DailyMotivationWidgetState extends ConsumerState<DailyMotivationWidget> {
     _quote = MotivationService.getQuoteOfDay();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    final textStyles = AppTextStyles(colors);
 
     if (_quote == null) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSizes.paddingL,
-        vertical: AppSizes.paddingM,
-      ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colors.gradientPurpleStart,
-            colors.gradientPurpleEnd,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.15),
+          width: 0.5,
         ),
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: colors.gradientPurpleStart.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -61,46 +52,74 @@ class _DailyMotivationWidgetState extends ConsumerState<DailyMotivationWidget> {
             setState(() => _isExpanded = !_isExpanded);
             HapticFeedback.lightImpact();
           },
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(AppSizes.paddingL),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        color: colors.elevatedSurface,
-                        size: 20,
+                // Header row
+                Row(
+                  children: [
+                    // Quote icon
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: AppSizes.paddingS),
-                      Text(
-                        'Daily Motivation',
-                        style: textStyles.titleCard.copyWith(
-                          color: colors.elevatedSurface,
-                        ),
+                      child: Icon(
+                        Icons.format_quote_rounded,
+                        color: colors.primary,
+                        size: 18,
                       ),
-                    ],
-                  ),
-                const SizedBox(height: AppSizes.paddingM),
+                    ),
+                    const SizedBox(width: 12),
+                    // Title
+                    Text(
+                      'Daily Inspiration',
+                      style: GoogleFonts.fraunces(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Expand icon
+                    Icon(
+                      _isExpanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      size: 20,
+                      color: colors.textSecondary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Quote text
                 Text(
                   _quote!,
-                  style: textStyles.body.copyWith(
-                    color: colors.elevatedSurface,
-                    fontSize: 15,
-                    height: 1.5,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: colors.textSecondary,
+                    letterSpacing: 0,
                   ),
-                  maxLines: _isExpanded ? null : 2,
+                  maxLines: _isExpanded ? null : 3,
                   overflow: _isExpanded ? null : TextOverflow.ellipsis,
                 ),
-                if (!_isExpanded)
+                if (!_isExpanded && _quote!.length > 100)
                   Padding(
-                    padding: const EdgeInsets.only(top: AppSizes.paddingS),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'Tap to expand',
-                      style: textStyles.caption.copyWith(
-                        color: colors.elevatedSurface.withValues(alpha: 0.7),
+                      'Tap to read more',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: colors.primary,
+                        letterSpacing: 0,
                       ),
                     ),
                   ),

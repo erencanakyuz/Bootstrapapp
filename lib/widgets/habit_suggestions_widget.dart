@@ -8,7 +8,6 @@ import '../providers/habit_providers.dart';
 import '../services/habit_suggestion_engine.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_constants.dart';
 import '../utils/page_transitions.dart';
 import '../screens/habit_templates_screen.dart';
 
@@ -28,7 +27,7 @@ class HabitSuggestionsWidget extends ConsumerWidget {
 
     return habitsAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (habits) {
         final engine = HabitSuggestionEngine(habits);
         final suggestions = engine.getSuggestions(limit: 3);
@@ -109,7 +108,7 @@ class HabitSuggestionsWidget extends ConsumerWidget {
                 physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.zero,
                 itemCount: suggestions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final template = suggestions[index];
                   return _CleanSuggestionCard(
