@@ -56,7 +56,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Cache for expensive computations
   int? _cachedTotalStreak;
   int? _cachedWeeklyCompletions;
-  Map<HabitTimeBlock, int>? _cachedTimeBlockCounts;
   String? _cachedWeekRangeLabel;
   DateTime? _lastCacheDate;
   List<Habit>? _cachedActiveTodayHabits;
@@ -81,7 +80,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Invalidate cached computations when habits change
       _cachedTotalStreak = null;
       _cachedWeeklyCompletions = null;
-      _cachedTimeBlockCounts = null;
       _cachedWeekRangeLabel = null;
     }
     return _cachedActiveTodayHabits!;
@@ -104,7 +102,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _cachedActiveTodayHabits = null;
       _cachedTotalStreak = null;
       _cachedWeeklyCompletions = null;
-      _cachedTimeBlockCounts = null;
     }
   }
 
@@ -822,19 +819,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isNewHabit(Habit habit) {
     final daysSinceCreation = _frameNow.difference(habit.createdAt).inDays;
     return daysSinceCreation <= 1; // Only show for 1 day
-  }
-
-  Map<HabitTimeBlock, int> _getTimeBlockCounts() {
-    // Use cached value if available
-    if (_cachedTimeBlockCounts != null) return _cachedTimeBlockCounts!;
-    
-    final activeHabits = _activeTodayHabits;
-    final counts = {for (final block in HabitTimeBlock.values) block: 0};
-    for (final habit in activeHabits) {
-      counts[habit.timeBlock] = counts[habit.timeBlock]! + 1;
-    }
-    _cachedTimeBlockCounts = counts;
-    return counts;
   }
 
   String _weekRangeLabel() {

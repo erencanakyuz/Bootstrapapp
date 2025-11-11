@@ -239,10 +239,11 @@ class AppColors extends ThemeExtension<AppColors> {
 const Map<AppPalette, AppColors> _paletteRegistry = {
   AppPalette.modern: AppColors(
     // RefactorUi.md FutureStyleUI Design System - Main palette (Light)
-    primary: Color(0xFF6B7D5A), // Muted military/olive green (replacing purple)
-    primaryDark: Color(0xFF5A6B4A), // Darker muted green
+    // Bej tonlarına çevrildi - app'in doğasıyla uyumlu
+    primary: Color(0xFFC9A882), // Warm beige-orange (yeşil yerine)
+    primaryDark: Color(0xFFB8966A), // Darker warm beige
     primarySoft: Color(0xFFE8E5E0), // Muted cream-beige soft
-    accentGreen: Color(0xFF6B7D5A), // Muted military/olive green
+    accentGreen: Color(0xFFC9A882), // Warm beige-orange
     accentBlue: Color(0xFF6B8FA3), // Muted blue-gray
     accentAmber: Color(0xFFC9A882), // Muted warm beige-orange
     background: Color(0xFFF9F3F0), // Light beige - user requested
@@ -252,7 +253,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     textPrimary: Color(0xFF292624), // brandTextPrimary
     textSecondary: Color(0xFF6D6256), // brandTextSecondary
     textTertiary: Color(0xFFB7A89A), // brandMutedIcon
-    statusComplete: Color(0xFF6B7D5A), // Muted military/olive green
+    statusComplete: Color(0xFFC9A882), // Warm beige-orange
     statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
     statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose
     // RefactorUi.md specific gradients - Muted palette
@@ -275,10 +276,11 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
   ),
   AppPalette.dark: AppColors(
     // Dark theme - Fully implemented with muted palette
-    primary: Color(0xFF7A8B6B), // Muted green for dark mode
-    primaryDark: Color(0xFF6B7D5A), // Darker muted green
-    primarySoft: Color(0xFF2A2D26), // Dark soft green
-    accentGreen: Color(0xFF7A8B6B), // Muted green
+    // Bej tonlarına çevrildi - app'in doğasıyla uyumlu
+    primary: Color(0xFFC9A882), // Warm beige-orange for dark mode
+    primaryDark: Color(0xFFB8966A), // Darker warm beige
+    primarySoft: Color(0xFF2A2D26), // Dark soft beige
+    accentGreen: Color(0xFFC9A882), // Warm beige-orange
     accentBlue: Color(0xFF6B8FA3), // Muted blue-gray (same as light)
     accentAmber: Color(0xFFC9A882), // Muted warm beige-orange (same as light)
     background: Color(0xFF1A1C18), // Very dark background
@@ -288,7 +290,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     textPrimary: Color(0xFFE8E5E0), // Light text
     textSecondary: Color(0xFF9AA3B2), // Muted light text
     textTertiary: Color(0xFF6B7280), // Very muted light text
-    statusComplete: Color(0xFF7A8B6B), // Muted green
+    statusComplete: Color(0xFFC9A882), // Warm beige-orange
     statusProgress: Color(0xFFC9A882), // Muted warm beige-orange
     statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose (same as light)
     // Dark theme gradients - muted palette

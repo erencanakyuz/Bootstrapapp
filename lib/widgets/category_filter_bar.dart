@@ -69,7 +69,6 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    final textStyles = AppTextStyles(colors);
 
     // Count habits per category
     final categoryCounts = <HabitCategory, int>{};
@@ -83,34 +82,34 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
       children: [
         const SizedBox(height: AppSizes.paddingM),
         SizedBox(
-          height: 40,
+          height: 50,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-                // "All" option
-                _CategoryChip(
-                  label: 'All',
-                  count: widget.habits.length,
-                  isSelected: _selectedCategory == null,
-                  onTap: () => _onCategorySelected(null),
-                  colors: colors,
-                ),
-                const SizedBox(width: AppSizes.paddingS),
-                // Category chips
-                ...HabitCategory.values.map((category) {
-                  final count = categoryCounts[category] ?? 0;
-                  if (count == 0) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(right: AppSizes.paddingS),
-                    child: _CategoryChip(
-                      label: category.label,
-                      count: count,
-                      isSelected: _selectedCategory == category,
-                      onTap: () => _onCategorySelected(category),
-                      colors: colors,
-                    ),
-                  );
-                }),
+              // "All" option
+              _CategoryChip(
+                label: 'All',
+                count: widget.habits.length,
+                isSelected: _selectedCategory == null,
+                onTap: () => _onCategorySelected(null),
+                colors: colors,
+              ),
+              const SizedBox(width: AppSizes.paddingS),
+              // Category chips
+              ...HabitCategory.values.map((category) {
+                final count = categoryCounts[category] ?? 0;
+                if (count == 0) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppSizes.paddingS),
+                  child: _CategoryChip(
+                    label: category.label,
+                    count: count,
+                    isSelected: _selectedCategory == category,
+                    onTap: () => _onCategorySelected(category),
+                    colors: colors,
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -142,9 +141,10 @@ class _CategoryChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSizes.radiusM),
         child: Container(
-          padding: const EdgeInsets.symmetric(
+          height: 38,
+          padding: EdgeInsets.symmetric(
             horizontal: AppSizes.paddingL,
-            vertical: AppSizes.paddingS,
+            vertical: isSelected ? 9 : 8,
           ),
           decoration: BoxDecoration(
             color: isSelected
@@ -160,14 +160,19 @@ class _CategoryChip extends StatelessWidget {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Flexible(
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontFamily: 'Inter',
+                    fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? colors.primary : colors.textPrimary,
+                    color: Colors.black,
+                    letterSpacing: 0.0,
+                    height: 1.2,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -176,21 +181,22 @@ class _CategoryChip extends StatelessWidget {
               const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
+                  horizontal: 7,
+                  vertical: 3,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? colors.primary.withValues(alpha: 0.2)
-                      : colors.outline.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.black.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   count.toString(),
                   style: TextStyle(
+                    fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? colors.primary : colors.textSecondary,
+                    color: Colors.black,
+                    letterSpacing: 0.0,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -201,4 +207,3 @@ class _CategoryChip extends StatelessWidget {
     );
   }
 }
-
