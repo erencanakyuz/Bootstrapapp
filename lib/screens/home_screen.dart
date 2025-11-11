@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
@@ -48,15 +47,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   late ConfettiController _confettiController;
-  Color? _currentHabitColor; // Store the color of the completed habit
-  HabitDifficulty? _currentHabitDifficulty; // Store the difficulty of the completed habit
-  int _confettiPaletteSeed = 0; // Forces ConfettiWidget to rebuild with new colors
+  // REMOVED: Confetti state moved to provider to reduce HomeScreen rebuilds
+  // Color? _currentHabitColor;
+  // HabitDifficulty? _currentHabitDifficulty;
+  // int _confettiPaletteSeed = 0;
 
   // Filtering
   HabitCategory? _selectedCategory;
 
   List<Habit> _currentTodayHabits() {
-    return List<Habit>.from(ref.read(todayActiveHabitsProvider));
+    // OPTIMIZED: Remove unnecessary List.from - provider already returns a new list
+    return ref.read(todayActiveHabitsProvider);
   }
 
   List<Habit> _filterHabits(List<Habit> habits) {
@@ -72,7 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _confettiController = ConfettiController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 5), // Increased from 2 to 5 seconds for longer animation
     );
   }
 
@@ -143,24 +144,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
       if (confettiEnabled) {
-        // Store habit color and difficulty for confetti
-        setState(() {
-          _currentHabitColor = habit.color;
-          _currentHabitDifficulty = habit.difficulty;
-          _confettiPaletteSeed++;
-        });
+        // OPTIMIZED: Update confetti state via provider instead of setState
+        // This prevents HomeScreen rebuild and only updates ConfettiWidget
+        ref.read(confettiStateProvider.notifier).updateConfetti(
+          habitColor: habit.color,
+          difficulty: habit.difficulty,
+        );
 
         // Delay play until the frame after state updates so colors are applied
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _confettiController.play();
             // Clear color after animation completes (save memory)
-            Future.delayed(const Duration(seconds: 2), () {
+            // Increased delay to match longer confetti duration + fade out
+            Future.delayed(const Duration(seconds: 5), () {
               if (mounted) {
-                setState(() {
-                  _currentHabitColor = null;
-                  _currentHabitDifficulty = null;
-                });
+                ref.read(confettiStateProvider.notifier).clear();
               }
             });
           }
@@ -171,37 +170,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Play success sound when habit is completed
       ref.read(soundServiceProvider).playSuccess();
     }
-  }
-
-  /// Get number of particles based on difficulty
-  int _getParticleCount(HabitDifficulty difficulty) {
-    switch (difficulty) {
-      case HabitDifficulty.easy:
-        return 30; // Less particles for easy tasks
-      case HabitDifficulty.medium:
-        return 50; // Medium particles
-      case HabitDifficulty.hard:
-        return 80; // More particles for hard tasks - bigger celebration!
-    }
-  }
-
-  /// Generate color palette from habit color (light tones)
-  List<Color> _generateColorPalette(Color baseColor) {
-    // Create lighter, softer tones of the base color
-    final hsl = HSLColor.fromColor(baseColor);
-    
-    return [
-      // Main color - slightly lighter
-      hsl.withLightness((hsl.lightness + 0.15).clamp(0.0, 1.0)).toColor(),
-      // Lighter tone
-      hsl.withLightness((hsl.lightness + 0.25).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.8).clamp(0.0, 1.0)).toColor(),
-      // Even lighter, more pastel
-      hsl.withLightness((hsl.lightness + 0.35).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.6).clamp(0.0, 1.0)).toColor(),
-      // Softest tone
-      hsl.withLightness((hsl.lightness + 0.4).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.4).clamp(0.0, 1.0)).toColor(),
-      // Original color with slight transparency variation
-      baseColor.withValues(alpha: 0.9),
-    ];
   }
 
   Future<void> _openHabitDetail(Habit habit) async {
@@ -558,6 +526,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColors colors,
     AppTextStyles textStyles,
     List<Habit> activeHabits,
+    DateTime weekStart, // OPTIMIZED: Pass weekStart to avoid recalculating in each card
+    DateTime today, // OPTIMIZED: Pass today to avoid DateTime.now() in each card
+    DateTime now, // OPTIMIZED: Pass now for _isNewHabit calculation
   ) {
     if (activeHabits.isEmpty && _selectedCategory != null) {
       return SliverToBoxAdapter(
@@ -577,15 +548,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final habit = activeHabits[index];
-          final isNew = _isNewHabit(habit);
+          final isNew = _isNewHabit(habit, now);
           return Padding(
             padding: EdgeInsets.only(
               bottom: index == activeHabits.length - 1 ? 0 : 16,
             ),
             child: HabitCard(
-              key: ValueKey('${habit.id}_${habit.isCompletedOn(DateTime.now())}'),
+              key: ValueKey(habit.id), // OPTIMIZED: Simplified key - habit.id is sufficient
               habit: habit,
               showNewBadge: isNew,
+              weekStart: weekStart, // OPTIMIZED: Pass weekStart to avoid DateTime.now() in card
+              today: today, // OPTIMIZED: Pass today to avoid DateTime.now() in card
               onTap: () => _openHabitDetail(habit),
               onCompletionToggle: () => _toggleHabitCompletion(habit),
               onLongPress: () => _showHabitOptions(habit),
@@ -730,8 +703,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  bool _isNewHabit(Habit habit) {
-    final daysSinceCreation = DateTime.now().difference(habit.createdAt).inDays;
+  bool _isNewHabit(Habit habit, DateTime now) {
+    // OPTIMIZED: Accept DateTime parameter to avoid repeated DateTime.now() calls
+    final daysSinceCreation = now.difference(habit.createdAt).inDays;
     return daysSinceCreation <= 1; // Only show for 1 day
   }
 
@@ -748,6 +722,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    // OPTIMIZED: Calculate weekStart once at screen level, pass to cards
+    final weekStart = DateTime(now.year, now.month, now.day - now.weekday + 1);
+    
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     final dateLabel = DateFormat('EEEE, MMM d').format(today);
@@ -775,14 +752,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
-          child: _buildHeroProgressCard(
-            completedToday,
-            colors,
-            textStyles,
-            today,
-            todayActiveHabits,
-            totalStreak,
-            weeklyCompletions,
+          child: RepaintBoundary(
+            child: _buildHeroProgressCard(
+              completedToday,
+              colors,
+              textStyles,
+              today,
+              todayActiveHabits,
+              totalStreak,
+              weeklyCompletions,
+            ),
           ),
         ),
       ),
@@ -809,7 +788,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             0,
           ),
           sliver: SliverToBoxAdapter(
-            child: _buildGuidedCTA(colors, textStyles),
+            child: RepaintBoundary(
+              child: _buildGuidedCTA(colors, textStyles),
+            ),
           ),
         ),
       ]);
@@ -834,7 +815,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             0,
           ),
           sliver: SliverToBoxAdapter(
-            child: _buildGuidedCTA(colors, textStyles),
+            child: RepaintBoundary(
+              child: _buildGuidedCTA(colors, textStyles),
+            ),
           ),
         ),
         // Habit Suggestions
@@ -903,6 +886,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               colors,
               textStyles,
               visibleHabits,
+              weekStart, // OPTIMIZED: Pass weekStart to cards
+              today, // OPTIMIZED: Pass today to cards
+              now, // OPTIMIZED: Pass now for _isNewHabit
             ),
           ),
         // Daily Motivation Widget - moved to bottom
@@ -940,51 +926,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               cacheExtent: 500,
               slivers: slivers,
             ),
-            // Confetti widget - only render when needed (performance optimization)
-            if (_currentHabitColor != null)
-              Align(
-                alignment: Alignment.topCenter,
-                child: IgnorePointer(
-                  ignoring: true, // Don't intercept touches
-                  child: ConfettiWidget(
-                    key: ValueKey('confetti-${_confettiPaletteSeed}_${_currentHabitColor != null ? _currentHabitColor!.hashCode : 'default'}'),
-                    confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive,
-                    particleDrag: 0.05,
-                    emissionFrequency: 0.03,
-                    numberOfParticles: _currentHabitDifficulty != null
-                        ? _getParticleCount(_currentHabitDifficulty!)
-                        : 50, // Default fallback
-                    gravity: 0.2,
-                    shouldLoop: false,
-                    colors: _currentHabitColor != null
-                        ? _generateColorPalette(_currentHabitColor!)
-                        : [
-                            // Fallback colors if no habit color
-                            const Color(0xFFD4C4B0),
-                            const Color(0xFFC9B8A3),
-                            const Color(0xFFB8A892),
-                          ],
-                    createParticlePath: (size) {
-                      // Custom beautiful shapes: stars, circles, and diamonds
-                      // Use size-based hash for variety
-                      final hash = (size.width * 1000 + size.height * 1000).toInt();
-                      final random = hash % 3;
-                      
-                      if (random == 0) {
-                        // Star shape
-                        return _createStarPath(size);
-                      } else if (random == 1) {
-                        // Diamond shape
-                        return _createDiamondPath(size);
-                      } else {
-                        // Circle with inner decoration
-                        return _createDecoratedCirclePath(size);
-                      }
-                    },
-                  ),
-                ),
-              ),
+            // Confetti widget - OPTIMIZED: Separate ConsumerWidget to isolate rebuilds
+            _ConfettiOverlay(confettiController: _confettiController),
           ],
         ),
       ),
@@ -1050,75 +993,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+}
 
-  /// Create a beautiful star path
-  Path _createStarPath(Size size) {
-    final path = Path();
-    final center = Offset(size.width / 2, size.height / 2);
-    final outerRadius = math.min(size.width, size.height) / 2;
-    final innerRadius = outerRadius * 0.4;
-    final numPoints = 5;
+/// OPTIMIZED: Separate ConfettiOverlay widget to isolate rebuilds from HomeScreen
+/// Only rebuilds when confetti state changes, not when habits change
+class _ConfettiOverlay extends ConsumerStatefulWidget {
+  final ConfettiController confettiController;
 
-    for (int i = 0; i < numPoints * 2; i++) {
-      final angle = (i * math.pi / numPoints) - (math.pi / 2);
-      final radius = i.isEven ? outerRadius : innerRadius;
-      final x = center.dx + radius * math.cos(angle);
-      final y = center.dy + radius * math.sin(angle);
-      
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
+  const _ConfettiOverlay({required this.confettiController});
+
+  @override
+  ConsumerState<_ConfettiOverlay> createState() => _ConfettiOverlayState();
+}
+
+class _ConfettiOverlayState extends ConsumerState<_ConfettiOverlay> {
+  double _opacity = 1.0; // Start fully visible
+  int? _lastPaletteSeed; // Track palette seed to detect new confetti
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _startFadeTimer() {
+    // Start fade out after 3.5 seconds (particles fall down first, then fade)
+    Future.delayed(const Duration(milliseconds: 3500), () {
+      if (mounted) {
+        setState(() {
+          _opacity = 0.0; // Fade out over remaining time
+        });
       }
-    }
-    path.close();
-    return path;
+    });
   }
 
-  /// Create a diamond path
-  Path _createDiamondPath(Size size) {
-    final path = Path();
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2;
+  // Cache for color palettes to avoid repeated allocations
+  static final Map<Color, List<Color>> _paletteCache = {};
 
-    path.moveTo(center.dx, center.dy - radius);
-    path.lineTo(center.dx + radius * 0.7, center.dy);
-    path.lineTo(center.dx, center.dy + radius);
-    path.lineTo(center.dx - radius * 0.7, center.dy);
-    path.close();
+  /// Generate color palette from habit color (light tones) - OPTIMIZED: Cached
+  List<Color> _generateColorPalette(Color baseColor) {
+    // Return cached palette if available
+    if (_paletteCache.containsKey(baseColor)) {
+      return _paletteCache[baseColor]!;
+    }
+
+    // Create lighter, softer tones of the base color
+    final hsl = HSLColor.fromColor(baseColor);
     
-    // Add inner decoration
-    final innerPath = Path();
-    innerPath.moveTo(center.dx, center.dy - radius * 0.5);
-    innerPath.lineTo(center.dx + radius * 0.35, center.dy);
-    innerPath.lineTo(center.dx, center.dy + radius * 0.5);
-    innerPath.lineTo(center.dx - radius * 0.35, center.dy);
-    innerPath.close();
-    
-    return Path.combine(PathOperation.difference, path, innerPath);
+    final palette = [
+      // Main color - slightly lighter
+      hsl.withLightness((hsl.lightness + 0.15).clamp(0.0, 1.0)).toColor(),
+      // Lighter tone
+      hsl.withLightness((hsl.lightness + 0.25).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.8).clamp(0.0, 1.0)).toColor(),
+      // Even lighter, more pastel
+      hsl.withLightness((hsl.lightness + 0.35).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.6).clamp(0.0, 1.0)).toColor(),
+      // Softest tone
+      hsl.withLightness((hsl.lightness + 0.4).clamp(0.0, 1.0)).withSaturation((hsl.saturation * 0.4).clamp(0.0, 1.0)).toColor(),
+      // Original color with slight transparency variation
+      baseColor.withValues(alpha: 0.9),
+    ];
+
+    // Cache the palette
+    _paletteCache[baseColor] = palette;
+    return palette;
   }
 
-  /// Create a decorated circle path
-  Path _createDecoratedCirclePath(Size size) {
-    final path = Path();
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2;
-    
-    // Outer circle
-    path.addOval(Rect.fromCircle(center: center, radius: radius));
-    
-    // Inner decoration - small circles
-    final innerRadius = radius * 0.3;
-    final numCircles = 4;
-    for (int i = 0; i < numCircles; i++) {
-      final angle = (i * 2 * math.pi / numCircles);
-      final offset = Offset(
-        center.dx + radius * 0.5 * math.cos(angle),
-        center.dy + radius * 0.5 * math.sin(angle),
-      );
-      path.addOval(Rect.fromCircle(center: offset, radius: innerRadius));
+  /// Get number of particles based on difficulty - OPTIMIZED: Reduced particle count
+  int _getParticleCount(HabitDifficulty difficulty) {
+    switch (difficulty) {
+      case HabitDifficulty.easy:
+        return 20; // Reduced from 30
+      case HabitDifficulty.medium:
+        return 28; // Reduced from 50
+      case HabitDifficulty.hard:
+        return 35; // Reduced from 80
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final confettiState = ref.watch(confettiStateProvider);
     
-    return path;
+    // Only render confetti if there's a color
+    if (confettiState.habitColor == null) {
+      // Reset opacity when confetti is cleared
+      if (_opacity != 1.0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _opacity = 1.0;
+              _lastPaletteSeed = null;
+            });
+          }
+        });
+      }
+      return const SizedBox.shrink();
+    }
+
+    // If this is a new confetti (palette seed changed), reset opacity and start fade timer
+    if (confettiState.paletteSeed != _lastPaletteSeed) {
+      _lastPaletteSeed = confettiState.paletteSeed;
+      _opacity = 1.0;
+      // Start fade timer after frame is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startFadeTimer();
+        }
+      });
+    }
+
+    return RepaintBoundary(
+      child: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 1500), // Smooth fade out
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: IgnorePointer(
+            ignoring: true, // Don't intercept touches
+            child: ConfettiWidget(
+              key: ValueKey('confetti-${confettiState.paletteSeed}_${confettiState.habitColor!.hashCode}'),
+              confettiController: widget.confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              particleDrag: 0.05,
+              emissionFrequency: 0.03,
+              numberOfParticles: confettiState.difficulty != null
+                  ? _getParticleCount(confettiState.difficulty!)
+                  : 28, // Reduced default fallback
+              gravity: 0.15, // Reduced from 0.2 for slower fall, allowing particles to reach bottom
+              shouldLoop: false,
+              colors: _generateColorPalette(confettiState.habitColor!),
+              createParticlePath: (size) {
+                // OPTIMIZED: Simple circle path instead of complex shapes
+                // This significantly reduces CanvasKit drawing overhead
+                final path = Path();
+                path.addOval(Rect.fromCircle(
+                  center: Offset(size.width / 2, size.height / 2),
+                  radius: size.shortestSide / 2,
+                ));
+                return path;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
