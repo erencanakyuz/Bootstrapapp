@@ -4,17 +4,16 @@ import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 
-/// GitHub-style contribution heatmap for habit streaks
-class StreakHeatmapWidget extends StatelessWidget {
-  final Habit habit;
+/// Year Activity heatmap showing all habits with their colors
+/// When multiple habits are completed on the same day, colors blend
+class AllHabitsHeatmapWidget extends StatelessWidget {
+  final List<Habit> habits;
   final int year;
-  final int? maxStreakDays;
 
-  StreakHeatmapWidget({
+  AllHabitsHeatmapWidget({
     super.key,
-    required this.habit,
+    required this.habits,
     int? year,
-    this.maxStreakDays,
   }) : year = year ?? DateTime.now().year;
 
   @override
@@ -23,7 +22,6 @@ class StreakHeatmapWidget extends StatelessWidget {
     final textStyles = AppTextStyles(colors);
     final targetYear = year;
     final heatmapData = _generateHeatmapData(targetYear);
-    final maxDays = maxStreakDays ?? _calculateMaxDays(heatmapData);
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.paddingL),
@@ -46,9 +44,9 @@ class StreakHeatmapWidget extends StatelessWidget {
                 style: textStyles.titleCard,
               ),
               Text(
-                '${habit.getCurrentStreak()} day streak',
+                '${habits.length} habits',
                 style: textStyles.bodySecondary.copyWith(
-                  color: colors.accentAmber,
+                  color: colors.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -117,10 +115,8 @@ class StreakHeatmapWidget extends StatelessWidget {
                   children: heatmapData.map((day) {
                     return _HeatmapCell(
                       date: day.date,
-                      intensity: day.intensity,
-                      maxIntensity: maxDays,
+                      completedHabits: day.completedHabits,
                       colors: colors,
-                      habitColor: habit.color, // Habit rengini ekle
                     );
                   }).toList(),
                 ),
@@ -128,40 +124,62 @@ class StreakHeatmapWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.paddingL),
-          // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Less',
-                style: textStyles.caption.copyWith(
-                  fontSize: 10,
-                  color: colors.textTertiary,
-                ),
+          // Legend - show habit colors
+          if (habits.isNotEmpty) ...[
+            Text(
+              'Habit Colors',
+              style: textStyles.caption.copyWith(
+                fontSize: 10,
+                color: colors.textTertiary,
+                fontWeight: FontWeight.w600,
               ),
-              Row(
-                children: List.generate(5, (index) {
-                  final intensity = index / 4.0;
-                  return Container(
-                    width: 10,
-                    height: 10,
-                    margin: const EdgeInsets.only(left: 2),
-                    decoration: BoxDecoration(
-                      color: _getIntensityColor(intensity, colors, habit.color),
-                      borderRadius: BorderRadius.circular(2),
+            ),
+            const SizedBox(height: AppSizes.paddingS),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: habits.take(8).map((habit) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: habit.color,
+                        borderRadius: BorderRadius.circular(2),
+                        border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
                     ),
-                  );
-                }),
-              ),
-              Text(
-                'More',
-                style: textStyles.caption.copyWith(
-                  fontSize: 10,
-                  color: colors.textTertiary,
+                    const SizedBox(width: 4),
+                    Text(
+                      habit.title.length > 12 
+                          ? '${habit.title.substring(0, 12)}...'
+                          : habit.title,
+                      style: textStyles.caption.copyWith(
+                        fontSize: 9,
+                        color: colors.textTertiary,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+            if (habits.length > 8)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+ ${habits.length - 8} more',
+                  style: textStyles.caption.copyWith(
+                    fontSize: 9,
+                    color: colors.textTertiary,
+                  ),
                 ),
               ),
-            ],
-          ),
+          ],
         ],
       ),
     );
@@ -179,15 +197,14 @@ class StreakHeatmapWidget extends StatelessWidget {
     for (int i = 0; i < daysToAdd; i++) {
       days.add(_HeatmapDay(
         date: startDate.subtract(Duration(days: daysToAdd - i)),
-        intensity: 0,
+        completedHabits: [],
       ));
     }
     
     // Add all days of the year
     for (var date = startDate; date.isBefore(endDate.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
-      final isCompleted = habit.isCompletedOn(date);
-      final intensity = isCompleted ? 1.0 : 0.0;
-      days.add(_HeatmapDay(date: date, intensity: intensity));
+      final completedHabits = habits.where((habit) => habit.isCompletedOn(date)).toList();
+      days.add(_HeatmapDay(date: date, completedHabits: completedHabits));
     }
     
     // Add padding to complete weeks
@@ -196,64 +213,78 @@ class StreakHeatmapWidget extends StatelessWidget {
       for (int i = 0; i < remainingDays; i++) {
         days.add(_HeatmapDay(
           date: endDate.add(Duration(days: i + 1)),
-          intensity: 0,
+          completedHabits: [],
         ));
       }
     }
     
     return days;
   }
-
-  int _calculateMaxDays(List<_HeatmapDay> days) {
-    int max = 0;
-    int currentStreak = 0;
-    
-    for (final day in days) {
-      if (day.intensity > 0) {
-        currentStreak++;
-        max = currentStreak > max ? currentStreak : max;
-      } else {
-        currentStreak = 0;
-      }
-    }
-    
-    return max > 0 ? max : 1;
-  }
 }
 
 class _HeatmapDay {
   final DateTime date;
-  final double intensity;
+  final List<Habit> completedHabits;
 
   _HeatmapDay({
     required this.date,
-    required this.intensity,
+    required this.completedHabits,
   });
 }
 
 class _HeatmapCell extends StatelessWidget {
   final DateTime date;
-  final double intensity;
-  final int maxIntensity;
+  final List<Habit> completedHabits;
   final AppColors colors;
-  final Color habitColor;
 
   const _HeatmapCell({
     required this.date,
-    required this.intensity,
-    required this.maxIntensity,
+    required this.completedHabits,
     required this.colors,
-    required this.habitColor,
   });
+
+  Color _blendColors(List<Color> colors) {
+    if (colors.isEmpty) {
+      return this.colors.outline.withValues(alpha: 0.1);
+    }
+    if (colors.length == 1) {
+      return colors.first.withValues(alpha: 0.7);
+    }
+    
+    // Multiple colors - blend them together
+    // Calculate average RGB values
+    double r = 0, g = 0, b = 0;
+    for (final color in colors) {
+      r += color.red;
+      g += color.green;
+      b += color.blue;
+    }
+    r /= colors.length;
+    g /= colors.length;
+    b /= colors.length;
+    
+    // Increase opacity based on number of habits (more habits = more intense)
+    final alpha = 0.5 + (colors.length.clamp(0, 5) * 0.1).clamp(0.0, 0.5);
+    
+    return Color.fromRGBO(
+      r.round(),
+      g.round(),
+      b.round(),
+      alpha,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final normalizedIntensity = maxIntensity > 0 ? intensity / maxIntensity : 0.0;
-    final cellColor = _getIntensityColor(normalizedIntensity, colors, habitColor);
+    final habitColors = completedHabits.map((h) => h.color).toList();
+    final cellColor = _blendColors(habitColors);
+    final habitNames = completedHabits.map((h) => h.title).join(', ');
 
     return Tooltip(
       message: DateFormat('MMM d, yyyy').format(date) +
-          (intensity > 0 ? '\nCompleted' : '\nNot completed'),
+          (completedHabits.isEmpty 
+              ? '\nNo completions' 
+              : '\n${completedHabits.length} habit${completedHabits.length > 1 ? 's' : ''}: $habitNames'),
       child: Container(
         width: 11,
         height: 11,
@@ -261,23 +292,12 @@ class _HeatmapCell extends StatelessWidget {
           color: cellColor,
           borderRadius: BorderRadius.circular(2),
           border: Border.all(
-            color: Colors.black.withValues(alpha: 0.3), // Tüm kareler için siyah border (boş ve dolu)
+            color: Colors.black.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
       ),
     );
   }
-}
-
-Color _getIntensityColor(double intensity, AppColors colors, Color habitColor) {
-  if (intensity == 0) {
-    return colors.outline.withValues(alpha: 0.1);
-  }
-  
-  // Habit rengini kullan, intensity'ye göre alpha ayarla
-  final alpha = 0.4 + (intensity * 0.6); // Range: 0.4 to 1.0
-  
-  return habitColor.withValues(alpha: alpha);
 }
 

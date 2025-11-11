@@ -477,18 +477,25 @@ class HabitDetailScreen extends ConsumerWidget {
     String initialText,
   ) async {
     final controller = TextEditingController(text: initialText);
+    final focusNode = FocusNode();
     try {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
           // Klavye overlay olacak, içeriği yukarı itmeyecek
+          // Dialog açıldıktan sonra kısa bir gecikme ile klavyeyi aç - performans için
+          Future.delayed(const Duration(milliseconds: 100), () {
+            focusNode.requestFocus();
+          });
           return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24), // Dialog padding optimizasyonu
             title: const Text('Daily note'),
             content: TextField(
               controller: controller,
+              focusNode: focusNode,
               maxLines: 4,
               decoration: const InputDecoration(hintText: 'What did you notice?'),
-              autofocus: true,
+              // autofocus kaldırıldı - performans için gecikmeli açılıyor
             ),
             actions: [
               TextButton(
@@ -515,6 +522,7 @@ class HabitDetailScreen extends ConsumerWidget {
             .upsertNote(habitId: habit.id, note: note);
       }
     } finally {
+      focusNode.dispose();
       // Dialog tamamen kapandıktan sonra controller'ı dispose et
       // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
       Future.delayed(const Duration(milliseconds: 200), () {
@@ -672,19 +680,26 @@ class HabitDetailScreen extends ConsumerWidget {
     Habit habit,
   ) async {
     final controller = TextEditingController();
+    final focusNode = FocusNode();
     try {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
           // Klavye overlay olacak, içeriği yukarı itmeyecek
+          // Dialog açıldıktan sonra kısa bir gecikme ile klavyeyi aç - performans için
+          Future.delayed(const Duration(milliseconds: 100), () {
+            focusNode.requestFocus();
+          });
           return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24), // Dialog padding optimizasyonu
             title: const Text('Add Task'),
             content: TextField(
               controller: controller,
+              focusNode: focusNode,
               decoration: const InputDecoration(
                 hintText: 'Enter task title',
               ),
-              autofocus: true,
+              // autofocus kaldırıldı - performans için gecikmeli açılıyor
             ),
             actions: [
               TextButton(
@@ -712,6 +727,7 @@ class HabitDetailScreen extends ConsumerWidget {
           );
       }
     } finally {
+      focusNode.dispose();
       // Dialog tamamen kapandıktan sonra controller'ı dispose et
       // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
       Future.delayed(const Duration(milliseconds: 200), () {

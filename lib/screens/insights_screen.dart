@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../utils/responsive.dart';
 import '../utils/page_transitions.dart';
 import '../widgets/stats_card.dart';
+import '../widgets/all_habits_heatmap_widget.dart';
 import 'achievements_screen.dart';
 import 'analytics_dashboard_screen.dart';
 
@@ -149,6 +150,30 @@ class InsightsScreen extends StatelessWidget {
                   addAutomaticKeepAlives: false,
                   addRepaintBoundaries: true,
                 ),
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                AppSizes.paddingXXL,
+                horizontalPadding,
+                AppSizes.paddingL,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'Year Activity',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: SliverToBoxAdapter(
+                child: AllHabitsHeatmapWidget(habits: habits),
               ),
             ),
             SliverPadding(
