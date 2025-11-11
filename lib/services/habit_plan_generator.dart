@@ -39,7 +39,7 @@ class HabitPlanGenerator {
       selectedCategories.add('health');
     }
 
-    // Add habits based on goals
+    // Add habits based on goals - ensure we get enough habits
     for (final goal in preferences.goals) {
       switch (goal) {
         case 'health':
@@ -75,7 +75,7 @@ class HabitPlanGenerator {
       }
     }
 
-    // Add habits based on interests
+    // Add habits based on interests - ensure we get enough habits
     for (final interest in preferences.interests) {
       switch (interest) {
         case 'fitness':
@@ -111,6 +111,48 @@ class HabitPlanGenerator {
       }
     }
 
+    // If we don't have enough habits, fill from selected categories
+    // Try multiple times to ensure we get enough unique habits
+    int attempts = 0;
+    while (habits.length < preferences.commitmentLevel && attempts < 5) {
+      attempts++;
+      final needed = preferences.commitmentLevel - habits.length;
+      final additionalHabits = <Habit>[];
+      final existingIds = habits.map((h) => h.id).toSet();
+      
+      // Add more habits from selected categories
+      for (final category in selectedCategories) {
+        if (additionalHabits.length >= needed * 2) break; // Get extra to ensure variety
+        
+        switch (category) {
+          case 'health':
+            additionalHabits.addAll(_getHealthHabits(preferences, false));
+            break;
+          case 'productivity':
+            additionalHabits.addAll(_getProductivityHabits(preferences));
+            break;
+          case 'learning':
+            additionalHabits.addAll(_getLearningHabits(preferences));
+            break;
+          case 'mindfulness':
+            additionalHabits.addAll(_getMindfulnessHabits(preferences));
+            break;
+          case 'creativity':
+            additionalHabits.addAll(_getCreativityHabits(preferences));
+            break;
+        }
+      }
+      
+      // Remove duplicates and add new ones
+      final uniqueAdditional = additionalHabits
+          .where((h) => !existingIds.contains(h.id))
+          .take(needed)
+          .toList();
+      
+      if (uniqueAdditional.isEmpty) break; // No more unique habits available
+      habits.addAll(uniqueAdditional);
+    }
+
     // Adjust based on lifestyle
     final adjustedHabits = _adjustForLifestyle(habits, preferences.lifestyle)
         .map(_alignTargetsWithSchedule)
@@ -119,9 +161,13 @@ class HabitPlanGenerator {
     adjustedHabits.shuffle(); // Randomize order for variety
 
     // Limit to commitment level after shuffling for better variety
-    return adjustedHabits
-        .take(preferences.commitmentLevel.clamp(3, 10))
-        .toList();
+    // Ensure we return at least the requested number if possible
+    final targetCount = preferences.commitmentLevel.clamp(3, 10);
+    if (adjustedHabits.length < targetCount && adjustedHabits.isNotEmpty) {
+      // If we have fewer habits than requested, return all we have
+      return adjustedHabits;
+    }
+    return adjustedHabits.take(targetCount).toList();
   }
 
   static List<Habit> _adjustForLifestyle(List<Habit> habits, String lifestyle) {
@@ -235,6 +281,61 @@ class HabitPlanGenerator {
           icon: PhosphorIconsRegular.moon,
           category: HabitCategory.health,
           timeBlock: HabitTimeBlock.evening,
+          difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Yoga or stretching',
+          description: '15 minutes of flexibility work',
+          color: const Color(0xFF8B9A6B),
+          icon: PhosphorIconsRegular.leaf,
+          category: HabitCategory.health,
+          timeBlock: HabitTimeBlock.morning,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Take vitamins',
+          description: 'Daily supplement routine',
+          color: const Color(0xFF9B8FA8),
+          icon: PhosphorIconsRegular.forkKnife,
+          category: HabitCategory.health,
+          timeBlock: HabitTimeBlock.morning,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Healthy breakfast',
+          description: 'Start your day with nutritious food',
+          color: const Color(0xFF6B7D5A),
+          icon: PhosphorIconsRegular.forkKnife,
+          category: HabitCategory.health,
+          timeBlock: HabitTimeBlock.morning,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Posture check',
+          description: 'Maintain good posture throughout the day',
+          color: const Color(0xFF8B9BA8),
+          icon: PhosphorIconsRegular.heart,
+          category: HabitCategory.health,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Screen break',
+          description: 'Take breaks from screens every hour',
+          color: const Color(0xFF7A9B9B),
+          icon: PhosphorIconsRegular.moon,
+          category: HabitCategory.health,
+          timeBlock: HabitTimeBlock.anytime,
           difficulty: HabitDifficulty.medium,
           activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
         ),
@@ -382,6 +483,39 @@ class HabitPlanGenerator {
           difficulty: HabitDifficulty.medium,
           activeWeekdays: const [1, 2, 3, 4, 5],
         ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Email zero',
+          description: 'Clear inbox to zero',
+          color: const Color(0xFF8B9BA8),
+          icon: PhosphorIconsRegular.clipboardText,
+          category: HabitCategory.productivity,
+          timeBlock: HabitTimeBlock.morning,
+          difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Pomodoro sessions',
+          description: 'Complete 4 focused work sessions',
+          color: const Color(0xFF6B7D5A),
+          icon: PhosphorIconsRegular.timer,
+          category: HabitCategory.productivity,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Declutter space',
+          description: 'Organize workspace for 15 minutes',
+          color: const Color(0xFFC9A882),
+          icon: PhosphorIconsRegular.briefcase,
+          category: HabitCategory.productivity,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5],
+        ),
       ]);
     }
 
@@ -473,6 +607,39 @@ class HabitPlanGenerator {
           category: HabitCategory.learning,
           timeBlock: HabitTimeBlock.anytime,
           difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Read an article',
+          description: 'Learn something new from an article',
+          color: const Color(0xFF9B8FA8),
+          icon: PhosphorIconsRegular.bookOpen,
+          category: HabitCategory.learning,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Take notes',
+          description: 'Write notes on what you learned',
+          color: const Color(0xFF8B9BA8),
+          icon: PhosphorIconsRegular.notebook,
+          category: HabitCategory.learning,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Watch TED talk',
+          description: 'Learn from inspiring speakers',
+          color: const Color(0xFFC9A882),
+          icon: PhosphorIconsRegular.book,
+          category: HabitCategory.learning,
+          timeBlock: HabitTimeBlock.evening,
+          difficulty: HabitDifficulty.easy,
           activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
         ),
       ]);
@@ -579,6 +746,39 @@ class HabitPlanGenerator {
           difficulty: HabitDifficulty.easy,
           activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
         ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Gratitude practice',
+          description: 'Write 3 things you\'re grateful for',
+          color: const Color(0xFF9B8FA8),
+          icon: PhosphorIconsRegular.heart,
+          category: HabitCategory.mindfulness,
+          timeBlock: HabitTimeBlock.evening,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Nature connection',
+          description: 'Spend time outdoors mindfully',
+          color: const Color(0xFF6B7D5A),
+          icon: PhosphorIconsRegular.tree,
+          category: HabitCategory.mindfulness,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Mindful eating',
+          description: 'Eat without distractions',
+          color: const Color(0xFF8B9BA8),
+          icon: PhosphorIconsRegular.forkKnife,
+          category: HabitCategory.mindfulness,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
       ]);
     }
 
@@ -629,6 +829,39 @@ class HabitPlanGenerator {
           description: 'Express yourself through sound',
           color: const Color(0xFFC99FA3),
           icon: PhosphorIconsRegular.musicNote,
+          category: HabitCategory.creativity,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.medium,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Take a photo',
+          description: 'Capture something beautiful',
+          color: const Color(0xFF9B8FA8),
+          icon: PhosphorIconsRegular.camera,
+          category: HabitCategory.creativity,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Doodle or sketch',
+          description: 'Free-form creative expression',
+          color: const Color(0xFFC99FA3),
+          icon: PhosphorIconsRegular.pencilSimple,
+          category: HabitCategory.creativity,
+          timeBlock: HabitTimeBlock.anytime,
+          difficulty: HabitDifficulty.easy,
+          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
+        ),
+        Habit(
+          id: _uuid.v4(),
+          title: 'Creative craft',
+          description: 'Work on a creative project',
+          color: const Color(0xFF8B9BA8),
+          icon: PhosphorIconsRegular.palette,
           category: HabitCategory.creativity,
           timeBlock: HabitTimeBlock.anytime,
           difficulty: HabitDifficulty.medium,

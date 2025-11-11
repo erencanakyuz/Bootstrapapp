@@ -6,7 +6,7 @@
     
     <application
         android:enableOnBackInvokedCallback="true"
-        android:label="bootstrap_app"
+        android:label="Habit Tracker Pro - Bootstrap Your life"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

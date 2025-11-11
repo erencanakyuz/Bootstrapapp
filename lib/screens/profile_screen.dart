@@ -13,6 +13,7 @@ import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../providers/notification_provider.dart';
 import '../screens/notification_test_screen.dart';
+import '../screens/widget_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../utils/mock_data_generator.dart';
 import '../utils/notification_permissions.dart';
@@ -212,10 +213,16 @@ class ProfileScreen extends ConsumerWidget {
                   leading: Icon(Icons.widgets, color: colors.primary),
                   title: const Text('Home Widget Setup'),
                   subtitle: const Text(
-                    'Add widgets to your home screen to track habits',
+                    'Select and configure widgets for your home screen',
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () => _showWidgetSetupDialog(context, colors),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const WidgetSelectionScreen(),
+                      ),
+                    );
+                  },
                 ),
                 SwitchListTile(
                   value: settings.allowPastDatesBeforeCreation,

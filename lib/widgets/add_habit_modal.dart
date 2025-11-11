@@ -280,7 +280,7 @@ Widget build(BuildContext context) {
             },
           );
         },
-        separatorBuilder: (_, __) => const SizedBox(width: AppSizes.paddingS),
+        separatorBuilder: (_, index) => const SizedBox(width: AppSizes.paddingS),
         itemCount: HabitCategory.values.length,
       ),
     );
@@ -432,23 +432,24 @@ Widget build(BuildContext context) {
           if (widget.habitToEdit == null) ...[
             const SizedBox(height: AppSizes.paddingM),
             TextButton.icon(
-              onPressed: () async {
+              onPressed: () {
+                // Close current modal first
                 Navigator.of(context).pop();
-                await Future.delayed(const Duration(milliseconds: 300));
-                if (!context.mounted) return;
-                final navigator = Navigator.of(context);
-                await navigator.push(
-                  PageTransitions.slideFromRight(
-                    HabitTemplatesScreen(
-                      onTemplateSelected: (habit) {
-                        if (widget.onHabitCreated != null &&
-                            widget.habitToEdit == null) {
-                          widget.onHabitCreated!(habit);
-                        }
-                      },
+                // Then navigate to templates screen after a short delay
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    PageTransitions.slideFromRight(
+                      HabitTemplatesScreen(
+                        onTemplateSelected: (habit) {
+                          if (widget.onHabitCreated != null) {
+                            widget.onHabitCreated!(habit);
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
+                });
               },
               icon: const Icon(Icons.lightbulb_outline),
               label: const Text('Browse templates'),
@@ -712,43 +713,96 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildIconSelector(AppColors colors) {
-    return SizedBox(
-      height: 120,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Wrap(
-          spacing: AppSizes.paddingM,
-          runSpacing: AppSizes.paddingM,
-          direction: Axis.horizontal,
-          children: HabitIconLibrary.icons.map((icon) {
-            final isSelected = icon == _selectedIcon;
-            return RepaintBoundary(
-              key: ValueKey('icon_$icon'),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedIcon = icon),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? _selectedColor.withValues(alpha: 0.2)
-                        : colors.surface,
-                    border: Border.all(
-                      color: isSelected ? _selectedColor : colors.outline,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isSelected ? _selectedColor : colors.textSecondary,
-                  ),
+    final iconCount = HabitIconLibrary.icons.length;
+    final iconsPerRow = 6; // Approximate icons per visible row
+    final hasMoreIcons = iconCount > iconsPerRow * 2;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 120,
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Wrap(
+                  spacing: AppSizes.paddingM,
+                  runSpacing: AppSizes.paddingM,
+                  direction: Axis.horizontal,
+                  children: HabitIconLibrary.icons.map((icon) {
+                    final isSelected = icon == _selectedIcon;
+                    return RepaintBoundary(
+                      key: ValueKey('icon_$icon'),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedIcon = icon),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? _selectedColor.withValues(alpha: 0.2)
+                                : colors.surface,
+                            border: Border.all(
+                              color: isSelected ? _selectedColor : colors.outline,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                          ),
+                          child: Icon(
+                            icon,
+                            color: isSelected ? _selectedColor : colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-            );
-          }).toList(),
+              // Scroll indicator on the right
+              if (hasMoreIcons)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 30,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          colors.background.withValues(alpha: 0.0),
+                          colors.background.withValues(alpha: 0.8),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: colors.textSecondary.withValues(alpha: 0.6),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
+        // Hint text
+        if (hasMoreIcons)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSizes.paddingS),
+            child: Text(
+              'Swipe right to see more icons',
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.textSecondary.withValues(alpha: 0.7),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -777,7 +831,7 @@ Widget build(BuildContext context) {
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, color: Colors.white)
+                  ? Icon(Icons.check, color: colors.surface)
                   : null,
             ),
           ),

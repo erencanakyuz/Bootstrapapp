@@ -205,15 +205,17 @@ class _CleanSuggestionCardState extends State<_CleanSuggestionCard>
               color: widget.colors.outline.withValues(alpha: 0.12),
               width: 0.5,
             ),
-            // Subtle single shadow
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-                spreadRadius: 0,
-              ),
-            ],
+            // No shadows in dark mode
+            boxShadow: widget.colors.background.computeLuminance() < 0.5
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      spreadRadius: 0,
+                    ),
+                  ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),

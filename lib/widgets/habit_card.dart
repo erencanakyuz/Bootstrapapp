@@ -41,6 +41,9 @@ class HabitCard extends StatelessWidget {
         ? habit.getWeeklyProgress(weekStart!)
         : habit.getWeeklyProgress(DateTime.now());
 
+    // Check if dark mode
+    final isDarkMode = colors.background.computeLuminance() < 0.5;
+    
     // RefactorUi.md promiseCard tokens
     // Professional shadow and border for beige theme
     return Container(
@@ -52,24 +55,27 @@ class HabitCard extends StatelessWidget {
           color: colors.outline.withValues(alpha: 0.5), // More subtle border
           width: 1,
         ),
-        boxShadow: [
-          // OPTIMIZED: Reduced shadow count and blur radius for better CanvasKit performance
-          // Strong outer shadow - reduced blur from 32 to 24
-          BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.15),
-            blurRadius: 24, // Reduced from 32
-            spreadRadius: 0,
-            offset: const Offset(0, 10),
-          ),
-          // Additional depth shadow - reduced blur from 16 to 12
-          BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.06),
-            blurRadius: 12, // Reduced from 16
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-          // REMOVED: Inner glow shadow (minimal visual impact, significant performance cost)
-        ],
+        // No shadows in dark mode - they look bad on black background
+        boxShadow: isDarkMode
+            ? []
+            : [
+                // OPTIMIZED: Reduced shadow count and blur radius for better CanvasKit performance
+                // Strong outer shadow - reduced blur from 32 to 24
+                BoxShadow(
+                  color: colors.textPrimary.withValues(alpha: 0.15),
+                  blurRadius: 24, // Reduced from 32
+                  spreadRadius: 0,
+                  offset: const Offset(0, 10),
+                ),
+                // Additional depth shadow - reduced blur from 16 to 12
+                BoxShadow(
+                  color: colors.textPrimary.withValues(alpha: 0.06),
+                  blurRadius: 12, // Reduced from 16
+                  spreadRadius: 0,
+                  offset: const Offset(0, 4),
+                ),
+                // REMOVED: Inner glow shadow (minimal visual impact, significant performance cost)
+              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -275,13 +281,16 @@ class HabitCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: colors.textPrimary, // badgeNewBackground
                       borderRadius: BorderRadius.circular(999),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.textPrimary.withValues(alpha: 0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      // No shadows in dark mode
+                      boxShadow: isDarkMode
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: colors.textPrimary.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: Text(
                       'NEW',

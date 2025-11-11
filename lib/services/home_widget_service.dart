@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 
+import '../screens/widget_selection_screen.dart';
 import '../utils/color_extensions.dart';
 
 /// Home screen widget service for Android/iOS
@@ -40,10 +41,12 @@ class HomeWidgetService {
     required int currentStreak,
     required String topHabitTitle,
     required Color topHabitColor,
+    List<WidgetType>? enabledWidgets,
   }) async {
-    if (!isSupported || !_widgetAvailable) return; // Widget mevcut değilse çık
+    if (!isSupported || !_widgetAvailable) return;
 
     try {
+      // Save basic data
       await HomeWidget.saveWidgetData<String>(
         'completed_today',
         '$completedToday',
@@ -69,26 +72,81 @@ class HomeWidgetService {
         DateTime.now().toIso8601String(),
       );
 
+      // Save enabled widget types
+      if (enabledWidgets != null) {
+        await HomeWidget.saveWidgetData<String>(
+          'enabled_widgets',
+          enabledWidgets.map((e) => e.name).join(','),
+        );
+      }
+
       // Update widget UI
       await HomeWidget.updateWidget(
         androidName: _androidWidgetName,
         iOSName: _iosWidgetName,
       );
     } catch (e) {
-      // Widget bulunamadıysa (ClassNotFoundException), sessizce geç
-      // Sadece ilk hatada bir kez logla, sonra flag'i false yap
       if (e.toString().contains('ClassNotFoundException') || 
           e.toString().contains('No Widget found')) {
         if (_widgetAvailable) {
-          // Sadece ilk hatada bir kez logla
           debugPrint('HomeWidget not available: Native widget provider not found. Widget feature disabled.');
           _widgetAvailable = false;
         }
-        // Sessizce geç, tekrar deneme
         return;
       }
-      // Diğer hatalar için normal log
       debugPrint('HomeWidget update error: $e');
+    }
+  }
+
+  /// Update widget with comprehensive data for all widget types
+  static Future<void> updateAllWidgets({
+    required int completedToday,
+    required int totalToday,
+    required int currentStreak,
+    required String topHabitTitle,
+    required Color topHabitColor,
+    required int weeklyCompleted,
+    required int weeklyTarget,
+    required Map<String, dynamic> stats,
+    List<WidgetType>? enabledWidgets,
+  }) async {
+    await updateWidget(
+      completedToday: completedToday,
+      totalToday: totalToday,
+      currentStreak: currentStreak,
+      topHabitTitle: topHabitTitle,
+      topHabitColor: topHabitColor,
+      enabledWidgets: enabledWidgets,
+    );
+
+    if (!isSupported || !_widgetAvailable) return;
+
+    try {
+      // Weekly progress data
+      await HomeWidget.saveWidgetData<String>(
+        'weekly_completed',
+        '$weeklyCompleted',
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'weekly_target',
+        '$weeklyTarget',
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'weekly_percentage',
+        weeklyTarget > 0 ? '${(weeklyCompleted / weeklyTarget * 100).round()}' : '0',
+      );
+
+      // Stats data
+      await HomeWidget.saveWidgetData<String>(
+        'total_habits',
+        '${stats['totalHabits'] ?? 0}',
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'completion_rate',
+        '${stats['completionRate'] ?? 0}',
+      );
+    } catch (e) {
+      debugPrint('HomeWidget updateAllWidgets error: $e');
     }
   }
 

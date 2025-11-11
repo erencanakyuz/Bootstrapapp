@@ -370,7 +370,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
             ),
             borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
-            boxShadow: AppShadows.cardSoft(null),
+            boxShadow: AppShadows.cardSoft(colors.background),
           ),
           child: Stack(
             children: [
@@ -469,7 +469,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Icon(
                   Icons.arrow_outward_rounded,
                   size: 28,
-                  color: Colors.black.withValues(alpha: 0.7),
+                  color: colors.surface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -490,22 +490,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildGuidedCTA(AppColors colors, AppTextStyles textStyles) {
+    final isDarkMode = colors.background.computeLuminance() < 0.5;
     return InkWell(
       onTap: () => _showAddHabitModal(),
       borderRadius: BorderRadius.circular(AppSizes.radiusL),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0xFFE8D5C4), // Muted cream-beige
-              Color(0xFFF5E6D3), // Muted peach-cream
-            ],
-          ),
+          gradient: isDarkMode
+              ? null
+              : LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFFE8D5C4), // Muted cream-beige
+                    Color(0xFFF5E6D3), // Muted peach-cream
+                  ],
+                ),
+          color: isDarkMode ? colors.elevatedSurface : null,
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
-          boxShadow: AppShadows.cardSoft(null),
+          border: isDarkMode
+              ? Border.all(
+                  color: colors.outline.withValues(alpha: 0.3),
+                  width: 1,
+                )
+              : null,
+          // No shadows in dark mode
+          boxShadow: isDarkMode ? [] : AppShadows.cardSoft(null),
         ),
         child: Row(
           children: [
@@ -539,7 +550,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.4),
         ),
-        boxShadow: AppShadows.cardSoft(null),
+        boxShadow: AppShadows.cardSoft(colors.background),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,7 +652,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: colors.elevatedSurface.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(AppSizes.radiusM),
       ),
       child: Column(
@@ -670,72 +681,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      useSafeArea: true,
       isDismissible: true,
       enableDrag: true,
       builder: (context) {
         final colors = Theme.of(context).extension<AppColors>()!;
-        return DraggableScrollableSheet(
-          initialChildSize: 0.25,
-          minChildSize: 0.2,
-          maxChildSize: 0.5,
-          builder: (context, scrollController) {
-            final viewPadding = MediaQuery.viewPaddingOf(context);
-            return Container(
-              decoration: BoxDecoration(
-                color: colors.elevatedSurface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
+        final viewPadding = MediaQuery.viewPaddingOf(context);
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            color: Colors.transparent,
+            child: GestureDetector(
+              onTap: () {}, // Prevent tap from closing when tapping inside
+              child: Container(
+                margin: EdgeInsets.only(bottom: viewPadding.bottom),
+                decoration: BoxDecoration(
+                  color: colors.elevatedSurface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                 ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colors.outline,
-                          borderRadius: BorderRadius.circular(2),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag handle
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: colors.outline.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  Flexible(
-                    child: ListView(
-                      controller: scrollController,
-                      shrinkWrap: true,
-                      children: [
-                        ListTile(
-                          leading: Icon(Icons.edit_rounded, color: colors.accentBlue),
-                          title: const Text('Edit Habit'),
-                          onTap: () {
-                            Navigator.pop(context);
+                      // Menu items
+                      ListTile(
+                        leading: Icon(Icons.edit_rounded, color: colors.accentBlue),
+                        title: Text(
+                          'Edit Habit',
+                          style: TextStyle(color: colors.textPrimary),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Future.delayed(const Duration(milliseconds: 200), () {
                             _showAddHabitModal(habitToEdit: habit);
-                          },
+                          });
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.delete_rounded,
+                          color: colors.statusIncomplete,
                         ),
-                        ListTile(
-                          leading: Icon(
-                            Icons.delete_rounded,
-                            color: colors.statusIncomplete,
-                          ),
-                          title: const Text('Delete Habit'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _deleteHabit(habit);
-                          },
+                        title: Text(
+                          'Delete Habit',
+                          style: TextStyle(color: colors.textPrimary),
                         ),
-                        SizedBox(height: viewPadding.bottom),
-                      ],
-                    ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _deleteHabit(habit);
+                        },
+                      ),
+                      SizedBox(height: viewPadding.bottom > 0 ? 8 : 16),
+                    ],
                   ),
-                ],
+                ),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
@@ -1004,7 +1022,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-            boxShadow: AppShadows.floatingButton(null),
+          boxShadow: AppShadows.floatingButton(colors.background),
           ),
           child: FloatingActionButton.extended(
             heroTag: "add-habit-button", // Unique hero tag

@@ -86,52 +86,74 @@ class AppConfig {
 class AppShadows {
   const AppShadows._();
 
+  // Helper to check if dark mode
+  static bool _isDarkMode(Color? baseColor) {
+    if (baseColor == null) return false;
+    return baseColor.computeLuminance() < 0.5;
+  }
+
   // TODO(perf): Explore lighter elevation tokens (or turning them off on low-end devices) to avoid Canvas.saveLayer() hits from large blur radii.
   // cardSoft: blurRadius 24, offsetY 10, color shadowSoft (rgba(0,0,0,0.07))
-  static List<BoxShadow> cardSoft(Color? baseColor) => [
-    BoxShadow(
-      color:
-          baseColor?.withValues(alpha: 0.07) ??
-          Colors.black.withValues(alpha: 0.07),
-      blurRadius: 24,
-      spreadRadius: 0,
-      offset: const Offset(0, 10),
-    ),
-  ];
+  static List<BoxShadow> cardSoft(Color? baseColor) {
+    // No shadows in dark mode - they look bad on black background
+    if (_isDarkMode(baseColor)) return [];
+    return [
+      BoxShadow(
+        color:
+            baseColor?.withValues(alpha: 0.07) ??
+            Colors.black.withValues(alpha: 0.07),
+        blurRadius: 24,
+        spreadRadius: 0,
+        offset: const Offset(0, 10),
+      ),
+    ];
+  }
 
   // cardStrong: blurRadius 32, offsetY 18, color shadowStrong (rgba(0,0,0,0.12))
-  static List<BoxShadow> cardStrong(Color? baseColor) => [
-    BoxShadow(
-      color:
-          baseColor?.withValues(alpha: 0.12) ??
-          Colors.black.withValues(alpha: 0.12),
-      blurRadius: 32,
-      spreadRadius: 0,
-      offset: const Offset(0, 18),
-    ),
-  ];
+  static List<BoxShadow> cardStrong(Color? baseColor) {
+    // No shadows in dark mode
+    if (_isDarkMode(baseColor)) return [];
+    return [
+      BoxShadow(
+        color:
+            baseColor?.withValues(alpha: 0.12) ??
+            Colors.black.withValues(alpha: 0.12),
+        blurRadius: 32,
+        spreadRadius: 0,
+        offset: const Offset(0, 18),
+      ),
+    ];
+  }
 
   // floatingButton: blurRadius 32, offsetY 12, color shadowStrong
-  static List<BoxShadow> floatingButton(Color? baseColor) => [
-    BoxShadow(
-      color:
-          baseColor?.withValues(alpha: 0.12) ??
-          Colors.black.withValues(alpha: 0.12),
-      blurRadius: 32,
-      spreadRadius: 0,
-      offset: const Offset(0, 12),
-    ),
-  ];
+  static List<BoxShadow> floatingButton(Color? baseColor) {
+    // No shadows in dark mode
+    if (_isDarkMode(baseColor)) return [];
+    return [
+      BoxShadow(
+        color:
+            baseColor?.withValues(alpha: 0.12) ??
+            Colors.black.withValues(alpha: 0.12),
+        blurRadius: 32,
+        spreadRadius: 0,
+        offset: const Offset(0, 12),
+      ),
+    ];
+  }
 
   // Legacy support
   static List<BoxShadow> small(Color baseColor) => cardSoft(baseColor);
   static List<BoxShadow> medium(Color baseColor) => cardStrong(baseColor);
   static List<BoxShadow> large(Color baseColor) => cardStrong(baseColor);
-  static List<BoxShadow> colored(Color color, {double alpha = 0.20}) => [
-    BoxShadow(
-      color: color.withValues(alpha: alpha),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
-    ),
-  ];
+  static List<BoxShadow> colored(Color color, {double alpha = 0.20}) {
+    // No shadows in dark mode
+    if (color.computeLuminance() < 0.5) return [];
+    return [
+      BoxShadow(
+        color: color.withValues(alpha: alpha),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ];
+  }
 }
