@@ -110,13 +110,15 @@ class HabitDetailScreen extends ConsumerWidget {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.paddingXXL,
+            padding: EdgeInsets.only(
+              left: AppSizes.paddingXXL,
+              right: AppSizes.paddingXXL,
+              top: AppSizes.paddingM,
+              bottom: MediaQuery.of(context).padding.bottom + AppSizes.paddingXXL, // Navigation bar için padding
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppSizes.paddingM),
                 // Hero card matching habit card style
                 Hero(
                   tag: 'habit-${habit.id}',
@@ -166,6 +168,7 @@ class HabitDetailScreen extends ConsumerWidget {
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                softWrap: true,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -177,6 +180,9 @@ class HabitDetailScreen extends ConsumerWidget {
                                   ),
                                   letterSpacing: 0.3,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
                               ),
                             ],
                           ),
@@ -365,6 +371,10 @@ class HabitDetailScreen extends ConsumerWidget {
                 ? habit.color
                 : colors.outline.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.3), // Tüm kareler için siyah border
+              width: 1,
+            ),
           ),
         );
       }).toList(),
@@ -376,7 +386,7 @@ class HabitDetailScreen extends ConsumerWidget {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.6,
+      childAspectRatio: 1.85, // 1.75'ten 1.85'e çıkarıldı - yazı kaybolmasın diye
       mainAxisSpacing: AppSizes.paddingM,
       crossAxisSpacing: AppSizes.paddingM,
       children: [
@@ -471,28 +481,25 @@ class HabitDetailScreen extends ConsumerWidget {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
-          final viewInsets = MediaQuery.viewInsetsOf(context);
-          return Padding(
-            padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            child: AlertDialog(
-              title: const Text('Daily note'),
-              content: TextField(
-                controller: controller,
-                maxLines: 4,
-                decoration: const InputDecoration(hintText: 'What did you notice?'),
-                autofocus: true,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, controller.text.trim()),
-                  child: const Text('Save'),
-                ),
-              ],
+          // Klavye overlay olacak, içeriği yukarı itmeyecek
+          return AlertDialog(
+            title: const Text('Daily note'),
+            content: TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(hintText: 'What did you notice?'),
+              autofocus: true,
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
           );
         },
       );
@@ -508,8 +515,15 @@ class HabitDetailScreen extends ConsumerWidget {
             .upsertNote(habitId: habit.id, note: note);
       }
     } finally {
-      // Always dispose controller to prevent memory leak
-      controller.dispose();
+      // Dialog tamamen kapandıktan sonra controller'ı dispose et
+      // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
+      Future.delayed(const Duration(milliseconds: 200), () {
+        try {
+          controller.dispose();
+        } catch (e) {
+          // Controller zaten dispose edilmiş olabilir
+        }
+      });
     }
   }
 
@@ -662,29 +676,26 @@ class HabitDetailScreen extends ConsumerWidget {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
-          final viewInsets = MediaQuery.viewInsetsOf(context);
-          return Padding(
-            padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            child: AlertDialog(
-              title: const Text('Add Task'),
-              content: TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'Enter task title',
-                ),
-                autofocus: true,
+          // Klavye overlay olacak, içeriği yukarı itmeyecek
+          return AlertDialog(
+            title: const Text('Add Task'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'Enter task title',
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, controller.text.trim()),
-                  child: const Text('Add'),
-                ),
-              ],
+              autofocus: true,
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, controller.text.trim()),
+                child: const Text('Add'),
+              ),
+            ],
           );
         },
       );
@@ -701,8 +712,15 @@ class HabitDetailScreen extends ConsumerWidget {
           );
       }
     } finally {
-      // Always dispose controller to prevent memory leak
-      controller.dispose();
+      // Dialog tamamen kapandıktan sonra controller'ı dispose et
+      // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
+      Future.delayed(const Duration(milliseconds: 200), () {
+        try {
+          controller.dispose();
+        } catch (e) {
+          // Controller zaten dispose edilmiş olabilir
+        }
+      });
     }
   }
 
@@ -714,12 +732,24 @@ class HabitDetailScreen extends ConsumerWidget {
     if (!context.mounted) return;
     final updatedHabit = await showModalBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Tam ekran için scroll controlled
       backgroundColor: Colors.transparent,
-      useSafeArea: true,
+      useSafeArea: false, // Manuel padding kontrolü için false
       isDismissible: true,
       enableDrag: true,
-      builder: (context) => AddHabitModal(habitToEdit: habit),
+      builder: (context) {
+        final topPadding = MediaQuery.of(context).padding.top;
+        // Klavye overlay olacak, içeriği yukarı itmeyecek
+        // Üst padding azaltıldı - drag handle daha erişilebilir olacak
+        
+        return Padding(
+          padding: EdgeInsets.only(
+            top: topPadding + 20, // Status bar + küçük boşluk (60'dan 20'ye düşürüldü)
+            // bottom padding kaldırıldı - klavye overlay olacak
+          ),
+          child: AddHabitModal(habitToEdit: habit),
+        );
+      },
     );
 
     if (!context.mounted) return;
@@ -788,7 +818,7 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16), // 20'den 16'ya düşürüldü - padding yazıyı yutmasın
       decoration: BoxDecoration(
         color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
@@ -802,24 +832,33 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: colors.textPrimary.withValues(alpha: 0.7),
-            size: 18,
+          // Icon ve sayı yan yana
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: colors.textPrimary.withValues(alpha: 0.7),
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  value,
+                  style: GoogleFonts.fraunces(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    height: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.fraunces(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              height: 1.0,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 4), // 6'dan 4'e düşürüldü
           Text(
             title,
             style: TextStyle(
@@ -829,6 +868,7 @@ class _StatTile extends StatelessWidget {
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            softWrap: false,
           ),
         ],
       ),

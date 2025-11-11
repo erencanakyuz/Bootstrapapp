@@ -39,6 +39,7 @@ class QuickActionFAB extends ConsumerWidget {
             ],
           ),
           child: FloatingActionButton(
+            heroTag: "template-button-ui", // Unique hero tag
             onPressed: () {
               HapticFeedback.lightImpact();
               ref.read(soundServiceProvider).playClick();
@@ -73,6 +74,7 @@ class QuickActionFAB extends ConsumerWidget {
             ],
           ),
           child: FloatingActionButton.extended(
+            heroTag: "add-habit-button-ui", // Unique hero tag
             onPressed: () {
               HapticFeedback.mediumImpact();
               ref.read(soundServiceProvider).playClick();
@@ -172,6 +174,7 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
       bottom: 100,
       right: 20,
       child: FloatingActionButton.small(
+        heroTag: "scroll-to-top-button", // Unique hero tag
         onPressed: _scrollToTop,
         backgroundColor: colors.elevatedSurface,
         child: Icon(
