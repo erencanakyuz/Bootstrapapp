@@ -401,7 +401,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: colors.elevatedSurface, // Use theme elevatedSurface
           borderRadius: BorderRadius.circular(16),
@@ -419,13 +419,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               children: [
                 Container(
                   width: 4,
-                  height: 48,
+                  height: 50,
                   decoration: BoxDecoration(
                     color: habit.color,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,9 +433,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Text(
                         habit.title,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
+                          height: 1.2,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -443,12 +444,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Text(
-                            '$completedThisWeek/$activeDaysThisWeek this week',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colors.textTertiary,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              '$completedThisWeek/$activeDaysThisWeek this week',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.textTertiary,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),

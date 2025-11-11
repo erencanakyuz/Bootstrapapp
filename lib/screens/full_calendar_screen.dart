@@ -9,9 +9,9 @@ import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../services/calendar_share_service.dart';
 
-const double _habitNameColumnWidth = 200.0;
+const double _habitNameColumnWidth = 220.0;
 const double _dayCellWidth = 40.0;
-const double _habitRowHeight = 50.0;
+const double _habitRowHeight = 54.0;
 const double _tableHeaderHeight = 60.0;
 const int _referenceHabitRows = 8;
 
@@ -1947,7 +1947,7 @@ class _MonthlyHeaderRow extends StatelessWidget {
           SizedBox(
             width: _habitNameColumnWidth,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Text(
                 'HABIT',
                 style: TextStyle(
@@ -2055,7 +2055,7 @@ class _MonthlyHabitRow extends StatelessWidget {
             width: _habitNameColumnWidth,
             child: RepaintBoundary(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 child: Row(
                   children: [
                     Container(
@@ -2066,17 +2066,20 @@ class _MonthlyHabitRow extends StatelessWidget {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             habit.title,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
+                              height: 1.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2089,6 +2092,7 @@ class _MonthlyHabitRow extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: colors.textSecondary,
                               letterSpacing: 0.5,
+                              height: 1.1,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
