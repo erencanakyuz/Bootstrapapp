@@ -38,9 +38,16 @@ class HabitSuggestionsWidget extends ConsumerWidget {
         }
 
         return Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppSizes.paddingL,
-            vertical: AppSizes.paddingM,
+          padding: const EdgeInsets.all(AppSizes.paddingL),
+          margin: const EdgeInsets.symmetric(vertical: AppSizes.paddingM),
+          decoration: BoxDecoration(
+            color: colors.elevatedSurface,
+            borderRadius: BorderRadius.circular(AppSizes.radiusL),
+            border: Border.all(
+              color: colors.outline.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            boxShadow: AppShadows.cardSoft(null),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,8 +69,8 @@ class HabitSuggestionsWidget extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  TextButton(
-                    onPressed: () {
+                  InkWell(
+                    onTap: () {
                       HapticFeedback.lightImpact();
                       ref.read(soundServiceProvider).playClick();
                       Navigator.of(context).push(
@@ -74,16 +81,33 @@ class HabitSuggestionsWidget extends ConsumerWidget {
                         ),
                       );
                     },
-                    child: Text(
-                      'See All',
-                      style: textStyles.bodySecondary.copyWith(
-                        color: colors.primary,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.paddingM,
+                        vertical: AppSizes.paddingS,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                        border: Border.all(
+                          color: colors.primary.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'See All',
+                        style: textStyles.bodySecondary.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSizes.paddingM),
+              const SizedBox(height: AppSizes.paddingL),
               SizedBox(
                 height: 130,
                 child: ListView.builder(
