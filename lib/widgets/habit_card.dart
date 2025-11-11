@@ -124,14 +124,18 @@ class HabitCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        // Checkbox - Right side
-                        GestureDetector(
-                          onTap: onCompletionToggle,
-                          child: _buildCompletionCheckbox(
-                            isCompletedToday,
-                            colors,
-                            habit.color,
-                            isLarge: false, // Smaller checkbox
+                        // Checkbox - Right side (larger and more tappable)
+                        Padding(
+                          padding: const EdgeInsets.all(4), // Extra padding for larger hit area
+                          child: GestureDetector(
+                            onTap: onCompletionToggle,
+                            behavior: HitTestBehavior.opaque, // Make entire padded area tappable
+                            child: _buildCompletionCheckbox(
+                              isCompletedToday,
+                              colors,
+                              habit.color,
+                              isLarge: false, // Now uses larger default size
+                            ),
                           ),
                         ),
                       ],
@@ -262,7 +266,7 @@ class HabitCard extends StatelessWidget {
               if (showNewBadge)
                 Positioned(
                   top: 12,
-                  right: 48, // Positioned to the left of checkbox (14px padding + 24px checkbox + 10px spacing)
+                  right: 60, // Positioned to the left of checkbox (14px padding + 4px padding + 36px checkbox + 6px spacing)
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -297,7 +301,7 @@ class HabitCard extends StatelessWidget {
     );
   }
 
-  // RefactorUi.md toggleCheckbox: size 24, borderRadius 8, borderWidth 1.5
+  // Enhanced checkbox: larger size (36px), more tappable, better visibility
   // borderColorOff: chipOutline (#D7C9BA), borderColorOn: habit.color
   Widget _buildCompletionCheckbox(
     bool isCompleted,
@@ -305,8 +309,10 @@ class HabitCard extends StatelessWidget {
     Color habitColor, {
     bool isLarge = false,
   }) {
-    final size = isLarge ? 32.0 : 24.0;
-    final iconSize = isLarge ? 20.0 : 16.0;
+    // Increased default size from 24 to 36 for better usability
+    final size = isLarge ? 44.0 : 36.0;
+    final iconSize = isLarge ? 26.0 : 22.0;
+    final borderWidth = isLarge ? 2.5 : 2.0; // Increased border width for better visibility
 
     return Container(
       width: size,
@@ -318,7 +324,7 @@ class HabitCard extends StatelessWidget {
           color: isCompleted
               ? habitColor
               : colors.chipOutline,
-          width: isLarge ? 2.0 : 1.5,
+          width: borderWidth,
         ),
       ),
       child: isCompleted
