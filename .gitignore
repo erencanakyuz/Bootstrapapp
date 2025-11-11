@@ -100,6 +100,15 @@ unlinked_spec.ds
 **/windows/flutter/generated_plugin_registrant.cc
 **/windows/flutter/generated_plugin_registrant.h
 **/windows/flutter/generated_plugins.cmake
+**/windows/
+windows/
+*.bat
+*.ps1
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
 # Linux related
 **/linux/flutter/generated_plugin_registrant.cc
@@ -161,6 +170,13 @@ Icon
 ._*
 .Spotlight-V100
 .Trashes
+# Windows
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+# Linux
+.directory
 
 # Temporary files
 *.tmp
@@ -225,3 +241,31 @@ firebase_options.dart
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Documentation files (markdown)
+*.md
+
+# Scripts
+*.bat
+*.ps1
+*.sh
+wifi_connect.bat
+analyze_project.ps1
+
+# IDE specific
+*.iml
+bootstrap_app.iml
+android/bootstrap_app_android.iml
+
+# Test coverage and reports
+test/*.json
+test/.test_coverage.dart
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
