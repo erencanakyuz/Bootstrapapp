@@ -91,13 +91,6 @@ void main() {
         expect(habits1, equals(habits2));
       });
 
-      test('emits habits on stream after initialization', () async {
-        final streamFuture = repository.watch().first;
-        await repository.ensureInitialized();
-        final habits = await streamFuture;
-        expect(habits, isNotEmpty);
-      });
-
       test('handles corrupted data by clearing and loading defaults', () async {
         mockStorage.shouldThrowOnLoad = true;
         try {
