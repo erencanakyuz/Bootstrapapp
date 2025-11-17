@@ -477,13 +477,21 @@ class NotificationService {
       ];
     }
 
-    final weekdays = reminder.weekdays
+    final normalizedReminderDays = reminder.weekdays
         .where((day) => day >= DateTime.monday && day <= DateTime.sunday)
-        .toSet()
-        .toList()
-      ..sort();
+        .toSet();
 
-    if (weekdays.isEmpty) {
+    final normalizedActiveDays = (habit.activeWeekdays.isEmpty
+            ? List<int>.generate(7, (index) => DateTime.monday + index)
+            : habit.activeWeekdays)
+        .where((day) => day >= DateTime.monday && day <= DateTime.sunday)
+        .toSet();
+
+    final effectiveWeekdays = normalizedReminderDays.isEmpty
+        ? normalizedActiveDays
+        : normalizedReminderDays.intersection(normalizedActiveDays);
+
+    if (effectiveWeekdays.isEmpty) {
       final fallbackDate = _scheduleCalculator.resolveNextSchedule(reminder);
       final fallbackId = _scheduleCalculator.notificationIdFor(
         habit,
@@ -498,7 +506,9 @@ class NotificationService {
       ];
     }
 
-    return weekdays
+    final sortedWeekdays = effectiveWeekdays.toList()..sort();
+
+    return sortedWeekdays
         .map(
           (weekday) => _ReminderScheduleTarget(
             id: _scheduleCalculator.notificationIdForWeekday(

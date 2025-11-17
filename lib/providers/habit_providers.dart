@@ -183,7 +183,7 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
     final repository = _repository;
     final habit = repository.byId(habitId);
     await _runMutation(
-      (repo) => repo.deleteHabit(habitId, hardDelete: true),
+      (repo) => repo.deleteHabit(habitId, hardDelete: false),
       onSuccess: () async {
         if (habit != null) {
           await ref.read(notificationServiceProvider).cancelHabitReminders(habit);
