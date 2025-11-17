@@ -25,6 +25,28 @@ class NotificationScheduleCalculator {
     return uniqueId.hashCode & 0x7fffffff;
   }
 
+  int notificationIdForWeekday(
+    Habit habit,
+    HabitReminder reminder,
+    int weekday,
+  ) {
+    final uniqueId = '${habit.id}_${reminder.id}_$weekday';
+    return uniqueId.hashCode & 0x7fffffff;
+  }
+
+  List<int> notificationIdsForReminder(
+    Habit habit,
+    HabitReminder reminder,
+  ) {
+    final weekdays = _normalizeWeekdays(reminder.weekdays);
+    if (weekdays.isEmpty) {
+      return [notificationIdFor(habit, reminder)];
+    }
+    return weekdays
+        .map((weekday) => notificationIdForWeekday(habit, reminder, weekday))
+        .toList();
+  }
+
   tz.TZDateTime resolveNextSchedule(
     HabitReminder reminder, {
     tz.TZDateTime? from,
@@ -75,5 +97,41 @@ class NotificationScheduleCalculator {
     }
 
     return candidate;
+  }
+
+  tz.TZDateTime resolveNextScheduleForWeekday(
+    HabitReminder reminder, {
+    required int weekday,
+    tz.TZDateTime? from,
+  }) {
+    final normalizedWeekday = weekday.clamp(DateTime.monday, DateTime.sunday);
+    final now = from ?? _clock.nowTz();
+    var candidate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      reminder.hour,
+      reminder.minute,
+    );
+
+    int daysChecked = 0;
+    while ((candidate.isBefore(now.subtract(const Duration(minutes: 1))) ||
+            candidate.weekday != normalizedWeekday) &&
+        daysChecked < maxLookAheadDays) {
+      candidate = candidate.add(const Duration(days: 1));
+      daysChecked++;
+    }
+
+    return candidate;
+  }
+
+  List<int> _normalizeWeekdays(List<int> weekdays) {
+    final normalized = weekdays
+        .where((day) => day >= DateTime.monday && day <= DateTime.sunday)
+        .toSet()
+        .toList()
+      ..sort();
+    return normalized;
   }
 }

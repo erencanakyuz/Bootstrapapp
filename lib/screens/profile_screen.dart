@@ -12,7 +12,6 @@ import '../constants/app_constants.dart';
 import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
 import '../providers/notification_provider.dart';
-import '../screens/notification_test_screen.dart';
 import '../screens/widget_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../utils/mock_data_generator.dart';
@@ -300,18 +299,6 @@ class ProfileScreen extends ConsumerWidget {
                     title: const Text('Load Mock Data'),
                     subtitle: const Text('Generate 8 habits with 1 month of data'),
                     onTap: () => _loadMockData(context, ref),
-                  ),
-                  ListTile(
-                   leading: const Icon(Icons.notifications_active),
-                    title: const Text('Notification Test Screen'),
-                    subtitle: const Text('Test all notification scenarios'),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        PageTransitions.fadeAndSlide(
-                          const NotificationTestScreen(),
-                        ),
-                      );
-                    },
                   ),
                 ],
                 if (archived.isNotEmpty) ...[

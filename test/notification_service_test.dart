@@ -70,6 +70,21 @@ void main() {
 
       expect(result.minute, 1);
     });
+
+    test('resolveNextScheduleForWeekday finds correct weekday', () {
+      final calculator = NotificationScheduleCalculator(
+        dateTimeProvider: FakeDateTimeProvider(baseDate(10, 0)),
+      );
+      final reminder = reminderAt(9, 0);
+
+      final result = calculator.resolveNextScheduleForWeekday(
+        reminder,
+        weekday: DateTime.friday,
+      );
+
+      expect(result.weekday, DateTime.friday);
+      expect(result.hour, 9);
+    });
   });
 
   group('NotificationService with fake backend', () {
@@ -95,8 +110,11 @@ void main() {
     setUp(() {
       backend = FakeNotificationBackend();
       habit = buildHabit(id: 'habit-1');
-      reminder = HabitReminder.daily(
-        time: const TimeOfDay(hour: 9, minute: 0),
+      reminder = HabitReminder(
+        id: const Uuid().v4(),
+        hour: 9,
+        minute: 0,
+        weekdays: const [DateTime.monday],
       );
       service = NotificationService(
         backend: backend,
@@ -122,13 +140,30 @@ void main() {
 
       expect(backend.zonedCalls, hasLength(1));
       final call = backend.zonedCalls.first;
-      final expectedId = service.notificationIdFor(habit, reminder);
-      expect(call.id, expectedId);
+      final expectedIds =
+          service.notificationIdsForReminder(habit, reminder);
+      expect(expectedIds.length, reminder.weekdays.length);
+      expect(expectedIds, contains(call.id));
       expect(call.androidScheduleMode, AndroidScheduleMode.exactAllowWhileIdle);
       expect(
-        service.getScheduledDate(expectedId)?.hour,
+        service.getScheduledDate(call.id)?.hour,
         call.scheduledDate.toLocal().hour,
       );
+    });
+
+    test('schedules one notification per weekday', () async {
+      final multiReminder = HabitReminder(
+        id: const Uuid().v4(),
+        hour: 8,
+        minute: 30,
+        weekdays: const [DateTime.monday, DateTime.wednesday],
+      );
+
+      await service.scheduleReminder(habit, multiReminder);
+
+      expect(backend.zonedCalls.length, 2);
+      final ids = backend.zonedCalls.map((c) => c.id).toSet();
+      expect(ids.length, 2);
     });
 
     test('falls back to inexact schedule when exact alarms disallowed',
@@ -145,21 +180,46 @@ void main() {
       final habitWithReminders = habit.copyWith(
         reminders: [
           reminder,
-          HabitReminder.daily(time: const TimeOfDay(hour: 12, minute: 0)),
+          HabitReminder(
+            id: const Uuid().v4(),
+            hour: 12,
+            minute: 0,
+            weekdays: const [DateTime.tuesday],
+          ),
         ],
       );
 
       await service.cancelHabitReminders(habitWithReminders);
 
-      expect(backend.cancelledIds.length, 2);
+      final expectedIds = habitWithReminders.reminders
+          .expand(
+            (rem) => service.notificationIdsForReminder(
+              habitWithReminders,
+              rem,
+            ),
+          )
+          .toSet();
+
+      expect(
+        backend.cancelledIds.length,
+        greaterThanOrEqualTo(expectedIds.length),
+      );
+      for (final id in expectedIds) {
+        expect(backend.cancelledIds, contains(id));
+      }
     });
 
     test('cancelReminder uses habit context when provided', () async {
       await service.cancelReminder(reminder, habit: habit);
 
+      final expectedIds =
+          service.notificationIdsForReminder(habit, reminder).toSet();
+      for (final id in expectedIds) {
+        expect(backend.cancelledIds, contains(id));
+      }
       expect(
-        backend.cancelledIds.single,
-        service.notificationIdFor(habit, reminder),
+        backend.cancelledIds,
+        contains(service.notificationIdFor(habit, reminder)),
       );
     });
 

@@ -227,7 +227,8 @@ void main() {
           }
         }
 
-        expect(mockBackend.scheduledCalls.length, 1);
+        expect(
+            mockBackend.scheduledCalls.length, reminder.weekdays.length);
         expect(mockBackend.scheduledCalls.first.scheduledDate.hour, 9);
       });
 
@@ -253,7 +254,8 @@ void main() {
           }
         }
 
-        expect(mockBackend.scheduledCalls.length, 1);
+        expect(
+            mockBackend.scheduledCalls.length, reminder1.weekdays.length);
 
         // Update reminder time
         final reminder2 = models.HabitReminder.daily(
@@ -273,7 +275,10 @@ void main() {
 
         // Should have cancelled old and scheduled new
         expect(mockBackend.cancelledIds.length, greaterThan(0));
-        expect(mockBackend.scheduledCalls.length, 2);
+        expect(
+          mockBackend.scheduledCalls.length,
+          reminder1.weekdays.length + reminder2.weekdays.length,
+        );
         expect(mockBackend.scheduledCalls.last.scheduledDate.hour, 12);
       });
 
@@ -299,12 +304,16 @@ void main() {
           }
         }
 
-        expect(mockBackend.scheduledCalls.length, 1);
+        expect(
+            mockBackend.scheduledCalls.length, reminder.weekdays.length);
 
         // Delete habit
         await notificationService.cancelHabitReminders(habit);
 
-        expect(mockBackend.cancelledIds.length, 1);
+        expect(
+          mockBackend.cancelledIds.length,
+          reminder.weekdays.length + 1,
+        );
       });
 
       test('4.2: Verify notifications cancelled when habit archived', () async {
@@ -333,7 +342,10 @@ void main() {
         final archived = habit.archive();
         await notificationService.cancelHabitReminders(archived);
 
-        expect(mockBackend.cancelledIds.length, 1);
+        expect(
+          mockBackend.cancelledIds.length,
+          reminder.weekdays.length + 1,
+        );
       });
 
       test('4.3: Verify notification data flow from database', () async {
@@ -365,7 +377,8 @@ void main() {
         }
 
         // Step 5: Verify notification scheduled
-        expect(mockBackend.scheduledCalls.length, 1);
+        expect(
+            mockBackend.scheduledCalls.length, reminder.weekdays.length);
         expect(mockBackend.scheduledCalls.first.payload, 'test-1');
       });
 

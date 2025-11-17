@@ -133,22 +133,20 @@ class NotificationService {
     }
 
     try {
-      final id = _scheduleCalculator.notificationIdFor(habit, reminder);
-      
+      final baseId = _scheduleCalculator.notificationIdFor(habit, reminder);
+
       // For test notifications with delay, use immediate show() instead of schedule
       // This ensures notification appears even without exact alarm permission
       if (isTest && testDelay != null && testDelay.inSeconds <= 10) {
-        // For very short delays (<=10 seconds), use immediate notification
-        // Wait for the delay then show immediately
         final scheduleDate = _scheduleCalculator.resolveNextSchedule(
           reminder,
           overrideDelay: testDelay,
         );
-        _scheduledDates[id] = scheduleDate.toLocal();
-        
+        _scheduledDates[baseId] = scheduleDate.toLocal();
+
         Future.delayed(testDelay, () async {
           await _backend.show(
-            id,
+            baseId,
             habit.title,
             habit.description?.isNotEmpty == true
                 ? habit.description!
@@ -165,7 +163,7 @@ class NotificationService {
                 enableLights: true,
                 enableVibration: true,
               ),
-              iOS: DarwinNotificationDetails(
+              iOS: const DarwinNotificationDetails(
                 sound: 'default',
                 presentAlert: true,
                 presentBadge: true,
@@ -176,18 +174,20 @@ class NotificationService {
         });
         return;
       }
-      
-      final scheduleDate = testDelay != null
-          ? _scheduleCalculator.resolveNextSchedule(
-              reminder,
-              overrideDelay: testDelay,
-            )
-          : _scheduleCalculator.resolveNextSchedule(reminder);
 
+      final schedules = _buildScheduleTargets(
+        habit,
+        reminder,
+        overrideDelay: testDelay,
+      );
+
+      if (schedules.isEmpty) {
+        return;
+      }
 
       // Create rich notification content similar to habit card
       final notificationTitle = habit.title;
-      
+
       // Use smart notification service for personalized messages
       // Get all habits for dependency checking
       final allHabits = habits ?? [];
@@ -197,60 +197,11 @@ class NotificationService {
           habit.id: habit.completedDates,
         },
       );
-      
+
       final today = DateTime.now();
-      // final streak = habit.getCurrentStreak();
       final isStreakAtRisk = smartScheduler.isStreakAtRisk(habit, today);
-      final unsatisfiedDeps = smartScheduler.getUnsatisfiedDependencies(habit, today);
-      
-      // Check if it's evening (after 6 PM) for evening-specific messages
-      final isEveningReminder = scheduleDate.hour >= 18;
-      
-      final notificationBody = smartScheduler.getPersonalizedMessage(
-        habit,
-        isStreakAtRisk: isStreakAtRisk,
-        unsatisfiedDependencies: unsatisfiedDeps.isNotEmpty ? unsatisfiedDeps : null,
-        isEveningReminder: isEveningReminder,
-      );
-
-      // Calculate time until scheduled date
-      final now = DateTime.now();
-      final timeUntil = scheduleDate.toLocal().difference(now);
-
-      // If notification is scheduled for less than 1 minute in the future,
-      // use immediate notification instead to ensure it appears
-      if (timeUntil.inSeconds > 0 && timeUntil.inSeconds < 60 && !isTest) {
-        debugPrint('Notification scheduled too soon (${timeUntil.inSeconds}s), showing immediately instead');
-        _scheduledDates[id] = scheduleDate.toLocal();
-        
-        Future.delayed(timeUntil, () async {
-          await _backend.show(
-            id,
-            notificationTitle,
-            notificationBody,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                'habit_reminders',
-                'Habit Reminders',
-                channelDescription: 'Daily reminders for your habits',
-                importance: Importance.max,
-                priority: Priority.high,
-                icon: '@mipmap/ic_launcher',
-                color: habit.color,
-                enableLights: true,
-                enableVibration: true,
-              ),
-              iOS: DarwinNotificationDetails(
-                sound: 'default',
-                presentAlert: true,
-                presentBadge: true,
-                presentSound: true,
-              ),
-            ),
-          );
-        });
-        return;
-      }
+      final unsatisfiedDeps =
+          smartScheduler.getUnsatisfiedDependencies(habit, today);
 
       AndroidScheduleMode scheduleMode =
           AndroidScheduleMode.exactAllowWhileIdle;
@@ -265,48 +216,102 @@ class NotificationService {
           }
         }
       }
-      
+
       // Include habit ID in payload for tap handling
       final payload = habit.id;
 
-      await _backend.zonedSchedule(
-        id,
-        notificationTitle,
-        notificationBody,
-        scheduleDate,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'habit_reminders',
-            'Habit Reminders',
-            channelDescription: 'Daily reminders for your habits',
-            importance: Importance.max,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: habit.color,
-            enableLights: true,
-            enableVibration: true,
-          ),
-          iOS: DarwinNotificationDetails(
-            sound: 'default',
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: scheduleMode,
-        matchDateTimeComponents: isTest ? null : DateTimeComponents.dayOfWeekAndTime,
-        payload: payload,
-      );
+      for (final target in schedules) {
+        final scheduleDate = target.scheduleDate;
+        final isEveningReminder = scheduleDate.hour >= 18;
+        final notificationBody = smartScheduler.getPersonalizedMessage(
+          habit,
+          isStreakAtRisk: isStreakAtRisk,
+          unsatisfiedDependencies:
+              unsatisfiedDeps.isNotEmpty ? unsatisfiedDeps : null,
+          isEveningReminder: isEveningReminder,
+        );
 
-      // Store scheduled date for UI display
-      _scheduledDates[id] = scheduleDate.toLocal();
-      
-      // Debug: Check if notification was actually scheduled
-      if (!isTest) {
-        final pending = await _backend.pendingNotificationRequests();
-        final found = pending.any((n) => n.id == id);
-        if (!found) {
-          debugPrint('WARNING: Notification $id scheduled but not found in pending list');
+        final now = DateTime.now();
+        final timeUntil = scheduleDate.toLocal().difference(now);
+
+        // If notification is scheduled for less than 1 minute in the future,
+        // use immediate notification instead to ensure it appears
+        if (timeUntil.inSeconds > 0 && timeUntil.inSeconds < 60 && !isTest) {
+          debugPrint(
+            'Notification scheduled too soon (${timeUntil.inSeconds}s), showing immediately instead',
+          );
+          _scheduledDates[target.id] = scheduleDate.toLocal();
+
+          Future.delayed(timeUntil, () async {
+            await _backend.show(
+              target.id,
+              notificationTitle,
+              notificationBody,
+              NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'habit_reminders',
+                  'Habit Reminders',
+                  channelDescription: 'Daily reminders for your habits',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  icon: '@mipmap/ic_launcher',
+                  color: habit.color,
+                  enableLights: true,
+                  enableVibration: true,
+                ),
+                iOS: const DarwinNotificationDetails(
+                  sound: 'default',
+                  presentAlert: true,
+                  presentBadge: true,
+                  presentSound: true,
+                ),
+              ),
+            );
+          });
+          continue;
+        }
+
+        await _backend.zonedSchedule(
+          target.id,
+          notificationTitle,
+          notificationBody,
+          scheduleDate,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'habit_reminders',
+              'Habit Reminders',
+              channelDescription: 'Daily reminders for your habits',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+              color: habit.color,
+              enableLights: true,
+              enableVibration: true,
+            ),
+            iOS: const DarwinNotificationDetails(
+              sound: 'default',
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+          androidScheduleMode: scheduleMode,
+          matchDateTimeComponents: isTest ? null : target.matchComponents,
+          payload: payload,
+        );
+
+        // Store scheduled date for UI display
+        _scheduledDates[target.id] = scheduleDate.toLocal();
+
+        // Debug: Check if notification was actually scheduled
+        if (!isTest) {
+          final pending = await _backend.pendingNotificationRequests();
+          final found = pending.any((n) => n.id == target.id);
+          if (!found) {
+            debugPrint(
+              'WARNING: Notification ${target.id} scheduled but not found in pending list',
+            );
+          }
         }
       }
     } catch (e) {
@@ -322,11 +327,19 @@ class NotificationService {
     if (!_isPlatformSupported) return;
 
     try {
-      final id = habit != null
-          ? _scheduleCalculator.notificationIdFor(habit, reminder)
-          : reminder.id.hashCode & 0x7fffffff;
-      await _backend.cancel(id);
-      _scheduledDates.remove(id);
+      final ids = <int>{};
+      if (habit != null) {
+        ids.addAll(
+            _scheduleCalculator.notificationIdsForReminder(habit, reminder));
+        ids.add(_scheduleCalculator.notificationIdFor(habit, reminder));
+      } else {
+        ids.add(reminder.id.hashCode & 0x7fffffff);
+      }
+
+      for (final id in ids) {
+        await _backend.cancel(id);
+        _scheduledDates.remove(id);
+      }
     } catch (e) {
       debugPrint('Cancel reminder error: $e');
     }
@@ -339,9 +352,20 @@ class NotificationService {
       if (!_isPlatformSupported) continue;
 
       try {
-        final id = _scheduleCalculator.notificationIdFor(habit, reminder);
-        await _backend.cancel(id);
-        _scheduledDates.remove(id);
+        final ids = _scheduleCalculator.notificationIdsForReminder(
+          habit,
+          reminder,
+        );
+        final legacyId = _scheduleCalculator.notificationIdFor(
+          habit,
+          reminder,
+        );
+        final uniqueIds = {...ids, legacyId};
+
+        for (final id in uniqueIds) {
+          await _backend.cancel(id);
+          _scheduledDates.remove(id);
+        }
       } catch (e) {
         debugPrint('Cancel reminder error: $e');
       }
@@ -433,6 +457,65 @@ class NotificationService {
     }
   }
 
+  List<_ReminderScheduleTarget> _buildScheduleTargets(
+    Habit habit,
+    HabitReminder reminder, {
+    Duration? overrideDelay,
+  }) {
+    if (overrideDelay != null) {
+      final scheduleDate = _scheduleCalculator.resolveNextSchedule(
+        reminder,
+        overrideDelay: overrideDelay,
+      );
+      final id = _scheduleCalculator.notificationIdFor(habit, reminder);
+      return [
+        _ReminderScheduleTarget(
+          id: id,
+          scheduleDate: scheduleDate,
+          matchComponents: null,
+        ),
+      ];
+    }
+
+    final weekdays = reminder.weekdays
+        .where((day) => day >= DateTime.monday && day <= DateTime.sunday)
+        .toSet()
+        .toList()
+      ..sort();
+
+    if (weekdays.isEmpty) {
+      final fallbackDate = _scheduleCalculator.resolveNextSchedule(reminder);
+      final fallbackId = _scheduleCalculator.notificationIdFor(
+        habit,
+        reminder,
+      );
+      return [
+        _ReminderScheduleTarget(
+          id: fallbackId,
+          scheduleDate: fallbackDate,
+          matchComponents: null,
+        ),
+      ];
+    }
+
+    return weekdays
+        .map(
+          (weekday) => _ReminderScheduleTarget(
+            id: _scheduleCalculator.notificationIdForWeekday(
+              habit,
+              reminder,
+              weekday,
+            ),
+            scheduleDate: _scheduleCalculator.resolveNextScheduleForWeekday(
+              reminder,
+              weekday: weekday,
+            ),
+            matchComponents: DateTimeComponents.dayOfWeekAndTime,
+          ),
+        )
+        .toList();
+  }
+
   /// Restore scheduled dates from pending notifications after app restart
   /// This populates _scheduledDates map with existing scheduled notifications
   Future<void> _restoreScheduledDates() async {
@@ -488,6 +571,12 @@ class NotificationService {
 
   int notificationIdFor(Habit habit, HabitReminder reminder) =>
       _scheduleCalculator.notificationIdFor(habit, reminder);
+
+  List<int> notificationIdsForReminder(
+    Habit habit,
+    HabitReminder reminder,
+  ) =>
+      _scheduleCalculator.notificationIdsForReminder(habit, reminder);
 }
 
 class PlatformWrapper {
@@ -503,4 +592,16 @@ class PlatformWrapper {
   bool get isAndroid =>
       _isAndroidOverride ?? (!kIsWeb && Platform.isAndroid);
   bool get isIOS => _isIOSOverride ?? (!kIsWeb && Platform.isIOS);
+}
+
+class _ReminderScheduleTarget {
+  const _ReminderScheduleTarget({
+    required this.id,
+    required this.scheduleDate,
+    this.matchComponents,
+  });
+
+  final int id;
+  final tz.TZDateTime scheduleDate;
+  final DateTimeComponents? matchComponents;
 }
