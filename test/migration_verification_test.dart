@@ -6,6 +6,7 @@ import 'package:bootstrap_app/storage/app_database.dart';
 import 'package:bootstrap_app/storage/drift_habit_storage.dart';
 import 'package:bootstrap_app/storage/migration_service.dart';
 import 'package:bootstrap_app/services/habit_storage.dart';
+import 'package:bootstrap_app/services/notification_schedule_store.dart';
 import 'package:bootstrap_app/models/habit.dart' as models;
 import 'dart:convert';
 
@@ -221,6 +222,99 @@ void main() {
         // Corrupted entry should be skipped
         final habits = await db.select(db.habits).get();
         expect(habits, isEmpty);
+      });
+
+      test('5.5: Test notification schedule migration from SharedPreferences', () async {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.remove('notification_schedules_migrated_to_drift');
+
+        // Create legacy notification schedule data in SharedPreferences
+        final testSchedules = <int, DateTime>{
+          1001: DateTime(2024, 1, 1, 9, 0),
+          1002: DateTime(2024, 1, 2, 10, 30),
+          1003: DateTime(2024, 1, 3, 14, 15),
+        };
+
+        final encoded = testSchedules.map(
+          (key, value) => MapEntry(
+            key.toString(),
+            value.toUtc().toIso8601String(),
+          ),
+        );
+        await prefs.setString('notification_schedule_cache', jsonEncode(encoded));
+
+        // Run migration
+        final migrated = await HabitMigrationService.migrateNotificationSchedules(
+          db,
+          preferencesOverride: prefs,
+        );
+
+        expect(migrated, isTrue);
+
+        // Verify data migrated to Drift
+        final driftStore = DriftNotificationScheduleStore(db);
+        final loaded = await driftStore.loadAll();
+
+        expect(loaded.length, 3);
+        expect(loaded[1001], isNotNull);
+        expect(loaded[1002], isNotNull);
+        expect(loaded[1003], isNotNull);
+
+        // Verify dates match (allowing for timezone conversion)
+        expect(loaded[1001]!.hour, 9);
+        expect(loaded[1002]!.hour, 10);
+        expect(loaded[1003]!.hour, 14);
+
+        // Verify migration flag set
+        final hasMigrated = prefs.getBool('notification_schedules_migrated_to_drift');
+        expect(hasMigrated, isTrue);
+      });
+
+      test('5.5: Notification schedule migration does not run if already migrated', () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('notification_schedules_migrated_to_drift', true);
+
+        // Create test data
+        final testSchedules = <int, DateTime>{
+          2001: DateTime(2024, 1, 1, 9, 0),
+        };
+        final encoded = testSchedules.map(
+          (key, value) => MapEntry(
+            key.toString(),
+            value.toUtc().toIso8601String(),
+          ),
+        );
+        await prefs.setString('notification_schedule_cache', jsonEncode(encoded));
+
+        // Run migration
+        final migrated = await HabitMigrationService.migrateNotificationSchedules(
+          db,
+          preferencesOverride: prefs,
+        );
+
+        expect(migrated, isFalse);
+
+        // Verify no data was migrated (should be empty)
+        final driftStore = DriftNotificationScheduleStore(db);
+        final loaded = await driftStore.loadAll();
+        expect(loaded, isEmpty);
+      });
+
+      test('5.5: Notification schedule migration handles empty data', () async {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.remove('notification_schedules_migrated_to_drift');
+        prefs.remove('notification_schedule_cache');
+
+        final migrated = await HabitMigrationService.migrateNotificationSchedules(
+          db,
+          preferencesOverride: prefs,
+        );
+
+        expect(migrated, isFalse);
+
+        // Verify migration flag still set
+        final hasMigrated = prefs.getBool('notification_schedules_migrated_to_drift');
+        expect(hasMigrated, isTrue);
       });
     });
   });

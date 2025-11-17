@@ -298,6 +298,18 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       HapticFeedback.lightImpact();
     }
 
+    if (!habit.isActiveOnDate(date)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${habit.title} isn\'t scheduled for that day.'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final allowPastDates = settings?.allowPastDatesBeforeCreation ?? false;
     final updatedHabit = habit.toggleCompletion(
       date,
@@ -2124,17 +2136,10 @@ class _MonthlyHabitRow extends StatelessWidget {
                 final isToday = date.year == now.year &&
                     date.month == now.month &&
                     date.day == now.day;
-                final normalizedDate = DateTime(date.year, date.month, date.day);
-                final normalizedToday = DateTime(now.year, now.month, now.day);
-                final normalizedCreatedAt = DateTime(
-                  habit.createdAt.year,
-                  habit.createdAt.month,
-                  habit.createdAt.day,
+                final isMissed = habit.isMissedOn(
+                  date,
+                  referenceDate: now,
                 );
-                final isMissed = isActive &&
-                    !isCompleted &&
-                    normalizedDate.isBefore(normalizedToday) &&
-                    !normalizedDate.isBefore(normalizedCreatedAt);
 
                 return RepaintBoundary(
                   child: Padding(

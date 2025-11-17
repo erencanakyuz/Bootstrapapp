@@ -1,7 +1,10 @@
 import 'package:bootstrap_app/models/habit.dart';
 import 'package:bootstrap_app/services/notification_backend.dart';
 import 'package:bootstrap_app/services/notification_schedule_calculator.dart';
+import 'package:bootstrap_app/services/notification_schedule_store.dart';
 import 'package:bootstrap_app/services/notification_service.dart';
+import 'package:bootstrap_app/storage/app_database.dart' hide Habit, HabitReminder;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +95,7 @@ void main() {
     late NotificationService service;
     late Habit habit;
     late HabitReminder reminder;
+    late NotificationScheduleStore scheduleStore;
 
     Habit buildHabit({
       String? id,
@@ -109,6 +113,7 @@ void main() {
 
     setUp(() {
       backend = FakeNotificationBackend();
+      scheduleStore = InMemoryNotificationScheduleStore();
       habit = buildHabit(id: 'habit-1');
       reminder = HabitReminder(
         id: const Uuid().v4(),
@@ -124,6 +129,7 @@ void main() {
             tz.TZDateTime(tz.local, 2024, 1, 1, 8),
           ),
         ),
+        scheduleStore: scheduleStore,
       );
     });
 
@@ -164,6 +170,70 @@ void main() {
       expect(backend.zonedCalls.length, 2);
       final ids = backend.zonedCalls.map((c) => c.id).toSet();
       expect(ids.length, 2);
+    });
+
+    test('does not schedule when habit is archived', () async {
+      final archivedHabit = habit.copyWith(archived: true);
+
+      await service.scheduleReminder(archivedHabit, reminder);
+
+      expect(backend.zonedCalls, isEmpty);
+    });
+
+    test('does not schedule when reminder disabled', () async {
+      final disabledReminder = reminder.copyWith(enabled: false);
+
+      await service.scheduleReminder(habit, disabledReminder);
+
+      expect(backend.zonedCalls, isEmpty);
+    });
+
+    test('restores scheduled dates from persisted cache', () async {
+      await service.scheduleReminder(habit, reminder);
+      final expectedIds =
+          service.notificationIdsForReminder(habit, reminder);
+
+      final newService = NotificationService(
+        backend: backend,
+        platformWrapper: const PlatformWrapper(isAndroidOverride: true),
+        scheduleCalculator: NotificationScheduleCalculator(
+          dateTimeProvider: FakeDateTimeProvider(
+            tz.TZDateTime(tz.local, 2024, 1, 1, 8),
+          ),
+        ),
+        scheduleStore: scheduleStore,
+      );
+
+      await newService.initialize();
+
+      for (final id in expectedIds) {
+        expect(newService.getScheduledDate(id), isNotNull);
+      }
+    });
+
+    test('restores pending notifications missing from cache', () async {
+      await service.scheduleReminder(habit, reminder);
+      final expectedIds =
+          service.notificationIdsForReminder(habit, reminder);
+
+      await scheduleStore.clear();
+
+      final newService = NotificationService(
+        backend: backend,
+        platformWrapper: const PlatformWrapper(isAndroidOverride: true),
+        scheduleCalculator: NotificationScheduleCalculator(
+          dateTimeProvider: FakeDateTimeProvider(
+            tz.TZDateTime(tz.local, 2024, 1, 1, 8),
+          ),
+        ),
+        scheduleStore: scheduleStore,
+      );
+
+      await newService.initialize();
+
+      for (final id in expectedIds) {
+        expect(newService.getScheduledDate(id), isNotNull);
+      }
     });
 
     test('falls back to inexact schedule when exact alarms disallowed',
@@ -245,6 +315,77 @@ void main() {
     });
   });
 
+  group('DriftNotificationScheduleStore', () {
+    late AppDatabase db;
+    late DriftNotificationScheduleStore store;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      store = DriftNotificationScheduleStore(db);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('saves and loads schedules correctly', () async {
+      final schedule1 = DateTime(2024, 1, 1, 9, 0);
+      final schedule2 = DateTime(2024, 1, 2, 14, 30);
+
+      await store.saveSchedule(1001, schedule1);
+      await store.saveSchedule(1002, schedule2);
+
+      final loaded = await store.loadAll();
+      expect(loaded.length, 2);
+      expect(loaded[1001]?.hour, 9);
+      expect(loaded[1002]?.hour, 14);
+    });
+
+    test('updates existing schedule', () async {
+      final schedule1 = DateTime(2024, 1, 1, 9, 0);
+      final schedule2 = DateTime(2024, 1, 1, 10, 0);
+
+      await store.saveSchedule(1001, schedule1);
+      await store.saveSchedule(1001, schedule2); // Update
+
+      final loaded = await store.loadAll();
+      expect(loaded.length, 1);
+      expect(loaded[1001]?.hour, 10);
+    });
+
+    test('removes schedule correctly', () async {
+      await store.saveSchedule(1001, DateTime(2024, 1, 1, 9, 0));
+      await store.saveSchedule(1002, DateTime(2024, 1, 2, 10, 0));
+
+      await store.removeSchedule(1001);
+
+      final loaded = await store.loadAll();
+      expect(loaded.length, 1);
+      expect(loaded[1001], isNull);
+      expect(loaded[1002], isNotNull);
+    });
+
+    test('clears all schedules', () async {
+      await store.saveSchedule(1001, DateTime(2024, 1, 1, 9, 0));
+      await store.saveSchedule(1002, DateTime(2024, 1, 2, 10, 0));
+
+      await store.clear();
+
+      final loaded = await store.loadAll();
+      expect(loaded, isEmpty);
+    });
+
+    test('persists data across store instances', () async {
+      await store.saveSchedule(1001, DateTime(2024, 1, 1, 9, 0));
+
+      final newStore = DriftNotificationScheduleStore(db);
+      final loaded = await newStore.loadAll();
+
+      expect(loaded.length, 1);
+      expect(loaded[1001]?.hour, 9);
+    });
+  });
+
   group('HabitReminder model helpers', () {
     test('daily factory populates defaults', () {
       final reminder = HabitReminder.daily(
@@ -303,11 +444,13 @@ class FakeNotificationBackend implements NotificationBackend {
   @override
   Future<void> cancel(int id) async {
     cancelledIds.add(id);
+    pending.removeWhere((request) => request.id == id);
   }
 
   @override
   Future<void> cancelAll() async {
     cancelledIds.add(-1);
+    pending.clear();
   }
 
   @override
@@ -373,6 +516,15 @@ class FakeNotificationBackend implements NotificationBackend {
         matchComponents: matchDateTimeComponents,
         androidScheduleMode: androidScheduleMode,
         payload: payload,
+      ),
+    );
+    pending.removeWhere((request) => request.id == id);
+    pending.add(
+      PendingNotificationRequest(
+        id,
+        title ?? '',
+        body ?? '',
+        payload,
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/habit.dart';
 import 'notification_backend.dart';
 import 'notification_schedule_calculator.dart';
+import 'notification_schedule_store.dart';
 import 'smart_notification_service.dart';
 
 /// Service for scheduling and managing habit reminder notifications.
@@ -22,17 +23,21 @@ class NotificationService {
     PlatformWrapper? platformWrapper,
     NotificationScheduleCalculator? scheduleCalculator,
     DateTimeProvider? dateTimeProvider,
+    NotificationScheduleStore? scheduleStore,
     this.onNotificationTap,
   })  : _backend = backend ?? FlutterLocalNotificationsBackend(),
         _platform = platformWrapper ?? const PlatformWrapper(),
         _scheduleCalculator = scheduleCalculator ??
             NotificationScheduleCalculator(
               dateTimeProvider: dateTimeProvider ?? const DateTimeProvider(),
-            );
+            ),
+        _scheduleStore =
+            scheduleStore ?? SharedPrefsNotificationScheduleStore();
 
   final NotificationBackend _backend;
   final PlatformWrapper _platform;
   final NotificationScheduleCalculator _scheduleCalculator;
+  final NotificationScheduleStore _scheduleStore;
   bool _initialized = false;
   // Store scheduled dates for pending notifications (notificationId -> scheduledDate)
   final Map<int, DateTime> _scheduledDates = {};
@@ -119,6 +124,10 @@ class NotificationService {
     await initialize();
     if (!_isPlatformSupported) return;
 
+    if (habit.archived || !reminder.enabled) {
+      return;
+    }
+
     // Check app-level notification setting (if provided)
     // If app notifications are disabled, don't schedule
     if (appNotificationsEnabled == false) {
@@ -142,7 +151,7 @@ class NotificationService {
           reminder,
           overrideDelay: testDelay,
         );
-        _scheduledDates[baseId] = scheduleDate.toLocal();
+        await _rememberSchedule(baseId, scheduleDate);
 
         Future.delayed(testDelay, () async {
           await _backend.show(
@@ -220,7 +229,21 @@ class NotificationService {
       // Include habit ID in payload for tap handling
       final payload = habit.id;
 
+      Set<int>? existingPendingIds;
+      if (!isTest) {
+        try {
+          final pending = await _backend.pendingNotificationRequests();
+          existingPendingIds = pending.map((n) => n.id).toSet();
+        } catch (e) {
+          debugPrint('Failed to fetch pending notifications: $e');
+        }
+      }
+
       for (final target in schedules) {
+        await _clearExistingSchedule(
+          target.id,
+          existingPendingIds: existingPendingIds,
+        );
         final scheduleDate = target.scheduleDate;
         final isEveningReminder = scheduleDate.hour >= 18;
         final notificationBody = smartScheduler.getPersonalizedMessage(
@@ -240,7 +263,7 @@ class NotificationService {
           debugPrint(
             'Notification scheduled too soon (${timeUntil.inSeconds}s), showing immediately instead',
           );
-          _scheduledDates[target.id] = scheduleDate.toLocal();
+          await _rememberSchedule(target.id, scheduleDate);
 
           Future.delayed(timeUntil, () async {
             await _backend.show(
@@ -301,7 +324,7 @@ class NotificationService {
         );
 
         // Store scheduled date for UI display
-        _scheduledDates[target.id] = scheduleDate.toLocal();
+        await _rememberSchedule(target.id, scheduleDate);
 
         // Debug: Check if notification was actually scheduled
         if (!isTest) {
@@ -338,7 +361,7 @@ class NotificationService {
 
       for (final id in ids) {
         await _backend.cancel(id);
-        _scheduledDates.remove(id);
+        await _forgetSchedule(id);
       }
     } catch (e) {
       debugPrint('Cancel reminder error: $e');
@@ -364,7 +387,7 @@ class NotificationService {
 
         for (final id in uniqueIds) {
           await _backend.cancel(id);
-          _scheduledDates.remove(id);
+          await _forgetSchedule(id);
         }
       } catch (e) {
         debugPrint('Cancel reminder error: $e');
@@ -378,7 +401,7 @@ class NotificationService {
 
     try {
       await _backend.cancelAll();
-      _scheduledDates.clear();
+      await _resetSchedules();
     } catch (e) {
       debugPrint('Cancel all notifications error: $e');
     }
@@ -457,6 +480,39 @@ class NotificationService {
     }
   }
 
+  Future<void> _rememberSchedule(int id, DateTime date) async {
+    final normalized = date.toLocal();
+    _scheduledDates[id] = normalized;
+    await _scheduleStore.saveSchedule(id, normalized);
+  }
+
+  Future<void> _forgetSchedule(int id) async {
+    _scheduledDates.remove(id);
+    await _scheduleStore.removeSchedule(id);
+  }
+
+  Future<void> _resetSchedules() async {
+    _scheduledDates.clear();
+    await _scheduleStore.clear();
+  }
+
+  Future<void> _clearExistingSchedule(
+    int id, {
+    Set<int>? existingPendingIds,
+  }) async {
+    final hasLocal = _scheduledDates.containsKey(id);
+    final hasPending = existingPendingIds?.contains(id) ?? false;
+    if (!hasLocal && !hasPending) {
+      return;
+    }
+    try {
+      await _backend.cancel(id);
+    } catch (e) {
+      debugPrint('Failed to cancel existing notification $id: $e');
+    }
+    await _forgetSchedule(id);
+  }
+
   List<_ReminderScheduleTarget> _buildScheduleTargets(
     Habit habit,
     HabitReminder reminder, {
@@ -526,19 +582,31 @@ class NotificationService {
         .toList();
   }
 
-  /// Restore scheduled dates from pending notifications after app restart
-  /// This populates _scheduledDates map with existing scheduled notifications
+  /// Restore scheduled dates from persisted cache after app restart
   Future<void> _restoreScheduledDates() async {
     if (!_isPlatformSupported) return;
-    
+
     try {
-      // Note: PendingNotificationRequest doesn't contain scheduled date,
-      // so we can't fully restore the map. This is a limitation.
-      // The map will be repopulated as new notifications are scheduled.
-      // For now, we just ensure the service is aware of pending notifications.
-      await _backend.pendingNotificationRequests();
+      final stored = await _scheduleStore.loadAll();
+      final pending = await _backend.pendingNotificationRequests();
+      final pendingIds = pending.map((n) => n.id).toSet();
+
+      for (final entry in stored.entries) {
+        if (pendingIds.contains(entry.key)) {
+          _scheduledDates[entry.key] = entry.value.toLocal();
+        } else {
+          await _scheduleStore.removeSchedule(entry.key);
+        }
+      }
+
+      for (final request in pending) {
+        if (!stored.containsKey(request.id)) {
+          final fallbackDate = DateTime.now();
+          await _rememberSchedule(request.id, fallbackDate);
+        }
+      }
     } catch (e) {
-      // Silently fail - this is not critical
+      debugPrint('Restore scheduled dates error: $e');
     }
   }
 

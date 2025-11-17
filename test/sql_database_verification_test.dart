@@ -24,10 +24,10 @@ void main() {
     group('Part 2: Database Schema Verification', () {
       test('2.1: Verify normalized tables exist', () async {
         final tables = await db.customSelect(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('habits', 'habit_completions', 'habit_notes', 'habit_tasks', 'habit_reminders', 'habit_active_weekdays', 'habit_dependencies', 'habit_tags')",
+          "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('habits', 'habit_completions', 'habit_notes', 'habit_tasks', 'habit_reminders', 'habit_active_weekdays', 'habit_dependencies', 'habit_tags', 'notification_schedules')",
         ).get();
 
-        expect(tables.length, 8);
+        expect(tables.length, 9);
         final tableNames = tables.map((t) => t.read<String>('name')).toSet();
         expect(tableNames, containsAll([
           'habits',
@@ -38,6 +38,7 @@ void main() {
           'habit_active_weekdays',
           'habit_dependencies',
           'habit_tags',
+          'notification_schedules',
         ]));
       });
 
@@ -80,12 +81,13 @@ void main() {
           'idx_notes_habit_date',
           'idx_tasks_habit',
           'idx_reminders_habit',
+          'idx_notification_schedules_id',
         ]));
       });
 
-      test('2.5: Verify schema version is 2', () async {
-        // Note: user_version might not be directly accessible, but schemaVersion should be 2
-        expect(db.schemaVersion, 2);
+      test('2.5: Verify schema version is 3', () async {
+        // Schema version updated to 3 with NotificationSchedules table
+        expect(db.schemaVersion, 3);
       });
     });
 

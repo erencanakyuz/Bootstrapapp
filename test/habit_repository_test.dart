@@ -150,6 +150,30 @@ void main() {
         expect(habits.first.archived, true);
       });
 
+      test('soft delete keeps habit history data intact', () async {
+        final createdAt = DateTime(2024, 1, 1);
+        final completionDate = createdAt.add(const Duration(days: 1));
+        final habit = createTestHabit(
+          title: 'History Habit',
+          category: HabitCategory.productivity,
+        ).copyWith(
+          createdAt: createdAt,
+          completedDates: [completionDate],
+          reminders: [
+            HabitReminder.daily(time: const TimeOfDay(hour: 9, minute: 0)),
+          ],
+        );
+
+        await repository.upsertHabit(habit);
+        await repository.deleteHabit(habit.id);
+
+        final stored = repository.byId(habit.id);
+        expect(stored, isNotNull);
+        expect(stored!.archived, true);
+        expect(stored.completedDates, contains(completionDate));
+        expect(stored.reminders, isNotEmpty);
+      });
+
       test('deleteHabit hard deletes when requested', () async {
         final habit = createTestHabit(
           title: 'Test Habit',

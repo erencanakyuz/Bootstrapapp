@@ -16,7 +16,6 @@ import '../screens/widget_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../utils/mock_data_generator.dart';
 import '../utils/notification_permissions.dart';
-import '../utils/page_transitions.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

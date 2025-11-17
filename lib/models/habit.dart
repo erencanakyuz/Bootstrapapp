@@ -365,6 +365,27 @@ class Habit {
     return isActiveOnWeekday(date.weekday);
   }
 
+  /// Determines if a habit should be marked as missed on [date].
+  bool isMissedOn(
+    DateTime date, {
+    DateTime? referenceDate,
+  }) {
+    final today = referenceDate ?? DateTime.now();
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final normalizedCreatedAt = DateTime(
+      createdAt.year,
+      createdAt.month,
+      createdAt.day,
+    );
+
+    if (!isActiveOnDate(normalizedDate)) return false;
+    if (isCompletedOn(normalizedDate)) return false;
+    if (!normalizedDate.isBefore(normalizedToday)) return false;
+    if (normalizedDate.isBefore(normalizedCreatedAt)) return false;
+    return true;
+  }
+
   /// Get weekly progress (completions this week vs weekly target)
   /// Only counts completions on active weekdays
   int getWeeklyProgress(DateTime referenceDate) {
@@ -475,6 +496,10 @@ class Habit {
     if (!allowPastDatesBeforeCreation &&
         normalizedDate.isBefore(normalizedCreatedAt)) {
       // Don't allow dates before creation - return unchanged habit
+      return this;
+    }
+
+    if (!isActiveOnDate(normalizedDate)) {
       return this;
     }
 

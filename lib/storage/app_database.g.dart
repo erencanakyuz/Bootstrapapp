@@ -3082,6 +3082,276 @@ class HabitTagsCompanion extends UpdateCompanion<HabitTag> {
   }
 }
 
+class $NotificationSchedulesTable extends NotificationSchedules
+    with TableInfo<$NotificationSchedulesTable, NotificationSchedule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationSchedulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _notificationIdMeta = const VerificationMeta(
+    'notificationId',
+  );
+  @override
+  late final GeneratedColumn<int> notificationId = GeneratedColumn<int>(
+    'notification_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scheduledDateMeta = const VerificationMeta(
+    'scheduledDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledDate =
+      GeneratedColumn<DateTime>(
+        'scheduled_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    notificationId,
+    scheduledDate,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notification_schedules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotificationSchedule> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('notification_id')) {
+      context.handle(
+        _notificationIdMeta,
+        notificationId.isAcceptableOrUnknown(
+          data['notification_id']!,
+          _notificationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scheduled_date')) {
+      context.handle(
+        _scheduledDateMeta,
+        scheduledDate.isAcceptableOrUnknown(
+          data['scheduled_date']!,
+          _scheduledDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {notificationId};
+  @override
+  NotificationSchedule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotificationSchedule(
+      notificationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}notification_id'],
+      )!,
+      scheduledDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_date'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NotificationSchedulesTable createAlias(String alias) {
+    return $NotificationSchedulesTable(attachedDatabase, alias);
+  }
+}
+
+class NotificationSchedule extends DataClass
+    implements Insertable<NotificationSchedule> {
+  final int notificationId;
+  final DateTime scheduledDate;
+  final DateTime createdAt;
+  const NotificationSchedule({
+    required this.notificationId,
+    required this.scheduledDate,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['notification_id'] = Variable<int>(notificationId);
+    map['scheduled_date'] = Variable<DateTime>(scheduledDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  NotificationSchedulesCompanion toCompanion(bool nullToAbsent) {
+    return NotificationSchedulesCompanion(
+      notificationId: Value(notificationId),
+      scheduledDate: Value(scheduledDate),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory NotificationSchedule.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotificationSchedule(
+      notificationId: serializer.fromJson<int>(json['notificationId']),
+      scheduledDate: serializer.fromJson<DateTime>(json['scheduledDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'notificationId': serializer.toJson<int>(notificationId),
+      'scheduledDate': serializer.toJson<DateTime>(scheduledDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  NotificationSchedule copyWith({
+    int? notificationId,
+    DateTime? scheduledDate,
+    DateTime? createdAt,
+  }) => NotificationSchedule(
+    notificationId: notificationId ?? this.notificationId,
+    scheduledDate: scheduledDate ?? this.scheduledDate,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  NotificationSchedule copyWithCompanion(NotificationSchedulesCompanion data) {
+    return NotificationSchedule(
+      notificationId: data.notificationId.present
+          ? data.notificationId.value
+          : this.notificationId,
+      scheduledDate: data.scheduledDate.present
+          ? data.scheduledDate.value
+          : this.scheduledDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationSchedule(')
+          ..write('notificationId: $notificationId, ')
+          ..write('scheduledDate: $scheduledDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(notificationId, scheduledDate, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotificationSchedule &&
+          other.notificationId == this.notificationId &&
+          other.scheduledDate == this.scheduledDate &&
+          other.createdAt == this.createdAt);
+}
+
+class NotificationSchedulesCompanion
+    extends UpdateCompanion<NotificationSchedule> {
+  final Value<int> notificationId;
+  final Value<DateTime> scheduledDate;
+  final Value<DateTime> createdAt;
+  const NotificationSchedulesCompanion({
+    this.notificationId = const Value.absent(),
+    this.scheduledDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  NotificationSchedulesCompanion.insert({
+    this.notificationId = const Value.absent(),
+    required DateTime scheduledDate,
+    this.createdAt = const Value.absent(),
+  }) : scheduledDate = Value(scheduledDate);
+  static Insertable<NotificationSchedule> custom({
+    Expression<int>? notificationId,
+    Expression<DateTime>? scheduledDate,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (notificationId != null) 'notification_id': notificationId,
+      if (scheduledDate != null) 'scheduled_date': scheduledDate,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  NotificationSchedulesCompanion copyWith({
+    Value<int>? notificationId,
+    Value<DateTime>? scheduledDate,
+    Value<DateTime>? createdAt,
+  }) {
+    return NotificationSchedulesCompanion(
+      notificationId: notificationId ?? this.notificationId,
+      scheduledDate: scheduledDate ?? this.scheduledDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (notificationId.present) {
+      map['notification_id'] = Variable<int>(notificationId.value);
+    }
+    if (scheduledDate.present) {
+      map['scheduled_date'] = Variable<DateTime>(scheduledDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationSchedulesCompanion(')
+          ..write('notificationId: $notificationId, ')
+          ..write('scheduledDate: $scheduledDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3097,6 +3367,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HabitDependenciesTable habitDependencies =
       $HabitDependenciesTable(this);
   late final $HabitTagsTable habitTags = $HabitTagsTable(this);
+  late final $NotificationSchedulesTable notificationSchedules =
+      $NotificationSchedulesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3110,6 +3382,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     habitActiveWeekdays,
     habitDependencies,
     habitTags,
+    notificationSchedules,
   ];
 }
 
@@ -4804,6 +5077,185 @@ typedef $$HabitTagsTableProcessedTableManager =
       HabitTag,
       PrefetchHooks Function()
     >;
+typedef $$NotificationSchedulesTableCreateCompanionBuilder =
+    NotificationSchedulesCompanion Function({
+      Value<int> notificationId,
+      required DateTime scheduledDate,
+      Value<DateTime> createdAt,
+    });
+typedef $$NotificationSchedulesTableUpdateCompanionBuilder =
+    NotificationSchedulesCompanion Function({
+      Value<int> notificationId,
+      Value<DateTime> scheduledDate,
+      Value<DateTime> createdAt,
+    });
+
+class $$NotificationSchedulesTableFilterComposer
+    extends Composer<_$AppDatabase, $NotificationSchedulesTable> {
+  $$NotificationSchedulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NotificationSchedulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotificationSchedulesTable> {
+  $$NotificationSchedulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NotificationSchedulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotificationSchedulesTable> {
+  $$NotificationSchedulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get notificationId => $composableBuilder(
+    column: $table.notificationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$NotificationSchedulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationSchedulesTable,
+          NotificationSchedule,
+          $$NotificationSchedulesTableFilterComposer,
+          $$NotificationSchedulesTableOrderingComposer,
+          $$NotificationSchedulesTableAnnotationComposer,
+          $$NotificationSchedulesTableCreateCompanionBuilder,
+          $$NotificationSchedulesTableUpdateCompanionBuilder,
+          (
+            NotificationSchedule,
+            BaseReferences<
+              _$AppDatabase,
+              $NotificationSchedulesTable,
+              NotificationSchedule
+            >,
+          ),
+          NotificationSchedule,
+          PrefetchHooks Function()
+        > {
+  $$NotificationSchedulesTableTableManager(
+    _$AppDatabase db,
+    $NotificationSchedulesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotificationSchedulesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$NotificationSchedulesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$NotificationSchedulesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> notificationId = const Value.absent(),
+                Value<DateTime> scheduledDate = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => NotificationSchedulesCompanion(
+                notificationId: notificationId,
+                scheduledDate: scheduledDate,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> notificationId = const Value.absent(),
+                required DateTime scheduledDate,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => NotificationSchedulesCompanion.insert(
+                notificationId: notificationId,
+                scheduledDate: scheduledDate,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotificationSchedulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationSchedulesTable,
+      NotificationSchedule,
+      $$NotificationSchedulesTableFilterComposer,
+      $$NotificationSchedulesTableOrderingComposer,
+      $$NotificationSchedulesTableAnnotationComposer,
+      $$NotificationSchedulesTableCreateCompanionBuilder,
+      $$NotificationSchedulesTableUpdateCompanionBuilder,
+      (
+        NotificationSchedule,
+        BaseReferences<
+          _$AppDatabase,
+          $NotificationSchedulesTable,
+          NotificationSchedule
+        >,
+      ),
+      NotificationSchedule,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4824,4 +5276,6 @@ class $AppDatabaseManager {
       $$HabitDependenciesTableTableManager(_db, _db.habitDependencies);
   $$HabitTagsTableTableManager get habitTags =>
       $$HabitTagsTableTableManager(_db, _db.habitTags);
+  $$NotificationSchedulesTableTableManager get notificationSchedules =>
+      $$NotificationSchedulesTableTableManager(_db, _db.notificationSchedules);
 }

@@ -259,48 +259,62 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 8),
-          
-          // Illustration or Icon badge
-          slide.illustration != null
-              ? _buildSVGIllustration(slide.illustration!, colors)
-              : _buildIconBadge(colors, slide.icon),
-          
-          const SizedBox(height: AppSizes.paddingM),
-          
-          // Title
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.fraunces(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-              height: 1.2,
-              letterSpacing: -0.3,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingM),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight.isFinite
+                    ? constraints.maxHeight - AppSizes.paddingM * 2
+                    : 0,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 8),
+
+                  // Illustration or Icon badge
+                  slide.illustration != null
+                      ? _buildSVGIllustration(slide.illustration!, colors)
+                      : _buildIconBadge(colors, slide.icon),
+
+                  const SizedBox(height: AppSizes.paddingM),
+
+                  // Title
+                  Text(
+                    slide.title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                      height: 1.2,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.paddingS),
+
+                  // Subtitle
+                  Text(
+                    slide.subtitle,
+                    textAlign: TextAlign.center,
+                    style: textStyles.body.copyWith(
+                      color: colors.textSecondary,
+                      height: 1.4,
+                      fontSize: 13,
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSizes.paddingM),
+
+                  // Feature-specific UI preview
+                  _buildFeaturePreview(colors, slide.featureType),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSizes.paddingS),
-          
-          // Subtitle
-          Text(
-            slide.subtitle,
-            textAlign: TextAlign.center,
-            style: textStyles.body.copyWith(
-              color: colors.textSecondary,
-              height: 1.4,
-              fontSize: 13,
-            ),
-          ),
-          
-          const SizedBox(height: AppSizes.paddingM),
-          
-          // Feature-specific UI preview
-          _buildFeaturePreview(colors, slide.featureType),
-        ],
+          );
+        },
       ),
     );
   }

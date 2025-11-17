@@ -19,6 +19,22 @@ void main() {
       expect(updated.getCurrentStreak(referenceDate: now), 1);
     });
 
+    test('toggle completion ignores inactive days', () {
+      final habit = Habit(
+        id: '1',
+        title: 'Weekday Habit',
+        color: Colors.green,
+        icon: Icons.check,
+        activeWeekdays: const [DateTime.monday],
+      );
+
+      final tuesday = DateTime(2024, 1, 2); // Tuesday
+      final updated = habit.toggleCompletion(tuesday);
+
+      expect(identical(updated, habit), true);
+      expect(updated.completedDates, isEmpty);
+    });
+
     test('notes can be upserted and retrieved', () {
       final habit = Habit(
         id: '1',
@@ -120,6 +136,58 @@ void main() {
       for (int i = 1; i <= 7; i++) {
         expect(habit.isActiveOnWeekday(i), true);
       }
+    });
+
+    test('habit marks missed days correctly', () {
+      final created = DateTime(2024, 1, 1);
+      final habit = Habit(
+        id: '1',
+        title: 'Weekday Habit',
+        color: Colors.blue,
+        icon: Icons.check,
+        activeWeekdays: const [DateTime.monday],
+        createdAt: created,
+      );
+
+      final monday = DateTime(2024, 1, 8);
+      final reference = DateTime(2024, 1, 10);
+
+      expect(
+        habit.isMissedOn(monday, referenceDate: reference),
+        true,
+      );
+      // Not active day
+      expect(
+        habit.isMissedOn(
+          DateTime(2024, 1, 9),
+          referenceDate: reference,
+        ),
+        false,
+      );
+      // Completed date
+      final completedHabit = habit.copyWith(
+        completedDates: [monday],
+      );
+      expect(
+        completedHabit.isMissedOn(monday, referenceDate: reference),
+        false,
+      );
+      // Future date
+      expect(
+        habit.isMissedOn(
+          DateTime(2024, 1, 12),
+          referenceDate: reference,
+        ),
+        false,
+      );
+      // Before creation
+      expect(
+        habit.isMissedOn(
+          DateTime(2023, 12, 25),
+          referenceDate: reference,
+        ),
+        false,
+      );
     });
 
     test('habit isActiveOnDate checks weekday correctly', () {

@@ -109,6 +109,17 @@ class HabitTags extends Table {
   Set<Column> get primaryKey => {habitId, tag};
 }
 
+/// Notification schedules - stores scheduled dates for notification IDs
+class NotificationSchedules extends Table {
+  IntColumn get notificationId => integer()();
+  DateTimeColumn get scheduledDate => dateTime()();
+  DateTimeColumn get createdAt =>
+      dateTime().clientDefault(() => DateTime.now())();
+
+  @override
+  Set<Column> get primaryKey => {notificationId};
+}
+
 LazyDatabase _openConnection() {
   return createDatabaseConnection();
 }
@@ -123,6 +134,7 @@ LazyDatabase _openConnection() {
     HabitActiveWeekdays,
     HabitDependencies,
     HabitTags,
+    NotificationSchedules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -130,7 +142,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -158,12 +170,24 @@ class AppDatabase extends _$AppDatabase {
           Index('idx_reminders_habit',
               'CREATE INDEX idx_reminders_habit ON habit_reminders(habit_id)'),
         );
+        await m.createIndex(
+          Index('idx_notification_schedules_id',
+              'CREATE INDEX idx_notification_schedules_id ON notification_schedules(notification_id)'),
+        );
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
           // Migration from version 1 (JSON blob) to version 2 (normalized)
           // This will be handled by migration service
           await m.createAll();
+        }
+        if (from < 3) {
+          // Migration to version 3: Add NotificationSchedules table
+          await m.createTable(notificationSchedules);
+          await m.createIndex(
+            Index('idx_notification_schedules_id',
+                'CREATE INDEX idx_notification_schedules_id ON notification_schedules(notification_id)'),
+          );
         }
       },
     );

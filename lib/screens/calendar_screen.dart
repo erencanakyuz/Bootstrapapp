@@ -120,6 +120,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       HapticFeedback.lightImpact();
     }
 
+    if (!habit.isActiveOnDate(date)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${habit.title} isn\'t scheduled for that day.'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final allowPastDates = settings?.allowPastDatesBeforeCreation ?? false;
     final updatedHabit = habit.toggleCompletion(
       date,

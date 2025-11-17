@@ -123,6 +123,9 @@ Future<void> _runStorageMigrations() async {
       onCleanupLegacy: legacyStorage.clearAllData,
       database: db, // Pass database for old schema migration
     );
+    
+    // Migrate notification schedules from SharedPreferences to Drift
+    await HabitMigrationService.migrateNotificationSchedules(db);
   } finally {
     await db.close();
   }

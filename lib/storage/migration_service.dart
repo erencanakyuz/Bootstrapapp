@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/habit.dart' as models;
+import '../services/notification_schedule_store.dart';
 import '../storage/habit_storage_interface.dart';
 import 'app_database.dart';
 import 'drift_habit_storage.dart';
@@ -156,6 +157,85 @@ class HabitMigrationService {
         'HabitMigrationService: Migration failed with error: $e\n$stackTrace',
       );
       rethrow;
+    }
+  }
+
+  /// Migrates notification schedules from SharedPreferences to Drift database.
+  /// Returns true if migration was needed and completed, false otherwise.
+  static Future<bool> migrateNotificationSchedules(
+    AppDatabase db, {
+    SharedPreferences? preferencesOverride,
+  }) async {
+    try {
+      final prefs =
+          preferencesOverride ?? await SharedPreferences.getInstance();
+      const storageKey = 'notification_schedule_cache';
+
+      // Check if migration already done
+      final migrationKey = 'notification_schedules_migrated_to_drift';
+      final hasMigrated = prefs.getBool(migrationKey) ?? false;
+      if (hasMigrated) {
+        debugPrint(
+          'NotificationScheduleMigration: Already migrated to Drift.',
+        );
+        return false;
+      }
+
+      // Check if data exists in SharedPreferences
+      final jsonString = prefs.getString(storageKey);
+      if (jsonString == null || jsonString.isEmpty) {
+        await prefs.setBool(migrationKey, true);
+        debugPrint(
+          'NotificationScheduleMigration: No data to migrate.',
+        );
+        return false;
+      }
+
+      // Parse JSON data
+      final map = <int, DateTime>{};
+      try {
+        final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
+        decoded.forEach((key, value) {
+          final id = int.tryParse(key);
+          final parsed =
+              value is String ? DateTime.tryParse(value) : null;
+          if (id != null && parsed != null) {
+            map[id] = parsed.toLocal();
+          }
+        });
+      } catch (e) {
+        debugPrint(
+          'NotificationScheduleMigration: Failed to parse JSON: $e',
+        );
+        await prefs.setBool(migrationKey, true);
+        return false;
+      }
+
+      if (map.isEmpty) {
+        await prefs.setBool(migrationKey, true);
+        debugPrint(
+          'NotificationScheduleMigration: No valid schedules to migrate.',
+        );
+        return false;
+      }
+
+      // Migrate to Drift
+      final driftStore = DriftNotificationScheduleStore(db);
+      for (final entry in map.entries) {
+        await driftStore.saveSchedule(entry.key, entry.value);
+      }
+
+      // Mark as migrated
+      await prefs.setBool(migrationKey, true);
+      debugPrint(
+        'NotificationScheduleMigration: Migrated ${map.length} schedules to Drift.',
+      );
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint(
+        'NotificationScheduleMigration: Migration failed: $e\n$stackTrace',
+      );
+      return false;
     }
   }
 }
