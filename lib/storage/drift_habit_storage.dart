@@ -182,153 +182,188 @@ class DriftHabitStorage implements HabitStorageInterface {
       final habits = <models.Habit>[];
 
       for (final habitRow in habitRows) {
+        // Load completions
+        List<DateTime> completedDates = [];
         try {
           // Load completions - normalize dates to remove duplicates
-        final completionRows = await (_db.select(_db.habitCompletions)
-              ..where((c) => c.habitId.equals(habitRow.id)))
-            .get();
-        final completionMap = <String, DateTime>{};
-        for (final row in completionRows) {
-          // Normalize date to remove time component
-          final normalized = DateTime(
-            row.completionDate.year,
-            row.completionDate.month,
-            row.completionDate.day,
-          );
-          final key = '${normalized.year}-${normalized.month}-${normalized.day}';
-          // Keep only one entry per day (handle duplicates)
-          if (!completionMap.containsKey(key)) {
-            completionMap[key] = normalized;
+          final completionRows = await (_db.select(_db.habitCompletions)
+                ..where((c) => c.habitId.equals(habitRow.id)))
+              .get();
+          final completionMap = <String, DateTime>{};
+          for (final row in completionRows) {
+            // Normalize date to remove time component
+            final normalized = DateTime(
+              row.completionDate.year,
+              row.completionDate.month,
+              row.completionDate.day,
+            );
+            final key = '${normalized.year}-${normalized.month}-${normalized.day}';
+            // Keep only one entry per day (handle duplicates)
+            if (!completionMap.containsKey(key)) {
+              completionMap[key] = normalized;
+            }
           }
+          completedDates = completionMap.values.toList()..sort();
+        } catch (e) {
+          debugPrint('Error loading completions for ${habitRow.id}: $e');
+          // Continue with empty completions rather than failing habit
         }
-        final completedDates = completionMap.values.toList()..sort();
 
         // Load notes
-        final noteRows = await (_db.select(_db.habitNotes)
-              ..where((n) => n.habitId.equals(habitRow.id)))
-            .get();
-        final notes = <String, models.HabitNote>{};
-        for (final noteRow in noteRows) {
-          final note = models.HabitNote(
-            id: noteRow.id,
-            date: noteRow.noteDate,
-            text: noteRow.noteText,
-          );
-          notes[note.dayKey] = note;
+        Map<String, models.HabitNote> notes = {};
+        try {
+          final noteRows = await (_db.select(_db.habitNotes)
+                ..where((n) => n.habitId.equals(habitRow.id)))
+              .get();
+          for (final noteRow in noteRows) {
+            final note = models.HabitNote(
+              id: noteRow.id,
+              date: noteRow.noteDate,
+              text: noteRow.noteText,
+            );
+            notes[note.dayKey] = note;
+          }
+        } catch (e) {
+          debugPrint('Error loading notes for ${habitRow.id}: $e');
         }
 
         // Load tasks
-        final taskRows = await (_db.select(_db.habitTasks)
-              ..where((t) => t.habitId.equals(habitRow.id)))
-            .get();
-        final tasks = taskRows.map((taskRow) {
-          return models.HabitTask(
-            id: taskRow.id,
-            title: taskRow.title,
-            completed: taskRow.completed,
-            completedAt: taskRow.completedAt,
-            createdAt: taskRow.createdAt,
-          );
-        }).toList();
+        List<models.HabitTask> tasks = [];
+        try {
+          final taskRows = await (_db.select(_db.habitTasks)
+                ..where((t) => t.habitId.equals(habitRow.id)))
+              .get();
+          tasks = taskRows.map((taskRow) {
+            return models.HabitTask(
+              id: taskRow.id,
+              title: taskRow.title,
+              completed: taskRow.completed,
+              completedAt: taskRow.completedAt,
+              createdAt: taskRow.createdAt,
+            );
+          }).toList();
+        } catch (e) {
+          debugPrint('Error loading tasks for ${habitRow.id}: $e');
+        }
 
         // Load reminders
-        final reminderRows = await (_db.select(_db.habitReminders)
-              ..where((r) => r.habitId.equals(habitRow.id)))
-            .get();
-        final reminders = reminderRows.map((reminderRow) {
-          List<int> weekdays;
-          try {
-            final decoded = jsonDecode(reminderRow.weekdays);
-            if (decoded is List) {
-              weekdays = List<int>.from(decoded);
-              // Validate weekdays are between 1-7
-              weekdays = weekdays.where((d) => d >= 1 && d <= 7).toSet().toList()..sort();
-              if (weekdays.isEmpty) {
+        List<models.HabitReminder> reminders = [];
+        try {
+          final reminderRows = await (_db.select(_db.habitReminders)
+                ..where((r) => r.habitId.equals(habitRow.id)))
+              .get();
+          reminders = reminderRows.map((reminderRow) {
+            List<int> weekdays;
+            try {
+              final decoded = jsonDecode(reminderRow.weekdays);
+              if (decoded is List) {
+                weekdays = List<int>.from(decoded);
+                // Validate weekdays are between 1-7
+                weekdays = weekdays.where((d) => d >= 1 && d <= 7).toSet().toList()..sort();
+                if (weekdays.isEmpty) {
+                  weekdays = const [1, 2, 3, 4, 5, 6, 7];
+                }
+              } else {
                 weekdays = const [1, 2, 3, 4, 5, 6, 7];
               }
-            } else {
+            } catch (_) {
               weekdays = const [1, 2, 3, 4, 5, 6, 7];
             }
-          } catch (_) {
-            weekdays = const [1, 2, 3, 4, 5, 6, 7];
-          }
-          return models.HabitReminder(
-            id: reminderRow.id,
-            hour: reminderRow.hour.clamp(0, 23),
-            minute: reminderRow.minute.clamp(0, 59),
-            weekdays: weekdays,
-            enabled: reminderRow.enabled,
-          );
-        }).toList();
+            return models.HabitReminder(
+              id: reminderRow.id,
+              hour: reminderRow.hour.clamp(0, 23),
+              minute: reminderRow.minute.clamp(0, 59),
+              weekdays: weekdays,
+              enabled: reminderRow.enabled,
+            );
+          }).toList();
+        } catch (e) {
+          debugPrint('Error loading reminders for ${habitRow.id}: $e');
+        }
 
-        // Load active weekdays - validate and deduplicate
-        final weekdayRows = await (_db.select(_db.habitActiveWeekdays)
-              ..where((w) => w.habitId.equals(habitRow.id)))
-            .get();
-        final activeWeekdaysSet = weekdayRows
-            .map((row) => row.weekday)
-            .where((d) => d >= 1 && d <= 7)
-            .toSet();
-        final activeWeekdays = activeWeekdaysSet.toList()..sort();
-        
-        // Ensure at least one weekday if empty (default to all days)
-        final finalActiveWeekdays = activeWeekdays.isEmpty 
-            ? const [1, 2, 3, 4, 5, 6, 7] 
-            : activeWeekdays;
+        // Load active weekdays
+        List<int> activeWeekdays = const [1, 2, 3, 4, 5, 6, 7];
+        try {
+          final weekdayRows = await (_db.select(_db.habitActiveWeekdays)
+                ..where((w) => w.habitId.equals(habitRow.id)))
+              .get();
+          final activeWeekdaysSet = weekdayRows
+              .map((row) => row.weekday)
+              .where((d) => d >= 1 && d <= 7)
+              .toSet();
+          final sorted = activeWeekdaysSet.toList()..sort();
+          if (sorted.isNotEmpty) {
+            activeWeekdays = sorted;
+          }
+        } catch (e) {
+          debugPrint('Error loading active weekdays for ${habitRow.id}: $e');
+        }
 
         // Load dependencies
-        final depRows = await (_db.select(_db.habitDependencies)
-              ..where((d) => d.habitId.equals(habitRow.id)))
-            .get();
-        final dependencyIds = depRows.map((row) => row.dependsOnHabitId).toList();
+        List<String> dependencyIds = [];
+        try {
+          final depRows = await (_db.select(_db.habitDependencies)
+                ..where((d) => d.habitId.equals(habitRow.id)))
+              .get();
+          dependencyIds = depRows.map((row) => row.dependsOnHabitId).toList();
+        } catch (e) {
+          debugPrint('Error loading dependencies for ${habitRow.id}: $e');
+        }
 
         // Load tags
-        final tagRows = await (_db.select(_db.habitTags)
-              ..where((t) => t.habitId.equals(habitRow.id)))
-            .get();
-        final tags = tagRows.map((row) => row.tag).toList();
-
-        // Parse enums
-        final category = models.HabitCategory.values.firstWhere(
-          (c) => c.name == habitRow.category,
-          orElse: () => models.HabitCategory.productivity,
-        );
-        final timeBlock = models.HabitTimeBlock.values.firstWhere(
-          (t) => t.name == habitRow.timeBlock,
-          orElse: () => models.HabitTimeBlock.anytime,
-        );
-        final difficulty = models.HabitDifficulty.values.firstWhere(
-          (d) => d.name == habitRow.difficulty,
-          orElse: () => models.HabitDifficulty.medium,
-        );
-
-        habits.add(models.Habit(
-          id: habitRow.id,
-          title: habitRow.title,
-          description: habitRow.description,
-          color: Color(habitRow.color),
-          icon: HabitIconLibrary.resolve(habitRow.iconCodePoint),
-          completedDates: completedDates,
-          createdAt: habitRow.createdAt,
-          category: category,
-          timeBlock: timeBlock,
-          difficulty: difficulty,
-          reminders: reminders,
-          notes: notes,
-          tasks: tasks,
-          archived: habitRow.archived,
-          archivedAt: habitRow.archivedAt,
-          weeklyTarget: habitRow.weeklyTarget,
-          monthlyTarget: habitRow.monthlyTarget,
-          activeWeekdays: finalActiveWeekdays,
-          dependencyIds: dependencyIds,
-          freezeUsesThisWeek: habitRow.freezeUsesThisWeek,
-          lastFreezeReset: habitRow.lastFreezeReset,
-          tags: tags,
-        ));
+        List<String> tags = [];
+        try {
+          final tagRows = await (_db.select(_db.habitTags)
+                ..where((t) => t.habitId.equals(habitRow.id)))
+              .get();
+          tags = tagRows.map((row) => row.tag).toList();
         } catch (e) {
-          debugPrint('Error loading habit ${habitRow.id}: $e');
-          // Skip corrupted habits instead of failing entire load
+          debugPrint('Error loading tags for ${habitRow.id}: $e');
+        }
+
+        try {
+          // Parse enums
+          final category = models.HabitCategory.values.firstWhere(
+            (c) => c.name == habitRow.category,
+            orElse: () => models.HabitCategory.productivity,
+          );
+          final timeBlock = models.HabitTimeBlock.values.firstWhere(
+            (t) => t.name == habitRow.timeBlock,
+            orElse: () => models.HabitTimeBlock.anytime,
+          );
+          final difficulty = models.HabitDifficulty.values.firstWhere(
+            (d) => d.name == habitRow.difficulty,
+            orElse: () => models.HabitDifficulty.medium,
+          );
+
+          habits.add(models.Habit(
+            id: habitRow.id,
+            title: habitRow.title,
+            description: habitRow.description,
+            color: Color(habitRow.color),
+            icon: HabitIconLibrary.resolve(habitRow.iconCodePoint),
+            completedDates: completedDates,
+            createdAt: habitRow.createdAt,
+            category: category,
+            timeBlock: timeBlock,
+            difficulty: difficulty,
+            reminders: reminders,
+            notes: notes,
+            tasks: tasks,
+            archived: habitRow.archived,
+            archivedAt: habitRow.archivedAt,
+            weeklyTarget: habitRow.weeklyTarget,
+            monthlyTarget: habitRow.monthlyTarget,
+            activeWeekdays: activeWeekdays,
+            dependencyIds: dependencyIds,
+            freezeUsesThisWeek: habitRow.freezeUsesThisWeek,
+            lastFreezeReset: habitRow.lastFreezeReset,
+            tags: tags,
+          ));
+        } catch (e) {
+          debugPrint('Error creating habit object for ${habitRow.id}: $e');
+          // Only skip if we absolutely cannot create the habit object (e.g. Color fail)
+          // But we should try to recover even then
           continue;
         }
       }

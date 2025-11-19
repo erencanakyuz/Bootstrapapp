@@ -59,6 +59,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.gradientBlueAudioStart,
     required this.gradientBlueAudioEnd,
     required this.chipOutline,
+    required this.success,
   });
 
   final Color primary;
@@ -92,6 +93,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color gradientBlueAudioStart;
   final Color gradientBlueAudioEnd;
   final Color chipOutline;
+  final Color success;
 
   @override
   AppColors copyWith({
@@ -125,6 +127,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? gradientBlueAudioStart,
     Color? gradientBlueAudioEnd,
     Color? chipOutline,
+    Color? success,
   }) {
     return AppColors(
       primary: primary ?? this.primary,
@@ -161,6 +164,7 @@ class AppColors extends ThemeExtension<AppColors> {
           gradientBlueAudioStart ?? this.gradientBlueAudioStart,
       gradientBlueAudioEnd: gradientBlueAudioEnd ?? this.gradientBlueAudioEnd,
       chipOutline: chipOutline ?? this.chipOutline,
+      success: success ?? this.success,
     );
   }
 
@@ -230,6 +234,7 @@ class AppColors extends ThemeExtension<AppColors> {
         other.gradientBlueAudioEnd,
       ),
       chipOutline: lerpColor(chipOutline, other.chipOutline),
+      success: lerpColor(success, other.success),
     );
   }
 }
@@ -271,6 +276,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     gradientBlueAudioStart: Color(0xFFD4D9E0), // Muted blue-gray
     gradientBlueAudioEnd: Color(0xFFE8EBF0), // Muted pale blue-gray
     chipOutline: Color(0xFFD7C9BA), // chipOutline - RefactorUi.md
+    success: Color(0xFF27AE60), // Modern yeşil - tasarruf teması
   ),
   AppPalette.dark: AppColors(
     // Airbnb-style dark mode: Deep black with subtle elevations
@@ -306,6 +312,7 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     gradientBlueAudioStart: Color(0xFF2A2A2A), // Dark blue audio start
     gradientBlueAudioEnd: Color(0xFF1A1A1A), // Dark blue audio end
     chipOutline: Color(0xFF2A2A2A), // Dark theme chip outline
+    success: Color(0xFF27AE60), // Modern yeşil (dark mode'da da tutarlı)
   ),
 };
 

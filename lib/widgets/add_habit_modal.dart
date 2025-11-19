@@ -733,7 +733,6 @@ Widget build(BuildContext context) {
                   children: HabitIconLibrary.icons.map((icon) {
                     final isSelected = icon == _selectedIcon;
                     return RepaintBoundary(
-                      key: ValueKey('icon_$icon'),
                       child: GestureDetector(
                         onTap: () => setState(() => _selectedIcon = icon),
                         child: Container(

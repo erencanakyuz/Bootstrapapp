@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/habit.dart';
 import '../models/habit_template.dart' as templates;
+import '../screens/savings_analysis_screen.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
@@ -85,6 +86,14 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
     Navigator.of(context).pop();
   }
 
+  void _openSavingsAnalysis() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SavingsAnalysisScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -139,6 +148,16 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.paddingL,
+            ),
+            child: _SavingsTemplateCard(
+              colors: colors,
+              onTap: _openSavingsAnalysis,
+            ),
+          ),
+          const SizedBox(height: AppSizes.paddingM),
           // Templates list
           Expanded(
             child: _filteredTemplates.isEmpty
@@ -274,6 +293,94 @@ class _TemplateCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SavingsTemplateCard extends StatelessWidget {
+  const _SavingsTemplateCard({
+    required this.colors,
+    required this.onTap,
+  });
+
+  final AppColors colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.paddingL),
+      decoration: BoxDecoration(
+        color: colors.success.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        border: Border.all(
+          color: colors.success.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colors.success.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                ),
+                child: Icon(
+                  Icons.savings,
+                  color: colors.success,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppSizes.paddingL),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tasarruf Et',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sigara, dışarıdan yemek vb. harcamaları azalt ve mini uygulamada birikimini izle.',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.paddingM),
+          OutlinedButton.icon(
+            onPressed: onTap,
+            icon: Icon(Icons.arrow_forward, color: colors.success),
+            label: Text(
+              'Tasarruf mini uygulamasını aç',
+              style: TextStyle(color: colors.success),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: colors.success),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.paddingL,
+                vertical: AppSizes.paddingS,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusL),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

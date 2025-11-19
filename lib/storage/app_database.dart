@@ -149,38 +149,18 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
-        // Create indexes for performance
-        await m.createIndex(
-          Index('idx_completions_habit_date',
-              'CREATE INDEX idx_completions_habit_date ON habit_completions(habit_id, completion_date)'),
-        );
-        await m.createIndex(
-          Index('idx_completions_date',
-              'CREATE INDEX idx_completions_date ON habit_completions(completion_date)'),
-        );
-        await m.createIndex(
-          Index('idx_notes_habit_date',
-              'CREATE INDEX idx_notes_habit_date ON habit_notes(habit_id, note_date)'),
-        );
-        await m.createIndex(
-          Index('idx_tasks_habit',
-              'CREATE INDEX idx_tasks_habit ON habit_tasks(habit_id)'),
-        );
-        await m.createIndex(
-          Index('idx_reminders_habit',
-              'CREATE INDEX idx_reminders_habit ON habit_reminders(habit_id)'),
-        );
-        await m.createIndex(
-          Index('idx_notification_schedules_id',
-              'CREATE INDEX idx_notification_schedules_id ON notification_schedules(notification_id)'),
-        );
+        await _createIndexes(m);
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
           // Migration from version 1 (JSON blob) to version 2 (normalized)
-          // This will be handled by migration service
+          // createAll creates the latest schema (v3 tables), so we don't need 
+          // to run specific v3 migration steps below
           await m.createAll();
+          await _createIndexes(m);
+          return; // Stop here as we are now at latest schema
         }
+        
         if (from < 3) {
           // Migration to version 3: Add NotificationSchedules table
           await m.createTable(notificationSchedules);
@@ -190,6 +170,34 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       },
+    );
+  }
+
+  Future<void> _createIndexes(Migrator m) async {
+    // Create indexes for performance
+    await m.createIndex(
+      Index('idx_completions_habit_date',
+          'CREATE INDEX idx_completions_habit_date ON habit_completions(habit_id, completion_date)'),
+    );
+    await m.createIndex(
+      Index('idx_completions_date',
+          'CREATE INDEX idx_completions_date ON habit_completions(completion_date)'),
+    );
+    await m.createIndex(
+      Index('idx_notes_habit_date',
+          'CREATE INDEX idx_notes_habit_date ON habit_notes(habit_id, note_date)'),
+    );
+    await m.createIndex(
+      Index('idx_tasks_habit',
+          'CREATE INDEX idx_tasks_habit ON habit_tasks(habit_id)'),
+    );
+    await m.createIndex(
+      Index('idx_reminders_habit',
+          'CREATE INDEX idx_reminders_habit ON habit_reminders(habit_id)'),
+    );
+    await m.createIndex(
+      Index('idx_notification_schedules_id',
+          'CREATE INDEX idx_notification_schedules_id ON notification_schedules(notification_id)'),
     );
   }
 }

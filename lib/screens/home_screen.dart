@@ -20,10 +20,12 @@ import '../widgets/daily_motivation_widget.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/habit_suggestions_widget.dart';
 import '../widgets/empty_states.dart';
+import '../widgets/savings_card.dart';
 import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
 import 'habit_templates_screen.dart';
 import 'onboarding_screen.dart';
+import 'savings_analysis_screen.dart';
 
 /// Home experience rebuilt to follow RefactorUi.md FutureStyleUI specs
 class HomeScreen extends ConsumerStatefulWidget {
@@ -183,6 +185,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await Navigator.of(context).push(
       PageTransitions.slideFromRight(
         HabitDetailScreen(habitId: habit.id),
+      ),
+    );
+  }
+
+  Future<void> _openSavingsAnalysis() async {
+    HapticFeedback.lightImpact();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      PageTransitions.slideFromRight(
+        const SavingsAnalysisScreen(),
       ),
     );
   }
@@ -898,6 +910,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           sliver: SliverToBoxAdapter(
             child: RepaintBoundary(
               child: _buildGuidedCTA(colors, textStyles),
+            ),
+          ),
+        ),
+        // Savings Card - En üstte
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            20,
+            horizontalPadding,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: SavingsCard(
+              onTapDetails: () => _openSavingsAnalysis(),
             ),
           ),
         ),

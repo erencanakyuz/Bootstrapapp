@@ -80,10 +80,17 @@ class HabitMigrationService {
       final driftStorage = DriftHabitStorage(db);
       await driftStorage.saveHabits(habits);
 
-      // Drop old table
-      await db.customStatement('DROP TABLE IF EXISTS habit_entries');
+      // Drop old table only if all habits were migrated successfully
+      // Otherwise rename it to keep a backup
+      if (habits.length == oldEntries.length) {
+        await db.customStatement('DROP TABLE IF EXISTS habit_entries');
+        debugPrint('HabitMigrationService: Migrated ${habits.length} habits from old Drift schema.');
+      } else {
+        // Partial migration - keep backup
+        await db.customStatement('ALTER TABLE habit_entries RENAME TO habit_entries_backup_v2');
+        debugPrint('HabitMigrationService: Partial migration (${habits.length}/${oldEntries.length}). Old data backed up to habit_entries_backup_v2.');
+      }
 
-      debugPrint('HabitMigrationService: Migrated ${habits.length} habits from old Drift schema.');
       return true;
     } catch (e, stackTrace) {
       debugPrint('HabitMigrationService: Migration from old Drift schema failed: $e\n$stackTrace');
