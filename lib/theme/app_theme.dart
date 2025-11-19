@@ -279,40 +279,37 @@ const Map<AppPalette, AppColors> _paletteRegistry = {
     success: Color(0xFF27AE60), // Modern yeşil - tasarruf teması
   ),
   AppPalette.dark: AppColors(
-    // Airbnb-style dark mode: Deep black with subtle elevations
-    // Professional, elegant, and easy on the eyes
-    primary: Color(0xFFC9A882), // Warm beige-orange accent (keeps brand identity)
-    primaryDark: Color(0xFFB8966A), // Darker warm beige
-    primarySoft: Color(0xFF1A1A1A), // Soft dark for subtle elements
-    accentGreen: Color(0xFFC9A882), // Warm beige-orange
-    accentBlue: Color(0xFF6B8FA3), // Muted blue-gray (softer for dark mode)
-    accentAmber: Color(0xFFC9A882), // Warm beige-orange
-    background: Color(0xFF000000), // Pure black background (Airbnb style)
-    surface: Color(0xFF0A0A0A), // Almost black surface (slight elevation)
-    elevatedSurface: Color(0xFF1A1A1A), // Card background (subtle elevation)
-    outline: Color(0xFF2A2A2A), // Very subtle outline/border
-    textPrimary: Color(0xFFF5F5F5), // High contrast white (Airbnb style)
-    textSecondary: Color(0xFFB3B3B3), // Medium contrast gray
-    textTertiary: Color(0xFF808080), // Low contrast gray
-    statusComplete: Color(0xFFC9A882), // Warm beige-orange
-    statusProgress: Color(0xFFC9A882), // Warm beige-orange
-    statusIncomplete: Color(0xFFB87D7D), // Muted dusty rose (softer for dark)
-    // Dark theme gradients - minimal and elegant
-    brandAccentPurple: Color(0xFF8B7FA0), // Softer muted lavender
-    brandAccentPurpleSoft: Color(0xFF6A5F7A), // Darker muted lavender
-    brandAccentPeach: Color(0xFFC4A082), // Softer muted peach
-    brandAccentPeachSoft: Color(0xFFA6896A), // Darker soft peach
-    brandMutedIcon: Color(0xFF666666), // Muted icon color
-    gradientPeachStart: Color(0xFF1A1A1A), // Subtle dark gradient start
-    gradientPeachEnd: Color(0xFF0A0A0A), // Subtle dark gradient end
-    gradientPurpleStart: Color(0xFF1A1A1A), // Subtle dark purple start
-    gradientPurpleEnd: Color(0xFF0A0A0A), // Subtle dark purple end
-    gradientPurpleLighterStart: Color(0xFF2A2A2A), // Lighter dark purple start
-    gradientPurpleLighterEnd: Color(0xFF1A1A1A), // Lighter dark purple end
-    gradientBlueAudioStart: Color(0xFF2A2A2A), // Dark blue audio start
-    gradientBlueAudioEnd: Color(0xFF1A1A1A), // Dark blue audio end
-    chipOutline: Color(0xFF2A2A2A), // Dark theme chip outline
-    success: Color(0xFF27AE60), // Modern yeşil (dark mode'da da tutarlı)
+    primary: Color(0xFFC9A882),
+    primaryDark: Color(0xFFB8966A),
+    primarySoft: Color(0xFF22222A),
+    accentGreen: Color(0xFFC9A882),
+    accentBlue: Color(0xFF7AA6C1),
+    accentAmber: Color(0xFFE3B86A),
+    background: Color(0xFF0E0E13),
+    surface: Color(0xFF18181F),
+    elevatedSurface: Color(0xFF22222A),
+    outline: Color(0xFF2F2F38),
+    textPrimary: Color(0xFFF3F3F4),
+    textSecondary: Color(0xFFBCBCC6),
+    textTertiary: Color(0xFF7C7C87),
+    statusComplete: Color(0xFFC9A882),
+    statusProgress: Color(0xFFC9A882),
+    statusIncomplete: Color(0xFFC97F7F),
+    brandAccentPurple: Color(0xFFB7A7D8),
+    brandAccentPurpleSoft: Color(0xFF7E6A9F),
+    brandAccentPeach: Color(0xFFE8B999),
+    brandAccentPeachSoft: Color(0xFFB78968),
+    brandMutedIcon: Color(0xFF777782),
+    gradientPeachStart: Color(0xFF2B1F1C),
+    gradientPeachEnd: Color(0xFF191315),
+    gradientPurpleStart: Color(0xFF32243F),
+    gradientPurpleEnd: Color(0xFF1D1B2E),
+    gradientPurpleLighterStart: Color(0xFF3A2F4D),
+    gradientPurpleLighterEnd: Color(0xFF262233),
+    gradientBlueAudioStart: Color(0xFF253245),
+    gradientBlueAudioEnd: Color(0xFF18222F),
+    chipOutline: Color(0xFF34343E),
+    success: Color(0xFF40DF98),
   ),
 };
 
@@ -594,3 +591,8 @@ ThemeData buildAppTheme(AppPalette palette) {
     dividerColor: colors.outline,
   );
 }
+
+
+
+
+

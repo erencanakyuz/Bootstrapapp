@@ -185,15 +185,9 @@ class ProfileScreen extends ConsumerWidget {
                 SwitchListTile(
                   value: settings.darkModeEnabled,
                   onChanged: (value) {
-                    ref.read(profileSettingsProvider.notifier).toggleDarkMode(value);
-                    // Force rebuild to apply theme change
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      if (context.mounted) {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                        );
-                      }
-                    });
+                    ref
+                        .read(profileSettingsProvider.notifier)
+                        .toggleDarkMode(value);
                   },
                   title: const Text('Dark Mode'),
                   subtitle: const Text(

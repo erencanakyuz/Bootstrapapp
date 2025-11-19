@@ -10,6 +10,7 @@ import '../utils/responsive.dart';
 import '../utils/page_transitions.dart';
 import '../widgets/week_calendar_strip.dart';
 import 'habit_detail_screen.dart';
+import 'full_calendar_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
@@ -153,16 +154,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     
     final weekLabel = '${DateFormat('MMM d').format(weekStart)} - ${DateFormat('MMM d').format(weekDays.last)}';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradientColors = isDark
+        ? [
+            colors.primary.withValues(alpha: 0.25),
+            colors.primary.withValues(alpha: 0.12),
+          ]
+        : [
+            colors.gradientPurpleStart,
+            colors.gradientPurpleEnd,
+          ];
+
+    final textColor = isDark ? Colors.white : colors.surface;
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colors.gradientPurpleStart,
-            colors.gradientPurpleEnd,
-          ],
+          colors: gradientColors,
         ),
         borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
         boxShadow: AppShadows.cardSoft(colors.background),
@@ -176,13 +187,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               Text(
                 'Weekly Overview',
                 style: textStyles.captionUppercase.copyWith(
-                  color: colors.surface.withValues(alpha: 0.9),
+                  color: textColor.withValues(alpha: 0.9),
                 ),
               ),
               Text(
                 weekLabel,
                 style: textStyles.caption.copyWith(
-                  color: colors.surface.withValues(alpha: 0.8),
+                  color: textColor.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -197,7 +208,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 style: textStyles.displayLarge.copyWith(
                   fontSize: 44,
                   letterSpacing: -1.5,
-                  color: colors.surface,
+                  color: textColor,
                 ),
               ),
               Padding(
@@ -205,7 +216,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: Text(
                   'completion rate',
                   style: textStyles.body.copyWith(
-                    color: colors.surface.withValues(alpha: 0.8),
+                    color: textColor.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -217,19 +228,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: colors.surface.withValues(alpha: 0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(colors.surface),
+              backgroundColor: textColor.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(textColor),
             ),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.check_circle_outline_rounded, size: 16, color: colors.surface),
+              Icon(Icons.check_circle_outline_rounded, size: 16, color: textColor),
               const SizedBox(width: 6),
               Text(
                 '$totalCompletions completed habits',
                 style: textStyles.caption.copyWith(
-                  color: colors.surface.withValues(alpha: 0.9),
+                  color: textColor.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -268,7 +279,58 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     selectedDate: _selectedDate,
                     onDateSelected: _onDateSelected,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      0,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final hapticsEnabled =
+                              _profileSettings?.hapticsEnabled ?? true;
+                          if (hapticsEnabled) {
+                            HapticFeedback.lightImpact();
+                          }
+                          Navigator.of(context).push(
+                            PageTransitions.fadeAndSlide(
+                              FullCalendarScreen(habits: widget.habits),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.calendar_view_month,
+                          size: 18,
+                          color: colors.surface,
+                        ),
+                        label: Text(
+                          'Table View',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.surface,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.textPrimary,
+                          foregroundColor: colors.surface,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -360,10 +422,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           color: colors.elevatedSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colors.outline.withValues(alpha: 0.3),
-            width: 1,
+            color: colors.outline.withValues(alpha: 0.5), // Increased opacity for solid feel
+            width: 1.5, // Thicker border
           ),
-          boxShadow: AppShadows.cardSoft(colors.background),
+          boxShadow: [
+            BoxShadow(
+              color: colors.textPrimary.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

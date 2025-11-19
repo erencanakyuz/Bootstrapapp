@@ -59,10 +59,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final colors = Theme.of(context).extension<AppColors>()!;
     final habitsAsync = ref.watch(habitsProvider);
 
-    return habitsAsync.when(
-      loading: () => _buildLoadingState(colors),
-      error: (error, stack) => _buildErrorState(colors, error),
-      data: (habits) => _buildContent(colors, habits, ref),
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: colors.background,
+      body: habitsAsync.when(
+        loading: () => _buildLoadingState(colors),
+        error: (error, stack) => _buildErrorState(colors, error, ref), 
+        data: (habits) => _buildContent(colors, habits, ref),
+      ),
+      bottomNavigationBar: _buildBottomNavigation(colors, ref),
     );
   }
 
@@ -107,45 +112,40 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         activeScreen = const SizedBox.shrink();
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false, // Klavye açıldığında arka planı yeniden render etme
-      body: activeScreen,
-      bottomNavigationBar: _buildBottomNavigation(colors),
-    );
+    return activeScreen;
   }
 
   /// Bottom Navigation - Reference image style: white bar with rounded top corners
-  Widget _buildBottomNavigation(AppColors colors) {
+  Widget _buildBottomNavigation(AppColors colors, WidgetRef ref) {
     final textStyles = AppTextStyles(colors);
     final isDarkMode = colors.background.computeLuminance() < 0.5;
 
+    final navColor = isDarkMode
+        ? Color.alphaBlend(
+            Colors.white.withOpacity(0.08),
+            colors.elevatedSurface,
+          )
+        : colors.surface;
+
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface, // Use theme surface color
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20), // Rounded top corners
+        color: navColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.textPrimary.withValues(
+              alpha: isDarkMode ? 0.25 : 0.05,
+            ),
+            blurRadius: isDarkMode ? 18 : 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+        border: Border(
+          top: BorderSide(
+            color: colors.outline.withValues(alpha: isDarkMode ? 0.5 : 0.15),
+            width: 1,
+          ),
         ),
-        // No shadows in dark mode
-        boxShadow: isDarkMode
-            ? []
-            : [
-                BoxShadow(
-                  color: colors.textPrimary.withValues(
-                    alpha: 0.05,
-                  ), // Use theme textPrimary
-                  blurRadius: 10,
-                  offset: const Offset(0, -2), // Shadow on top edge
-                ),
-              ],
-        // Add border in dark mode for better visibility
-        border: isDarkMode
-            ? Border(
-                top: BorderSide(
-                  color: colors.outline.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              )
-            : null,
       ),
       child: SafeArea(
         top: false,
@@ -238,14 +238,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildLoadingState(AppColors colors) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: colors.background,
-      body: const SafeArea(child: HabitListSkeleton()),
-    );
+    return const SafeArea(child: HabitListSkeleton());
   }
 
-  Widget _buildErrorState(AppColors colors, Object error) {
+  Widget _buildErrorState(
+    AppColors colors,
+    Object error,
+    WidgetRef ref,
+  ) {
     String errorMessage = 'Something went wrong';
     if (error is HabitValidationException || error is StorageException) {
       errorMessage = error.toString();
@@ -253,39 +253,35 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       errorMessage = 'An unexpected error occurred. Please try again.';
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: colors.background,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, color: colors.statusIncomplete, size: 48),
-            const SizedBox(height: AppSizes.paddingL),
-            Text(
-              'Something went off track',
-              style: TextStyle(
-                fontSize: 18,
-                color: colors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, color: colors.statusIncomplete, size: 48),
+          const SizedBox(height: AppSizes.paddingL),
+          Text(
+            'Something went off track',
+            style: TextStyle(
+              fontSize: 18,
+              color: colors.textPrimary,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: AppSizes.paddingS),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                errorMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colors.textSecondary),
-              ),
+          ),
+          const SizedBox(height: AppSizes.paddingS),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.textSecondary),
             ),
-            const SizedBox(height: AppSizes.paddingL),
-            ElevatedButton(
-              onPressed: () => ref.read(habitsProvider.notifier).refresh(),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSizes.paddingL),
+          ElevatedButton(
+            onPressed: () => ref.read(habitsProvider.notifier).refresh(),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
@@ -303,7 +299,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 }
 
-// KeepAlive wrapper to preserve state when switching tabs
+// KeepAlive wrapper to preserve tab state between switches
 class _KeepAliveWrapper extends StatefulWidget {
   final Widget child;
 
