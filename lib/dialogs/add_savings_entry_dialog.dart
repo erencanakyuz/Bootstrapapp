@@ -355,7 +355,7 @@ class _AddSavingsEntryDialogState
                 Text('Konum (Opsiyonel)', style: textStyles.bodyBold),
                 const SizedBox(height: AppSizes.paddingS),
                 DropdownButtonFormField<String>(
-                  value: _locationController.text.isEmpty ? null : _locationController.text,
+                  initialValue: _locationController.text.isEmpty ? null : _locationController.text,
                   decoration: InputDecoration(
                     hintText: 'Konum seçin',
                     border: OutlineInputBorder(
