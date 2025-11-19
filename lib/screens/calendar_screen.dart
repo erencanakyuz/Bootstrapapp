@@ -7,10 +7,9 @@ import '../providers/app_settings_providers.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../utils/responsive.dart';
-import '../widgets/modern_button.dart';
 import '../utils/page_transitions.dart';
+import '../widgets/week_calendar_strip.dart';
 import 'habit_detail_screen.dart';
-import 'full_calendar_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   final List<Habit> habits;
@@ -27,12 +26,52 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  DateTime _selectedWeekStart = _getWeekStart(DateTime.now());
-  List<DateTime>? _cachedWeekDays;
+  late DateTime _selectedDate;
+  
+  // Cache variables
   DateTime? _cachedWeekStart;
+  List<DateTime>? _cachedWeekDays;
   AppColors? _cachedColors;
   AppTextStyles? _cachedTextStyles;
   ProfileSettings? _profileSettingsSnapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now();
+    // Full screen mode for better calendar experience
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+      overlays: [SystemUiOverlay.top],
+    );
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    final weekday = date.weekday;
+    return date.subtract(Duration(days: weekday - 1));
+  }
+
+  List<DateTime> _getWeekDays(DateTime weekStart) {
+    if (_cachedWeekDays != null && _cachedWeekStart == weekStart) {
+      return _cachedWeekDays!;
+    }
+    _cachedWeekStart = weekStart;
+    _cachedWeekDays = List.generate(
+      7,
+      (index) => weekStart.add(Duration(days: index)),
+    );
+    return _cachedWeekDays!;
+  }
+
+  void _onDateSelected(DateTime date) {
+    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
+    if (hapticsEnabled) {
+      HapticFeedback.selectionClick();
+    }
+    setState(() {
+      _selectedDate = date;
+    });
+  }
 
   void _refreshProfileSettingsSnapshot() {
     final settingsAsync = ref.read(profileSettingsProvider);
@@ -56,66 +95,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    // Set to current week start
-    _selectedWeekStart = _getWeekStart(DateTime.now());
-    // Full screen mode for better calendar experience
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-      overlays: [SystemUiOverlay.top],
-    );
-  }
-
-  static DateTime _getWeekStart(DateTime date) {
-    final weekday = date.weekday;
-    return date.subtract(Duration(days: weekday - 1));
-  }
-
-  @override
   void dispose() {
-    // Reset system UI mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _previousWeek() {
-    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
-    if (hapticsEnabled) {
-      HapticFeedback.selectionClick();
-    }
-    setState(() {
-      _selectedWeekStart = _selectedWeekStart.subtract(const Duration(days: 7));
-      _cachedWeekDays = null; // Clear cache
-    });
-  }
-
-  void _nextWeek() {
-    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
-    if (hapticsEnabled) {
-      HapticFeedback.selectionClick();
-    }
-    setState(() {
-      _selectedWeekStart = _selectedWeekStart.add(const Duration(days: 7));
-      _cachedWeekDays = null; // Clear cache
-    });
-  }
-
-  void _goToCurrentWeek() {
-    final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
-    if (hapticsEnabled) {
-      HapticFeedback.mediumImpact();
-    }
-    setState(() {
-      _selectedWeekStart = _getWeekStart(DateTime.now());
-      _cachedWeekDays = null; // Clear cache
-    });
-  }
-
   Future<void> _toggleHabitCompletion(Habit habit, DateTime date) async {
-    // Haptic feedback
     final settings = _profileSettings;
-
     if (settings?.hapticsEnabled ?? true) {
       HapticFeedback.lightImpact();
     }
@@ -140,28 +126,131 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     await widget.onUpdateHabit(updatedHabit);
   }
 
-  List<DateTime> _getWeekDays() {
-    // Cache week days to avoid recalculating on every build
-    if (_cachedWeekDays != null && _cachedWeekStart == _selectedWeekStart) {
-      return _cachedWeekDays!;
+  Widget _buildWeeklySummaryCard(
+    AppColors colors, 
+    AppTextStyles textStyles, 
+    List<Habit> habits,
+    DateTime weekStart,
+  ) {
+    final weekDays = _getWeekDays(weekStart);
+    var totalCompletions = 0;
+    var possibleCompletions = 0;
+
+    for (final habit in habits) {
+      for (final date in weekDays) {
+        if (habit.isActiveOnDate(date)) {
+          possibleCompletions++;
+          if (habit.isCompletedOn(date)) {
+            totalCompletions++;
+          }
+        }
+      }
     }
-    _cachedWeekStart = _selectedWeekStart;
-    _cachedWeekDays = List.generate(
-      7,
-      (index) => _selectedWeekStart.add(Duration(days: index)),
+
+    final progress = possibleCompletions > 0 
+        ? totalCompletions / possibleCompletions 
+        : 0.0;
+    
+    final weekLabel = '${DateFormat('MMM d').format(weekStart)} - ${DateFormat('MMM d').format(weekDays.last)}';
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.gradientPurpleStart,
+            colors.gradientPurpleEnd,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        boxShadow: AppShadows.cardSoft(colors.background),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Weekly Overview',
+                style: textStyles.captionUppercase.copyWith(
+                  color: colors.surface.withValues(alpha: 0.9),
+                ),
+              ),
+              Text(
+                weekLabel,
+                style: textStyles.caption.copyWith(
+                  color: colors.surface.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: textStyles.displayLarge.copyWith(
+                  fontSize: 44,
+                  letterSpacing: -1.5,
+                  color: colors.surface,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 8),
+                child: Text(
+                  'completion rate',
+                  style: textStyles.body.copyWith(
+                    color: colors.surface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSizes.radiusS),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: colors.surface.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(colors.surface),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.check_circle_outline_rounded, size: 16, color: colors.surface),
+              const SizedBox(width: 6),
+              Text(
+                '$totalCompletions completed habits',
+                style: textStyles.caption.copyWith(
+                  color: colors.surface.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
-    return _cachedWeekDays!;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Cache colors and text styles to prevent unnecessary rebuilds
     _cachedColors ??= Theme.of(context).extension<AppColors>()!;
     _cachedTextStyles ??= AppTextStyles(_cachedColors!);
     final colors = _cachedColors!;
     final textStyles = _cachedTextStyles!;
     _refreshProfileSettingsSnapshot();
     final horizontalPadding = context.horizontalGutter;
+    
+    final weekStart = _getWeekStart(_selectedDate);
+    final weekDays = _getWeekDays(weekStart);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -174,58 +263,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               padding: const EdgeInsets.only(top: 12),
               child: Column(
                 children: [
-                  _buildWeekSelector(colors, textStyles, horizontalPadding),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      0,
-                      horizontalPadding,
-                      0,
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          final hapticsEnabled =
-                              _profileSettings?.hapticsEnabled ?? true;
-                          if (hapticsEnabled) {
-                            HapticFeedback.lightImpact();
-                          }
-                          Navigator.of(context).push(
-                            PageTransitions.fadeAndSlide(
-                              FullCalendarScreen(habits: widget.habits),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.calendar_view_month,
-                          size: 18,
-                          color: colors.surface,
-                        ),
-                        label: Text(
-                          'Table View',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: colors.surface,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.textPrimary,
-                          foregroundColor: colors.surface,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusM),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
+                  // Date Strip with current selection
+                  WeekCalendarStrip(
+                    selectedDate: _selectedDate,
+                    onDateSelected: _onDateSelected,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -239,16 +282,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 padding: EdgeInsets.only(
                   left: horizontalPadding,
                   right: horizontalPadding,
-                  top: 12,
+                  top: 4,
                   bottom: 12 + MediaQuery.of(context).padding.bottom,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Weekly Summary Hero Card
+                    if (widget.habits.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: _buildWeeklySummaryCard(
+                          colors, 
+                          textStyles, 
+                          widget.habits,
+                          weekStart,
+                        ),
+                      ),
+                    
                     if (widget.habits.isEmpty)
-                      _buildEmptyState(colors, horizontalPadding)
+                      _buildEmptyState(colors)
                     else
-                      ..._buildFilteredHabits(colors),
+                      ..._buildFilteredHabits(colors, weekDays),
                   ],
                 ),
               ),
@@ -259,116 +314,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildWeekSelector(
-    AppColors colors,
-    AppTextStyles textStyles,
-    double horizontalPadding,
-  ) {
-    final weekDays = _getWeekDays();
-    final weekEnd = weekDays.last;
-    final now = DateTime.now();
-    final isCurrentWeek =
-        _selectedWeekStart.year == now.year &&
-        _selectedWeekStart.month == now.month &&
-        _selectedWeekStart.day == _getWeekStart(now).day;
-
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null) {
-          if (details.primaryVelocity! > 0) {
-            // Swipe right - previous week
-            _previousWeek();
-          } else if (details.primaryVelocity! < 0) {
-            // Swipe left - next week
-            _nextWeek();
-          }
-        }
-      },
-      child: Container(
-        margin: EdgeInsets.fromLTRB(
-          horizontalPadding,
-          0,
-          horizontalPadding,
-          12,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: colors.elevatedSurface, // Use theme elevatedSurface
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: colors.outline.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: AppShadows.cardSoft(null),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            ModernIconButton(
-              icon: Icons.chevron_left,
-              onPressed: _previousWeek,
-              backgroundColor:
-                  colors.elevatedSurface, // Use theme elevatedSurface
-              iconColor: colors.textPrimary,
-              size: 44,
-            ),
-            Expanded(
-              child: GestureDetector(
-                onTap: _goToCurrentWeek,
-                child: Column(
-                  children: [
-                    Text(
-                      '${DateFormat('MMM d').format(weekDays.first)} - ${DateFormat('MMM d, yyyy').format(weekEnd)}',
-                      style: textStyles.headline3.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (isCurrentWeek)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.outline.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'This Week',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: colors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            ModernIconButton(
-              icon: Icons.chevron_right,
-              onPressed: _nextWeek,
-              backgroundColor:
-                  colors.elevatedSurface, // Use theme elevatedSurface
-              iconColor: colors.textPrimary,
-              size: 44,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildFilteredHabits(AppColors colors) {
-    final weekDays = _getWeekDays();
-    // Cache filtered habits to avoid recalculation on every build
+  List<Widget> _buildFilteredHabits(AppColors colors, List<DateTime> weekDays) {
+    // Filter habits: only show if active on at least one day in the selected week
     final filteredHabits = widget.habits.where((habit) {
-      // Filter habits: only show if active on at least one day in the selected week
       return weekDays.any((date) => habit.isActiveOnDate(date));
     }).toList();
     
@@ -376,32 +324,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: RepaintBoundary(
-          key: ValueKey('habit_${habit.id}_${_selectedWeekStart.millisecondsSinceEpoch}'),
-          child: _buildHabitCard(colors, habit),
+          key: ValueKey('habit_cal_${habit.id}_${weekDays.first.millisecondsSinceEpoch}'),
+          child: _buildHabitCard(colors, habit, weekDays),
         ),
       );
     }).toList();
   }
 
-  Widget _buildHabitCard(AppColors colors, Habit habit) {
-    final weekDays = _getWeekDays();
+  Widget _buildHabitCard(AppColors colors, Habit habit, List<DateTime> weekDays) {
     final now = DateTime.now();
-    
-    // Count completions only on active days
-    final completedThisWeek = weekDays
-        .where((date) => 
-            habit.isActiveOnDate(date) && habit.isCompletedOn(date))
-        .length;
     
     // Count active days in this week
     final activeDaysThisWeek = weekDays
         .where((date) => habit.isActiveOnDate(date))
         .length;
     
-    final weekProgress = activeDaysThisWeek > 0 
-        ? completedThisWeek / activeDaysThisWeek 
-        : 0.0;
-
+    final completedThisWeek = weekDays
+        .where((date) => 
+            habit.isActiveOnDate(date) && habit.isCompletedOn(date))
+        .length;
+    
     return GestureDetector(
       onLongPress: () {
         final hapticsEnabled = _profileSettings?.hapticsEnabled ?? true;
@@ -415,112 +357,82 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: colors.elevatedSurface, // Use theme elevatedSurface
+          color: colors.elevatedSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colors.outline.withValues(alpha: 0.5),
+            color: colors.outline.withValues(alpha: 0.3),
             width: 1,
           ),
-          boxShadow: AppShadows.cardSoft(null),
+          boxShadow: AppShadows.cardSoft(colors.background),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Habit header
             Row(
               children: [
                 Container(
-                  width: 4,
-                  height: 50,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: habit.color,
-                    borderRadius: BorderRadius.circular(2),
+                    color: habit.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(habit.icon, color: habit.color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    habit.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        habit.title,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '$completedThisWeek/$activeDaysThisWeek this week',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colors.textTertiary,
-                                fontWeight: FontWeight.w500,
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: weekProgress,
-                                backgroundColor: colors.outline.withValues(
-                                  alpha: 0.2,
-                                ),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  habit.color,
-                                ),
-                                minHeight: 4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colors.outline.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    '$completedThisWeek/$activeDaysThisWeek',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textSecondary,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            // Week days grid
             SizedBox(
-              height: 110,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final cellWidth = constraints.maxWidth / weekDays.length;
-                  return ListView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    itemCount: weekDays.length,
-                    scrollDirection: Axis.horizontal,
-                    itemBuilder: (context, index) {
-                      final date = weekDays[index];
-                      return SizedBox(
-                        width: cellWidth,
-                        child: _DayCell(
-                          key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
-                          index: index,
-                          date: date,
-                          habit: habit,
-                          colors: colors,
-                          now: now,
-                          onTap: () => _toggleHabitCompletion(habit, date),
-                        ),
-                      );
-                    },
+              height: 80,
+              child: Row(
+                children: weekDays.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final date = entry.value;
+                  return Expanded(
+                    child: _DayCell(
+                      key: ValueKey('${habit.id}_${date.millisecondsSinceEpoch}'),
+                      index: index,
+                      date: date,
+                      habit: habit,
+                      colors: colors,
+                      now: now,
+                      isSelected: date.day == _selectedDate.day && 
+                                date.month == _selectedDate.month && 
+                                date.year == _selectedDate.year,
+                      onTap: () => _toggleHabitCompletion(habit, date),
+                    ),
                   );
-                },
+                }).toList(),
               ),
             ),
           ],
@@ -529,39 +441,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildEmptyState(AppColors colors, double horizontalPadding) {
+  Widget _buildEmptyState(AppColors colors) {
     return Container(
       padding: const EdgeInsets.all(32),
-      margin: EdgeInsets.symmetric(
-        vertical: MediaQuery.of(context).size.height * 0.15,
-      ),
+      alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.calendar_today_outlined,
-            size: 80,
-            color: colors.textPrimary.withValues(alpha: 0.3),
+            size: 64,
+            color: colors.textPrimary.withValues(alpha: 0.2),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
-            'No habits yet',
+            'No habits found',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: colors.textPrimary,
+              color: colors.textPrimary.withValues(alpha: 0.5),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Start building better habits by adding your first goal',
-            style: TextStyle(
-              fontSize: 16,
-              color: colors.textSecondary,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -569,13 +468,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 }
 
-/// Optimized day cell widget to reduce rebuilds
 class _DayCell extends StatelessWidget {
   final int index;
   final DateTime date;
   final Habit habit;
   final AppColors colors;
   final DateTime now;
+  final bool isSelected;
   final VoidCallback? onTap;
 
   const _DayCell({
@@ -585,6 +484,7 @@ class _DayCell extends StatelessWidget {
     required this.habit,
     required this.colors,
     required this.now,
+    this.isSelected = false,
     this.onTap,
   });
 
@@ -597,8 +497,6 @@ class _DayCell extends StatelessWidget {
         date.month == now.month &&
         date.day == now.day;
     
-    // Check if habit was missed: active but not completed, date is in the past,
-    // and date is not before habit creation date
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final normalizedToday = DateTime(now.year, now.month, now.day);
     final normalizedCreatedAt = DateTime(
@@ -606,93 +504,76 @@ class _DayCell extends StatelessWidget {
       habit.createdAt.month,
       habit.createdAt.day,
     );
+    
     final isMissed = isActive && 
         !isCompleted && 
         normalizedDate.isBefore(normalizedToday) &&
         !normalizedDate.isBefore(normalizedCreatedAt);
     
     final dayName = DateFormat('E').format(date).substring(0, 1);
-    final dayNumber = date.day;
 
-    Widget status;
-    if (isCompleted) {
-      status = Icon(
-        Icons.check,
-        size: 18,
-        color: colors.surface,
-      );
-    } else if (isMissed) {
-      status = Icon(
-        Icons.warning_amber_rounded,
-        size: 18,
-        color: colors.statusIncomplete,
-      );
-    } else {
-      status = Text(
-        dayNumber.toString(),
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-          color: colors.textPrimary,
+    Widget statusIcon;
+    Color statusColor;
+    Color? iconColor;
+
+    if (!isActive) {
+      statusColor = Colors.transparent;
+      statusIcon = Container(
+        width: 4,
+        height: 4,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: colors.outline.withValues(alpha: 0.3),
         ),
       );
+    } else if (isCompleted) {
+      statusColor = habit.color;
+      statusIcon = Icon(Icons.check, size: 16, color: colors.surface);
+    } else if (isMissed) {
+      statusColor = colors.statusIncomplete.withValues(alpha: 0.1);
+      iconColor = colors.statusIncomplete;
+      statusIcon = Icon(Icons.close, size: 16, color: iconColor);
+    } else {
+      statusColor = colors.elevatedSurface; // Placeholder
+      statusIcon = Container(); // Empty ring
     }
 
-    final borderColor = isCompleted
-        ? habit.color
-        : isToday
-            ? colors.textPrimary
-            : colors.outline.withValues(alpha: 0.3);
-
-    return RepaintBoundary(
-      child: GestureDetector(
-        onTap: isActive ? onTap : null,
-        child: Opacity(
-          opacity: isActive ? 1.0 : 0.35,
-          child: Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: index == 0 || index == 6 ? 2 : 4,
+    return GestureDetector(
+      onTap: isActive ? onTap : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? colors.textPrimary.withValues(alpha: 0.05) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              dayName,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? colors.textPrimary : colors.textTertiary,
+              ),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: isToday
-                  ? colors.outline.withValues(alpha: 0.08)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: isToday
-                  ? Border.all(color: colors.textPrimary, width: 2)
-                  : null,
+            const SizedBox(height: 8),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: statusColor,
+                border: !isCompleted && isActive
+                    ? Border.all(
+                        color: isSelected ? colors.textPrimary : colors.outline.withValues(alpha: 0.3),
+                        width: 1.5,
+                      )
+                    : null,
+              ),
+              child: Center(child: statusIcon),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  dayName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color:
-                        isToday ? colors.textPrimary : colors.textTertiary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        isCompleted ? habit.color : Colors.transparent,
-                    border: Border.all(
-                      color: borderColor,
-                      width: isToday ? 2.5 : 2,
-                    ),
-                  ),
-                  child: Center(child: status),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );

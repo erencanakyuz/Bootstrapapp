@@ -8,11 +8,13 @@ import '../constants/app_constants.dart';
 class WeekCalendarStrip extends StatefulWidget {
   final DateTime selectedDate;
   final Function(DateTime) onDateSelected;
+  final bool Function(DateTime)? hasHabitsOnDate;
 
   const WeekCalendarStrip({
     super.key,
     required this.selectedDate,
     required this.onDateSelected,
+    this.hasHabitsOnDate,
   });
 
   @override
@@ -90,6 +92,7 @@ class _WeekCalendarStripState extends State<WeekCalendarStrip> {
           final date = _startDate.add(Duration(days: index));
           final isSelected = _isSameDay(date, widget.selectedDate);
           final isToday = _isSameDay(date, today);
+          final hasHabits = widget.hasHabitsOnDate?.call(date) ?? false;
           
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -97,6 +100,7 @@ class _WeekCalendarStripState extends State<WeekCalendarStrip> {
               date, 
               isSelected, 
               isToday, 
+              hasHabits,
               colors, 
               textStyles,
             ),
@@ -110,6 +114,7 @@ class _WeekCalendarStripState extends State<WeekCalendarStrip> {
     DateTime date,
     bool isSelected,
     bool isToday,
+    bool hasHabits,
     AppColors colors,
     AppTextStyles textStyles,
   ) {
@@ -172,13 +177,15 @@ class _WeekCalendarStripState extends State<WeekCalendarStrip> {
             const SizedBox(height: 4),
             // Dot indicator for active status (optional, purely visual for now)
             Container(
-              width: 4,
-              height: 4,
+              width: 6,
+              height: 6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected
                     ? colors.accentAmber
-                    : Colors.transparent,
+                    : hasHabits
+                        ? colors.textPrimary.withValues(alpha: 0.4)
+                        : Colors.transparent,
               ),
             ),
           ],

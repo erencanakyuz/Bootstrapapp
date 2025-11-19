@@ -80,6 +80,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .toList();
   }
 
+  bool _hasHabitsOnDate(DateTime date) {
+    final allHabits = ref.read(habitsProvider).value ?? [];
+    return allHabits.any(
+      (habit) => !habit.archived && habit.isActiveOnDate(date),
+    );
+  }
+
   List<Habit> _filterHabits(List<Habit> habits) {
     if (_selectedCategory == null) {
       return habits;
@@ -345,6 +352,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         WeekCalendarStrip(
           selectedDate: _selectedDate,
           onDateSelected: _onDateSelected,
+          hasHabitsOnDate: _hasHabitsOnDate,
         ),
         
         const SizedBox(height: 18),
