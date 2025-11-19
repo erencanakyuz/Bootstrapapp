@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
@@ -16,7 +17,7 @@ import 'smart_notification_service.dart';
 
 /// Service for scheduling and managing habit reminder notifications.
 /// Fully integrated with mobile support - Windows/Web builds skip
-///gracefully.
+/// gracefully.
 class NotificationService {
   NotificationService({
     NotificationBackend? backend,
@@ -45,6 +46,10 @@ class NotificationService {
   bool _exactAlarmsWarningLogged = false;
   // Callback for notification tap handling
   final void Function(String habitId)? onNotificationTap;
+
+  static const String _channelId = 'habit_reminders';
+  static const String _channelName = 'Habit Reminders';
+  static const String _channelDesc = 'Daily reminders for your habits';
 
   bool get _isPlatformSupported {
     if (kIsWeb) return false;
@@ -89,6 +94,25 @@ class NotificationService {
         },
       );
 
+      // Create the notification channel on Android
+      if (_platform.isAndroid) {
+        final androidImplementation = _backend.getAndroidPlugin();
+        
+        if (androidImplementation != null) {
+          await androidImplementation.createNotificationChannel(
+            const AndroidNotificationChannel(
+              _channelId,
+              _channelName,
+              description: _channelDesc,
+              importance: Importance.max,
+              enableLights: true,
+              enableVibration: true,
+              playSound: true,
+            ),
+          );
+        }
+      }
+
       // Request permissions for iOS
       if (_platform.isIOS) {
         await _backend.requestIOSPermissions(
@@ -110,6 +134,32 @@ class NotificationService {
       _initialized = true;
     } catch (e) {
       debugPrint('Notification initialization error: $e');
+    }
+  }
+
+  /// Re-schedules all notifications. 
+  /// Call this when timezone changes or significant data restoration happens.
+  Future<void> rescheduleAll(List<Habit> habits) async {
+    await initialize();
+    if (!_isPlatformSupported) return;
+    
+    debugPrint('Rescheduling all notifications due to timezone/system change...');
+    
+    // 1. Update timezone
+    await _configureLocalTimeZone();
+
+    // 2. Cancel all existing to prevent duplicates/ghosts
+    await _backend.cancelAll();
+    await _resetSchedules();
+
+    // 3. Schedule everything again
+    for (final habit in habits) {
+      if (habit.archived) continue;
+      for (final reminder in habit.reminders) {
+        if (reminder.enabled) {
+           await scheduleReminder(habit, reminder, habits: habits);
+        }
+      }
     }
   }
 
@@ -162,9 +212,9 @@ class NotificationService {
                 : 'Time to complete ${habit.title}!',
             NotificationDetails(
               android: AndroidNotificationDetails(
-                'habit_reminders',
-                'Habit Reminders',
-                channelDescription: 'Daily reminders for your habits',
+                _channelId,
+                _channelName,
+                channelDescription: _channelDesc,
                 importance: Importance.max,
                 priority: Priority.high,
                 icon: '@mipmap/ic_launcher',
@@ -272,9 +322,9 @@ class NotificationService {
               notificationBody,
               NotificationDetails(
                 android: AndroidNotificationDetails(
-                  'habit_reminders',
-                  'Habit Reminders',
-                  channelDescription: 'Daily reminders for your habits',
+                  _channelId,
+                  _channelName,
+                  channelDescription: _channelDesc,
                   importance: Importance.max,
                   priority: Priority.high,
                   icon: '@mipmap/ic_launcher',
@@ -301,9 +351,9 @@ class NotificationService {
           scheduleDate,
           NotificationDetails(
             android: AndroidNotificationDetails(
-              'habit_reminders',
-              'Habit Reminders',
-              channelDescription: 'Daily reminders for your habits',
+              _channelId,
+              _channelName,
+              channelDescription: _channelDesc,
               importance: Importance.max,
               priority: Priority.high,
               icon: '@mipmap/ic_launcher',
@@ -326,16 +376,7 @@ class NotificationService {
         // Store scheduled date for UI display
         await _rememberSchedule(target.id, scheduleDate);
 
-        // Debug: Check if notification was actually scheduled
-        if (!isTest) {
-          final pending = await _backend.pendingNotificationRequests();
-          final found = pending.any((n) => n.id == target.id);
-          if (!found) {
-            debugPrint(
-              'WARNING: Notification ${target.id} scheduled but not found in pending list',
-            );
-          }
-        }
+        // Removed heavy pending notification polling to keep scheduling fast.
       }
     } catch (e) {
       debugPrint('Schedule reminder error: $e');
@@ -424,9 +465,9 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'habit_reminders',
-            'Habit Reminders',
-            channelDescription: 'Daily reminders for your habits',
+            _channelId,
+            _channelName,
+            channelDescription: _channelDesc,
             importance: Importance.max,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -434,7 +475,7 @@ class NotificationService {
             enableLights: true,
             enableVibration: true,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             sound: 'default',
             presentAlert: true,
             presentBadge: true,

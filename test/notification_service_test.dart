@@ -528,6 +528,9 @@ class FakeNotificationBackend implements NotificationBackend {
       ),
     );
   }
+
+  @override
+  AndroidFlutterLocalNotificationsPlugin? getAndroidPlugin() => null;
 }
 
 class ZonedScheduleCall {

@@ -42,6 +42,10 @@ abstract class NotificationBackend {
     bool badge = true,
     bool sound = true,
   });
+
+  // Specific methods instead of generic resolvePlatformSpecificImplementation
+  // to avoid type inference issues and compiler errors in some environments.
+  AndroidFlutterLocalNotificationsPlugin? getAndroidPlugin();
 }
 
 class FlutterLocalNotificationsBackend implements NotificationBackend {
@@ -50,6 +54,12 @@ class FlutterLocalNotificationsBackend implements NotificationBackend {
   ]) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
+
+  @override
+  AndroidFlutterLocalNotificationsPlugin? getAndroidPlugin() {
+    return _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+  }
 
   @override
   Future<void> initialize(

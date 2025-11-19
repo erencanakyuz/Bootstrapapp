@@ -21,6 +21,7 @@ import '../widgets/category_filter_bar.dart';
 import '../widgets/habit_suggestions_widget.dart';
 import '../widgets/empty_states.dart';
 import '../widgets/savings_card.dart';
+import '../widgets/week_calendar_strip.dart';
 import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
 import 'habit_templates_screen.dart';
@@ -49,10 +50,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   late ConfettiController _confettiController;
-  // REMOVED: Confetti state moved to provider to reduce HomeScreen rebuilds
-  // Color? _currentHabitColor;
-  // HabitDifficulty? _currentHabitDifficulty;
-  // int _confettiPaletteSeed = 0;
+  
+  // Date state
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
 
   // Filtering
   HabitCategory? _selectedCategory;
@@ -61,9 +65,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _todayFlowKey = GlobalKey();
 
-  List<Habit> _currentTodayHabits() {
-    // OPTIMIZED: Remove unnecessary List.from - provider already returns a new list
-    return ref.read(todayActiveHabitsProvider);
+  bool get _isToday => _isSameDay(_selectedDate, DateTime.now());
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  List<Habit> _getActiveHabitsForSelectedDate() {
+    final allHabits = ref.read(habitsProvider).value ?? [];
+    return allHabits
+        .where(
+          (habit) => !habit.archived && habit.isActiveOnDate(_selectedDate),
+        )
+        .toList();
   }
 
   List<Habit> _filterHabits(List<Habit> habits) {
@@ -75,11 +89,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .toList();
   }
 
+  int _calculateStreakForDate(List<Habit> habits, DateTime date) {
+    var maxStreak = 0;
+    for (final habit in habits) {
+      final streak = habit.getCurrentStreak(referenceDate: date);
+      if (streak > maxStreak) {
+        maxStreak = streak;
+      }
+    }
+    return maxStreak;
+  }
+
+  int _calculateWeeklyCompletionsForDate(
+    List<Habit> habits,
+    DateTime date,
+  ) {
+    var total = 0;
+    for (final habit in habits) {
+      total += habit.getWeeklyProgress(date);
+    }
+    return total;
+  }
+
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(
-      duration: const Duration(seconds: 5), // Increased from 2 to 5 seconds for longer animation
+      duration: const Duration(seconds: 5),
     );
   }
 
@@ -93,6 +129,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _onCategoryFilterChanged(HabitCategory? category) {
     setState(() {
       _selectedCategory = category;
+    });
+  }
+
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _selectedCategory = null; // Reset filter on date change
     });
   }
 
@@ -111,12 +154,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _toggleHabitCompletion(Habit habit) {
-    final today = DateTime.now();
-    if (!habit.isActiveOnDate(today)) {
+    // If not today, we can still mark as complete/incomplete for history
+    // But maybe show a different warning if it's in the future?
+    final now = DateTime.now();
+    if (_selectedDate.isAfter(now)) {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${habit.title} isn\'t scheduled for today.'),
+          content: Text('You can\'t complete habits for future dates.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!habit.isActiveOnDate(_selectedDate)) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${habit.title} isn\'t scheduled for this date.'),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -125,24 +181,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     HapticFeedback.lightImpact();
-    final wasCompleted = habit.isCompletedOn(today);
-    final updatedHabit = habit.toggleCompletion(today);
+    final wasCompleted = habit.isCompletedOn(_selectedDate);
+    final updatedHabit = habit.toggleCompletion(_selectedDate);
     widget.onUpdateHabit(updatedHabit);
 
-    // Update home widget
-    final activeHabits = _currentTodayHabits();
-    final completedToday = activeHabits.where((h) => h.isCompletedOn(today)).length;
-    final totalToday = activeHabits.length;
-    final topHabit = activeHabits.isNotEmpty ? activeHabits.first : null;
-    HomeWidgetService.updateWidget(
-      completedToday: completedToday,
-      totalToday: totalToday,
-      currentStreak: ref.read(totalStreakProvider),
-      topHabitTitle: topHabit?.title ?? '',
-      topHabitColor: topHabit?.color ?? Colors.green,
-    );
+    // Update home widget only if modifying today
+    if (_isToday) {
+      final activeHabits = _getActiveHabitsForSelectedDate();
+      final completedToday = activeHabits.where((h) => h.isCompletedOn(_selectedDate)).length;
+      final totalToday = activeHabits.length;
+      final topHabit = activeHabits.isNotEmpty ? activeHabits.first : null;
+      HomeWidgetService.updateWidget(
+        completedToday: completedToday,
+        totalToday: totalToday,
+        currentStreak: ref.read(totalStreakProvider),
+        topHabitTitle: topHabit?.title ?? '',
+        topHabitColor: topHabit?.color ?? Colors.green,
+      );
+    }
 
-    if (!wasCompleted && updatedHabit.isCompletedOn(today)) {
+    if (!wasCompleted && updatedHabit.isCompletedOn(_selectedDate)) {
       // Check confetti setting
       final settingsAsync = ref.read(profileSettingsProvider);
       final confettiEnabled = settingsAsync.maybeWhen(
@@ -151,19 +209,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
       if (confettiEnabled) {
-        // OPTIMIZED: Update confetti state via provider instead of setState
-        // This prevents HomeScreen rebuild and only updates ConfettiWidget
         ref.read(confettiStateProvider.notifier).updateConfetti(
           habitColor: habit.color,
           difficulty: habit.difficulty,
         );
 
-        // Delay play until the frame after state updates so colors are applied
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _confettiController.play();
-            // Clear color after animation completes (save memory)
-            // Increased delay to match longer confetti duration + fade out
             Future.delayed(const Duration(seconds: 5), () {
               if (mounted) {
                 ref.read(confettiStateProvider.notifier).clear();
@@ -204,17 +257,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted) return;
     final result = await showModalBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true, // Tam ekran için scroll controlled
+      isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      useSafeArea: false, // Manuel padding kontrolü için false
+      useSafeArea: false,
       isDismissible: true,
       enableDrag: true,
       builder: (context) {
         final topPadding = MediaQuery.of(context).padding.top;
-        // Klavye overlay olacak, içeriği yukarı itmeyecek
-        // Üst padding azaltıldı - drag handle daha erişilebilir olacak
-        
         return Padding(
           padding: EdgeInsets.only(
             top: topPadding + 20,
@@ -233,12 +283,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       } else {
         widget.onAddHabit(result);
         HapticFeedback.mediumImpact();
-        
-        // TODO: Show app rating pop-up when first habit is added.
-        // Check if rating has been shown before using AppSettingsService.
-        // If not shown yet, show rating dialog with theme-matched styling (AppColors, AppTextStyles).
-        // Use showModalBottomSheet or showDialog with theme colors.
-        // Store rating shown status in SharedPreferences via AppSettingsService.
       }
     }
   }
@@ -273,57 +317,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: colors.surface, // Use theme surface
-                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                border: Border.all(
-                  color: colors.outline.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.wb_sunny_rounded, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    dateLabel,
-                    style: textStyles.captionUppercase.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // TODO: Remove this dev-only button before release
-            if (kDebugMode)
-              IconButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const OnboardingScreen(),
-                    ),
-                  );
-                },
-                icon: Icon(
-                  Icons.info_outline_rounded,
-                  size: 20,
-                  color: colors.textSecondary,
-                ),
-                tooltip: 'Open Onboarding',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
-              ),
-          ],
+        // New Date Strip
+        WeekCalendarStrip(
+          selectedDate: _selectedDate,
+          onDateSelected: _onDateSelected,
         ),
+        
+        // TODO: Remove this dev-only button before release
+        if (kDebugMode)
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const OnboardingScreen(),
+                  ),
+                );
+              },
+              icon: Icon(
+                Icons.info_outline_rounded,
+                size: 20,
+                color: colors.textSecondary,
+              ),
+              tooltip: 'Open Onboarding',
+            ),
+          ),
+
         const SizedBox(height: 18),
         Text('Future Journal', style: textStyles.captionUppercase),
         const SizedBox(height: 8),
@@ -341,14 +362,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int completed,
     AppColors colors,
     AppTextStyles textStyles,
-    DateTime today,
-    List<Habit> todayHabits,
+    DateTime date,
+    List<Habit> activeHabits,
     int totalStreak,
     int weeklyCompletions,
   ) {
-    final total = todayHabits.length;
+    final total = activeHabits.length;
     final progress = total == 0 ? 0.0 : completed / total;
-    final message = _getMotivationalMessage(todayHabits, today);
+    final message = _getMotivationalMessage(activeHabits, date);
+    
+    // Different label for past/future dates
+    String dateLabel = 'Today';
+    if (!_isToday) {
+      dateLabel = DateFormat('EEEE').format(date);
+    }
 
     return Material(
       color: Colors.transparent,
@@ -356,7 +383,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onTap: () {
           HapticFeedback.mediumImpact();
           ref.read(soundServiceProvider).playClick();
-          // Scroll to Today's Flow section
           WidgetsBinding.instance.addPostFrameCallback((_) {
             final context = _todayFlowKey.currentContext;
             if (context != null) {
@@ -364,7 +390,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 context,
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeInOut,
-                alignment: 0.1, // Scroll to show section near top
+                alignment: 0.1,
               );
             }
           });
@@ -390,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Today',
+                    dateLabel,
                     style: textStyles.captionUppercase.copyWith(
                       color: colors.textPrimary.withValues(alpha: 0.7),
                     ),
@@ -425,13 +451,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       minHeight: 6,
                       backgroundColor: colors.surface.withValues(
                         alpha: 0.4,
-                      ), // Use theme surface
+                      ),
                       valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(message, style: textStyles.bodyBold),
                   const SizedBox(height: 18),
+                  
+                  // Stats row - show differently if browsing history
                   Row(
                     children: [
                       Expanded(
@@ -449,7 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           colors,
                           textStyles,
                           Icons.local_fire_department_rounded,
-                          'Best streak',
+                          'Current streak',
                           '$totalStreak d',
                         ),
                       ),
@@ -467,14 +495,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Week ${_weekRangeLabel()}',
+                    'Week ${_weekRangeLabel(date)}',
                     style: textStyles.caption.copyWith(
                       color: colors.textPrimary.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
               ),
-              // Ok ikonu sağ üstte
               Positioned(
                 top: 0,
                 right: 0,
@@ -497,7 +524,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppTextStyles textStyles,
     double horizontalPadding,
   ) {
-    // Removed - Future Journal card removed per user request
     return const SizedBox.shrink();
   }
 
@@ -527,7 +553,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   width: 1,
                 )
               : null,
-          // No shadows in dark mode
           boxShadow: isDarkMode ? [] : AppShadows.cardSoft(null),
         ),
         child: Row(
@@ -568,7 +593,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'No habits scheduled today',
+            'No habits scheduled for ${_isToday ? 'today' : 'this day'}',
             style: textStyles.titleSection,
           ),
           const SizedBox(height: 8),
@@ -588,13 +613,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     if (activeHabits.isEmpty) return const SizedBox.shrink();
 
+    final title = _isToday ? 'Today\'s flow' : '${DateFormat('EEEE').format(_selectedDate)}\'s flow';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Today\'s flow', style: textStyles.titleSection),
+            Text(title, style: textStyles.titleSection),
             Text('${activeHabits.length} habits', style: textStyles.caption),
           ],
         ),
@@ -606,9 +633,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColors colors,
     AppTextStyles textStyles,
     List<Habit> activeHabits,
-    DateTime weekStart, // OPTIMIZED: Pass weekStart to avoid recalculating in each card
-    DateTime today, // OPTIMIZED: Pass today to avoid DateTime.now() in each card
-    DateTime now, // OPTIMIZED: Pass now for _isNewHabit calculation
+    DateTime weekStart, 
+    DateTime today, 
+    DateTime now, 
   ) {
     if (activeHabits.isEmpty && _selectedCategory != null) {
       return SliverToBoxAdapter(
@@ -634,11 +661,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               bottom: index == activeHabits.length - 1 ? 0 : 16,
             ),
             child: HabitCard(
-              key: ValueKey(habit.id), // OPTIMIZED: Simplified key - habit.id is sufficient
+              key: ValueKey('${habit.id}_$_selectedDate'), // Unique key per date to force refresh
               habit: habit,
               showNewBadge: isNew,
-              weekStart: weekStart, // OPTIMIZED: Pass weekStart to avoid DateTime.now() in card
-              today: today, // OPTIMIZED: Pass today to avoid DateTime.now() in card
+              weekStart: weekStart, 
+              today: _selectedDate, // Pass selected date as 'today' for the card
               onTap: () => _openHabitDetail(habit),
               onCompletionToggle: () => _toggleHabitCompletion(habit),
               onLongPress: () => _showHabitOptions(habit),
@@ -749,7 +776,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         leading: Icon(
                           Icons.delete_rounded,
                           color: colors.statusIncomplete,
-                        ),
+                          ),
                         title: Text(
                           'Delete Habit',
                           style: TextStyle(color: colors.textPrimary),
@@ -771,18 +798,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  String _getMotivationalMessage(List<Habit> activeHabits, DateTime today) {
+  String _getMotivationalMessage(List<Habit> activeHabits, DateTime date) {
     final completedToday =
-        activeHabits.where((h) => h.isCompletedOn(today)).length;
+        activeHabits.where((h) => h.isCompletedOn(date)).length;
     final total = activeHabits.length;
     final progress = total > 0 ? completedToday / total : 0.0;
 
     if (progress == 1.0) {
-      return 'Perfect day! You\'re unstoppable.';
+      return 'Perfect flow! You\'re unstoppable.';
     } else if (progress >= 0.7) {
       return 'Almost there! Keep going.';
     } else if (progress >= 0.4) {
-      return 'Great progress today!';
+      return 'Great progress!';
     } else if (progress > 0) {
       return 'Every step counts.';
     } else {
@@ -791,14 +818,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool _isNewHabit(Habit habit, DateTime now) {
-    // OPTIMIZED: Accept DateTime parameter to avoid repeated DateTime.now() calls
     final daysSinceCreation = now.difference(habit.createdAt).inDays;
-    return daysSinceCreation <= 1; // Only show for 1 day
+    return daysSinceCreation <= 1; 
   }
 
-  String _weekRangeLabel() {
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+  String _weekRangeLabel(DateTime date) {
+    final weekStart = date.subtract(Duration(days: date.weekday - 1));
     final weekEnd = weekStart.add(const Duration(days: 6));
     final formatter = DateFormat('MMM d');
     return '${formatter.format(weekStart)} - ${formatter.format(weekEnd)}';
@@ -808,15 +833,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    // OPTIMIZED: Calculate weekStart once at screen level, pass to cards
-    final weekStart = DateTime(now.year, now.month, now.day - now.weekday + 1);
+    // Use selected date for calculations
+    final weekStart = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day - _selectedDate.weekday + 1);
     
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
-    final dateLabel = DateFormat('EEEE, MMM d').format(today);
-    final todayActiveHabits = ref.watch(todayActiveHabitsProvider);
-    final visibleHabits = _filterHabits(todayActiveHabits);
+    final dateLabel = DateFormat('EEEE, MMM d').format(_selectedDate);
+    
+    // Get active habits for the selected date
+    final activeHabits = _getActiveHabitsForSelectedDate();
+    final visibleHabits = _filterHabits(activeHabits);
+    
+    // Calculate stats for the selected date
+    final completedCount = activeHabits.where((h) => h.isCompletedOn(_selectedDate)).length;
+    final totalStreakForDate = _calculateStreakForDate(activeHabits, _selectedDate);
+    final weeklyCompletionsForDate =
+        _calculateWeeklyCompletionsForDate(activeHabits, _selectedDate);
+    
     final mediaQuery = MediaQuery.of(context);
     final viewPadding = mediaQuery.padding;
     final horizontalPadding = context.horizontalGutter;
@@ -836,25 +869,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final completedToday =
-                  ref.watch(completedTodayCountProvider);
-              final totalStreak = ref.watch(totalStreakProvider);
-              final weeklyCompletions =
-                  ref.watch(weeklyCompletionsProvider);
-              return RepaintBoundary(
-                child: _buildHeroProgressCard(
-                  completedToday,
-                  colors,
-                  textStyles,
-                  today,
-                  todayActiveHabits,
-                  totalStreak,
-                  weeklyCompletions,
-                ),
-              );
-            },
+          child: RepaintBoundary(
+            child: _buildHeroProgressCard(
+              completedCount,
+              colors,
+              textStyles,
+              _selectedDate,
+              activeHabits,
+              totalStreakForDate,
+              weeklyCompletionsForDate,
+            ),
           ),
         ),
       ),
@@ -942,12 +966,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _buildDailyFocusSection(
                   colors,
                   textStyles,
-                  todayActiveHabits,
+                  activeHabits,
                 ),
-                if (todayActiveHabits.isNotEmpty) ...[
+                if (activeHabits.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   CategoryFilterBar(
-                    habits: todayActiveHabits,
+                    habits: activeHabits,
                     onFilterChanged: _onCategoryFilterChanged,
                     initialCategory: _selectedCategory,
                   ),
@@ -956,7 +980,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        if (todayActiveHabits.isEmpty)
+        if (activeHabits.isEmpty)
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -980,12 +1004,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               colors,
               textStyles,
               visibleHabits,
-              weekStart, // OPTIMIZED: Pass weekStart to cards
-              today, // OPTIMIZED: Pass today to cards
-              now, // OPTIMIZED: Pass now for _isNewHabit
+              weekStart, 
+              _selectedDate, // Pass selected date
+              now,
             ),
           ),
-        // Habit Suggestions - moved above Daily Motivation
+        // Habit Suggestions
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,
@@ -1021,11 +1045,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Klavye açıldığında arka planı yeniden render etme
+      resizeToAvoidBottomInset: false,
       backgroundColor: colors.background,
       body: SafeArea(
         top: true,
-        bottom: false, // Bottom navigation handled by MainScreen
+        bottom: false, 
         child: Stack(
           children: [
             CustomScrollView(
@@ -1036,7 +1060,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               cacheExtent: 500,
               slivers: slivers,
             ),
-            // Confetti widget - OPTIMIZED: Separate ConsumerWidget to isolate rebuilds
+            // Confetti widget
             _ConfettiOverlay(confettiController: _confettiController),
           ],
         ),

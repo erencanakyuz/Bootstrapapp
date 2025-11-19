@@ -367,7 +367,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildFeaturePreview(AppColors colors, FeatureType featureType) {
     return Container(
-      height: 120,
+      height: 140,
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
       padding: const EdgeInsets.all(12),

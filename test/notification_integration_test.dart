@@ -110,6 +110,9 @@ class MockNotificationBackend implements NotificationBackend {
       ),
     );
   }
+
+  @override
+  AndroidFlutterLocalNotificationsPlugin? getAndroidPlugin() => null;
 }
 
 class ZonedScheduleCall {

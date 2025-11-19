@@ -25,161 +25,181 @@ class UserPreferences {
   });
 }
 
+/// Internal template class to separate data from the Habit model (which requires IDs)
+class _HabitTemplate {
+  final String title;
+  final String description;
+  final Color color;
+  final IconData icon;
+  final HabitCategory category;
+  final HabitTimeBlock timeBlock;
+  final HabitDifficulty difficulty;
+  final List<int> activeWeekdays;
+
+  const _HabitTemplate({
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.icon,
+    required this.category,
+    required this.timeBlock,
+    required this.difficulty,
+    required this.activeWeekdays,
+  });
+
+  Habit toHabit() {
+    return Habit(
+      id: _uuid.v4(),
+      title: title,
+      description: description,
+      color: color,
+      icon: icon,
+      category: category,
+      timeBlock: timeBlock,
+      difficulty: difficulty,
+      activeWeekdays: activeWeekdays,
+    );
+  }
+}
+
 /// Service to generate personalized habit plans based on user preferences
 /// Includes extensive variety of common habits people need
 class HabitPlanGenerator {
   /// Generate habits based on user preferences with variety
   static List<Habit> generatePlan(UserPreferences preferences) {
-    final habits = <Habit>[];
+    final candidates = <_HabitTemplate>[];
     final selectedCategories = <String>{};
 
-    // Always include health basics if no goals selected
+    // 1. Collect all potential categories based on goals
     if (preferences.goals.isEmpty) {
-      habits.addAll(_getHealthHabits(preferences, true));
-      selectedCategories.add('health');
-    }
-
-    // Add habits based on goals - ensure we get enough habits
-    for (final goal in preferences.goals) {
-      switch (goal) {
-        case 'health':
-          if (!selectedCategories.contains('health')) {
-            habits.addAll(_getHealthHabits(preferences, false));
-            selectedCategories.add('health');
-          }
-          break;
-        case 'productivity':
-          if (!selectedCategories.contains('productivity')) {
-            habits.addAll(_getProductivityHabits(preferences));
-            selectedCategories.add('productivity');
-          }
-          break;
-        case 'learning':
-          if (!selectedCategories.contains('learning')) {
-            habits.addAll(_getLearningHabits(preferences));
-            selectedCategories.add('learning');
-          }
-          break;
-        case 'mindfulness':
-          if (!selectedCategories.contains('mindfulness')) {
-            habits.addAll(_getMindfulnessHabits(preferences));
-            selectedCategories.add('mindfulness');
-          }
-          break;
-        case 'creativity':
-          if (!selectedCategories.contains('creativity')) {
-            habits.addAll(_getCreativityHabits(preferences));
-            selectedCategories.add('creativity');
-          }
-          break;
+      selectedCategories.add('health'); // Default
+    } else {
+      for (final goal in preferences.goals) {
+        selectedCategories.add(goal); // Goals map directly to categories usually
       }
     }
 
-    // Add habits based on interests - ensure we get enough habits
+    // 2. Collect all potential categories based on interests
     for (final interest in preferences.interests) {
       switch (interest) {
         case 'fitness':
-          if (!selectedCategories.contains('health')) {
-            habits.addAll(_getHealthHabits(preferences, false));
-            selectedCategories.add('health');
-          }
+          selectedCategories.add('health');
           break;
         case 'reading':
-          if (!selectedCategories.contains('learning')) {
-            habits.addAll(_getLearningHabits(preferences));
-            selectedCategories.add('learning');
-          }
+          selectedCategories.add('learning');
           break;
         case 'work':
-          if (!selectedCategories.contains('productivity')) {
-            habits.addAll(_getProductivityHabits(preferences));
-            selectedCategories.add('productivity');
-          }
+          selectedCategories.add('productivity');
           break;
         case 'meditation':
-          if (!selectedCategories.contains('mindfulness')) {
-            habits.addAll(_getMindfulnessHabits(preferences));
-            selectedCategories.add('mindfulness');
-          }
+          selectedCategories.add('mindfulness');
           break;
         case 'creativity':
-          if (!selectedCategories.contains('creativity')) {
-            habits.addAll(_getCreativityHabits(preferences));
-            selectedCategories.add('creativity');
-          }
+          selectedCategories.add('creativity');
           break;
       }
     }
 
-    // If we don't have enough habits, fill from selected categories
-    // Try multiple times to ensure we get enough unique habits
-    int attempts = 0;
-    while (habits.length < preferences.commitmentLevel && attempts < 5) {
-      attempts++;
-      final needed = preferences.commitmentLevel - habits.length;
-      final additionalHabits = <Habit>[];
-      final existingIds = habits.map((h) => h.id).toSet();
+    // 3. Gather ALL candidates from selected categories
+    for (final category in selectedCategories) {
+      switch (category) {
+        case 'health':
+          candidates.addAll(_healthTemplates);
+          break;
+        case 'productivity':
+          candidates.addAll(_productivityTemplates);
+          break;
+        case 'learning':
+          candidates.addAll(_learningTemplates);
+          break;
+        case 'mindfulness':
+          candidates.addAll(_mindfulnessTemplates);
+          break;
+        case 'creativity':
+          candidates.addAll(_creativityTemplates);
+          break;
+      }
+    }
+
+    // 4. Filter candidates based on Lifestyle & Schedule
+    var filteredCandidates = candidates.where((template) {
+      // Filter by schedule type
+      if (preferences.scheduleType == 'daily') {
+         // Daily: only habits that are for every day or weekdays (basically almost all activeWeekdays)
+         // We keep habits that have 5 or 7 active days.
+         if (template.activeWeekdays.length < 5) return false;
+      } else if (preferences.scheduleType == 'weekly') {
+         // Weekly: prefer habits with fewer active days (e.g. 1-3 days)
+         // But we can allow some daily ones if needed, let's strictly filter for now
+         // to respect the user's choice, or maybe allow up to 4 days.
+         if (template.activeWeekdays.length > 4) return false;
+      } else if (preferences.scheduleType == 'weekend') {
+         // Weekend: must include Sat(6) or Sun(7)
+         if (!template.activeWeekdays.contains(6) && !template.activeWeekdays.contains(7)) return false;
+      }
+      // 'mixed' allows everything
+
+      // Filter by lifestyle (Difficulty)
+      if (preferences.lifestyle == 'busy') {
+        // Busy: No Hard habits
+        if (template.difficulty == HabitDifficulty.hard) return false;
+      }
+      // 'balanced' and 'flexible' allow everything
+
+      return true;
+    }).toList();
+
+    // 5. Deduplicate by Title (CRITICAL FIX)
+    final uniqueCandidates = <String, _HabitTemplate>{};
+    for (final template in filteredCandidates) {
+      if (!uniqueCandidates.containsKey(template.title)) {
+        uniqueCandidates[template.title] = template;
+      }
+    }
+    var finalPool = uniqueCandidates.values.toList();
+
+    // 6. Shuffle for variety
+    finalPool.shuffle(math.Random());
+
+    // 7. Select top N habits
+    // Ensure we don't exceed available unique habits
+    final countToTake = math.min(preferences.commitmentLevel, finalPool.length);
+    var selectedTemplates = finalPool.take(countToTake).toList();
+
+    // 8. Fallback: If we strictly filtered too much and have too few habits,
+    // relax the filters to fill the quota.
+    if (selectedTemplates.length < preferences.commitmentLevel) {
+      final needed = preferences.commitmentLevel - selectedTemplates.length;
       
-      // Add more habits from selected categories
-      for (final category in selectedCategories) {
-        if (additionalHabits.length >= needed * 2) break; // Get extra to ensure variety
-        
-        switch (category) {
-          case 'health':
-            additionalHabits.addAll(_getHealthHabits(preferences, false));
-            break;
-          case 'productivity':
-            additionalHabits.addAll(_getProductivityHabits(preferences));
-            break;
-          case 'learning':
-            additionalHabits.addAll(_getLearningHabits(preferences));
-            break;
-          case 'mindfulness':
-            additionalHabits.addAll(_getMindfulnessHabits(preferences));
-            break;
-          case 'creativity':
-            additionalHabits.addAll(_getCreativityHabits(preferences));
-            break;
+      // Get candidates that were filtered out but belong to selected categories
+      // (excluding ones we already picked)
+      final alreadyPickedTitles = selectedTemplates.map((t) => t.title).toSet();
+      
+      final relaxedCandidates = candidates.where((t) {
+        if (alreadyPickedTitles.contains(t.title)) return false;
+        // Apply simpler filter: just avoid hard habits if busy
+        if (preferences.lifestyle == 'busy' && t.difficulty == HabitDifficulty.hard) return false;
+        return true;
+      }).toList();
+
+      // Deduplicate relaxed candidates
+      final uniqueRelaxed = <String, _HabitTemplate>{};
+      for (final template in relaxedCandidates) {
+        if (!uniqueRelaxed.containsKey(template.title)) {
+           uniqueRelaxed[template.title] = template;
         }
       }
-      
-      // Remove duplicates and add new ones
-      final uniqueAdditional = additionalHabits
-          .where((h) => !existingIds.contains(h.id))
-          .take(needed)
-          .toList();
-      
-      if (uniqueAdditional.isEmpty) break; // No more unique habits available
-      habits.addAll(uniqueAdditional);
+
+      var relaxedPool = uniqueRelaxed.values.toList()..shuffle(math.Random());
+      selectedTemplates.addAll(relaxedPool.take(needed));
     }
 
-    // Adjust based on lifestyle
-    final adjustedHabits = _adjustForLifestyle(habits, preferences.lifestyle)
-        .map(_alignTargetsWithSchedule)
-        .toList();
-
-    adjustedHabits.shuffle(); // Randomize order for variety
-
-    // Limit to commitment level after shuffling for better variety
-    // Ensure we return at least the requested number if possible
-    final targetCount = preferences.commitmentLevel.clamp(3, 10);
-    if (adjustedHabits.length < targetCount && adjustedHabits.isNotEmpty) {
-      // If we have fewer habits than requested, return all we have
-      return adjustedHabits;
-    }
-    return adjustedHabits.take(targetCount).toList();
-  }
-
-  static List<Habit> _adjustForLifestyle(List<Habit> habits, String lifestyle) {
-    if (lifestyle == 'busy') {
-      // Prefer easier, shorter habits for busy people
-      return habits.where((h) => h.difficulty != HabitDifficulty.hard).toList();
-    } else if (lifestyle == 'flexible') {
-      // Keep all habits
-      return habits;
-    }
-    // Balanced - keep all
-    return habits;
+    // 9. Convert to Habits
+    // Align targets (monthly/weekly) logic is handled inside Habit model usually or we can keep the helper
+    return selectedTemplates.map((t) {
+      var habit = t.toHabit();
+      return _alignTargetsWithSchedule(habit);
+    }).toList();
   }
 
   static Habit _alignTargetsWithSchedule(Habit habit) {
@@ -201,691 +221,581 @@ class HabitPlanGenerator {
     );
   }
 
-  static List<Habit> _getHealthHabits(UserPreferences prefs, bool isDefault) {
-    final habits = <Habit>[];
-    
-    // Daily habits
-    if (prefs.scheduleType == 'daily' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Drink 8 glasses of water',
-          description: 'Stay hydrated throughout the day',
-          color: const Color(0xFF7A9B9B),
-          icon: PhosphorIconsRegular.drop,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Get 7-8 hours of sleep',
-          description: 'Quality rest for better tomorrow',
-          color: const Color(0xFF6B8FA3),
-          icon: PhosphorIconsRegular.moon,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Take vitamins',
-          description: 'Support your daily nutrition',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: '10-minute walk',
-          description: 'Move your body, clear your mind',
-          color: const Color(0xFF8B9A6B),
-          icon: PhosphorIconsRegular.footprints,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Eat 5 servings of fruits/veggies',
-          description: 'Nourish your body with whole foods',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Stretch for 5 minutes',
-          description: 'Improve flexibility and reduce tension',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.leaf,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'No screens 1 hour before bed',
-          description: 'Better sleep quality',
-          color: const Color(0xFF6B8FA3),
-          icon: PhosphorIconsRegular.moon,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Yoga or stretching',
-          description: '15 minutes of flexibility work',
-          color: const Color(0xFF8B9A6B),
-          icon: PhosphorIconsRegular.leaf,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Take vitamins',
-          description: 'Daily supplement routine',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Healthy breakfast',
-          description: 'Start your day with nutritious food',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Posture check',
-          description: 'Maintain good posture throughout the day',
-          color: const Color(0xFF8B9BA8),
-          icon: PhosphorIconsRegular.heart,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Screen break',
-          description: 'Take breaks from screens every hour',
-          color: const Color(0xFF7A9B9B),
-          icon: PhosphorIconsRegular.moon,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-      ]);
-    }
 
-    // Weekly habits
-    if (prefs.scheduleType == 'weekly' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Exercise 3 times a week',
-          description: 'Move your body, boost your energy',
-          color: const Color(0xFF8B9A6B),
-          icon: PhosphorIconsRegular.barbell,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 3, 5], // Mon, Wed, Fri
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Meal prep for the week',
-          description: 'Plan and prepare healthy meals',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [7], // Sunday
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: '30-minute cardio session',
-          description: 'Get your heart rate up',
-          color: const Color(0xFF8B9A6B),
-          icon: PhosphorIconsRegular.heart,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [2, 4, 6], // Tue, Thu, Sat
-        ),
-      ]);
-    }
+  // --- DATA DEFINITIONS ---
 
-    // Weekend habits
-    if (prefs.scheduleType == 'weekend' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Outdoor activity',
-          description: 'Fresh air and nature time',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.tree,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [6, 7], // Sat, Sun
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Long walk or hike',
-          description: 'Explore nature and stay active',
-          color: const Color(0xFF8B9A6B),
-          icon: PhosphorIconsRegular.tree,
-          category: HabitCategory.health,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [6, 7],
-        ),
-      ]);
-    }
+  static const List<_HabitTemplate> _healthTemplates = [
+    _HabitTemplate(
+      title: 'Drink 8 glasses of water',
+      description: 'Stay hydrated throughout the day',
+      color: Color(0xFF7A9B9B),
+      icon: PhosphorIconsRegular.drop,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Get 7-8 hours of sleep',
+      description: 'Quality rest for better tomorrow',
+      color: Color(0xFF6B8FA3),
+      icon: PhosphorIconsRegular.moon,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Take vitamins',
+      description: 'Support your daily nutrition',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.forkKnife,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: '10-minute walk',
+      description: 'Move your body, clear your mind',
+      color: Color(0xFF8B9A6B),
+      icon: PhosphorIconsRegular.footprints,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Eat 5 servings of fruits/veggies',
+      description: 'Nourish your body with whole foods',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.carrot,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Stretch for 5 minutes',
+      description: 'Improve flexibility and reduce tension',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.personSimpleTaiChi,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'No screens 1 hour before bed',
+      description: 'Better sleep quality',
+      color: Color(0xFF6B8FA3),
+      icon: PhosphorIconsRegular.moon,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Yoga session',
+      description: '15 minutes of flow and balance',
+      color: Color(0xFF8B9A6B),
+      icon: PhosphorIconsRegular.personSimpleTaiChi,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Healthy breakfast',
+      description: 'Start your day with nutritious food',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.coffee,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Posture check',
+      description: 'Maintain good posture throughout the day',
+      color: Color(0xFF8B9BA8),
+      icon: PhosphorIconsRegular.person,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Screen break',
+      description: 'Take breaks from screens every hour',
+      color: Color(0xFF7A9B9B),
+      icon: PhosphorIconsRegular.monitor,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Exercise 3 times a week',
+      description: 'Move your body, boost your energy',
+      color: Color(0xFF8B9A6B),
+      icon: PhosphorIconsRegular.barbell,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 3, 5], // Mon, Wed, Fri
+    ),
+    _HabitTemplate(
+      title: 'Meal prep for the week',
+      description: 'Plan and prepare healthy meals',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.cookingPot,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [7], // Sunday
+    ),
+    _HabitTemplate(
+      title: '30-minute cardio session',
+      description: 'Get your heart rate up',
+      color: Color(0xFF8B9A6B),
+      icon: PhosphorIconsRegular.heart,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [2, 4, 6], // Tue, Thu, Sat
+    ),
+    _HabitTemplate(
+      title: 'Outdoor activity',
+      description: 'Fresh air and nature time',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.tree,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [6, 7], // Sat, Sun
+    ),
+    _HabitTemplate(
+      title: 'Floss teeth',
+      description: 'Oral hygiene routine',
+      color: Color(0xFF7A9B9B),
+      icon: PhosphorIconsRegular.smiley,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Limit sugar intake',
+      description: 'Make healthier food choices',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.cookie,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.hard,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Intermittent fasting',
+      description: 'Stick to your eating window',
+      color: Color(0xFF8B9A6B),
+      icon: PhosphorIconsRegular.clock,
+      category: HabitCategory.health,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.hard,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+  ];
 
-    return habits;
-  }
+  static const List<_HabitTemplate> _productivityTemplates = [
+    _HabitTemplate(
+      title: 'Plan your day',
+      description: 'Write down top 3 priorities',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.listChecks,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Deep work session',
+      description: '90 minutes of focused work',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.brain,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.afternoon,
+      difficulty: HabitDifficulty.hard,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Review and reflect',
+      description: 'What went well? What to improve?',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.notebook,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Clear inbox',
+      description: 'Process emails and messages',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.envelope,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'No phone for first hour',
+      description: 'Start your day distraction-free',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.cellSignalSlash,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Eat the frog',
+      description: 'Complete your hardest task first',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.checkCircle,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Pomodoro sessions',
+      description: 'Complete 4 focused work sessions',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.timer,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Declutter space',
+      description: 'Organize workspace for 15 minutes',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.trash,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5],
+    ),
+    _HabitTemplate(
+      title: 'Weekly review',
+      description: 'Reflect on the week and plan ahead',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.calendarCheck,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [7], // Sunday
+    ),
+    _HabitTemplate(
+      title: 'Track expenses',
+      description: 'Record daily spending',
+      color: Color(0xFF8B9BA8),
+      icon: PhosphorIconsRegular.currencyDollar,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+     _HabitTemplate(
+      title: 'Backup data',
+      description: 'Ensure digital files are safe',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.hardDrives,
+      category: HabitCategory.productivity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [6], // Saturday
+    ),
+  ];
 
-  static List<Habit> _getProductivityHabits(UserPreferences prefs) {
-    final habits = <Habit>[];
-    
-    if (prefs.scheduleType == 'daily' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Plan your day',
-          description: 'Write down top 3 priorities',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.clipboardText,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5], // Weekdays
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Deep work session',
-          description: '90 minutes of focused work',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.briefcase,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.afternoon,
-          difficulty: HabitDifficulty.hard,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Review and reflect',
-          description: 'What went well? What to improve?',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.notebook,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Clear inbox',
-          description: 'Process emails and messages',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.clipboardText,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'No phone for first hour',
-          description: 'Start your day distraction-free',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.briefcase,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Complete one important task',
-          description: 'Tackle your biggest challenge',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.briefcase,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Email zero',
-          description: 'Clear inbox to zero',
-          color: const Color(0xFF8B9BA8),
-          icon: PhosphorIconsRegular.clipboardText,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Pomodoro sessions',
-          description: 'Complete 4 focused work sessions',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.timer,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Declutter space',
-          description: 'Organize workspace for 15 minutes',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.briefcase,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5],
-        ),
-      ]);
-    }
+  static const List<_HabitTemplate> _learningTemplates = [
+    _HabitTemplate(
+      title: 'Read for 20 minutes',
+      description: 'Learn something new every day',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.bookOpen,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Listen to a podcast',
+      description: 'Expand your knowledge while multitasking',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.headphones,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Learn 5 new words',
+      description: 'Build your vocabulary',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.translate,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Watch educational video',
+      description: 'Learn from experts online',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.monitorPlay,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Practice a skill',
+      description: 'Dedicate time to improve',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.target,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Read an article',
+      description: 'Stay updated with industry news',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.newspaper,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Take study notes',
+      description: 'Write notes on what you learned',
+      color: Color(0xFF8B9BA8),
+      icon: PhosphorIconsRegular.pencil,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Watch TED talk',
+      description: 'Learn from inspiring speakers',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.presentation,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Learn a new skill',
+      description: 'Practice or study something new',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.graduationCap,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [6, 7], // Weekend
+    ),
+    _HabitTemplate(
+      title: 'Language practice',
+      description: '15 mins of Duolingo or speaking',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.chatCircleDots,
+      category: HabitCategory.learning,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+  ];
 
-    if (prefs.scheduleType == 'weekly' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Weekly review',
-          description: 'Reflect on the week and plan ahead',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.calendar,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [7], // Sunday
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Organize workspace',
-          description: 'Clean and declutter your space',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.briefcase,
-          category: HabitCategory.productivity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [7], // Sunday
-        ),
-      ]);
-    }
+  static const List<_HabitTemplate> _mindfulnessTemplates = [
+    _HabitTemplate(
+      title: 'Meditation',
+      description: '10 minutes of mindfulness',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.personSimpleTaiChi,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Gratitude journal',
+      description: 'Write 3 things you\'re grateful for',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.heart,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Mindful breathing',
+      description: 'Take 5 deep breaths',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.wind,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Digital detox hour',
+      description: 'Unplug and be present',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.plug,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Nature connection',
+      description: 'Spend time outdoors mindfully',
+      color: Color(0xFF6B7D5A),
+      icon: PhosphorIconsRegular.tree,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Self-reflection',
+      description: 'Check in with yourself',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.userFocus,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Mindful eating',
+      description: 'Eat without distractions',
+      color: Color(0xFF8B9BA8),
+      icon: PhosphorIconsRegular.bowlFood,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Call a loved one',
+      description: 'Connect with family or friends',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.phoneCall,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [6], // Saturday
+    ),
+    _HabitTemplate(
+      title: 'Positive affirmations',
+      description: 'Start day with positive self-talk',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.chats,
+      category: HabitCategory.mindfulness,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+  ];
 
-    return habits;
-  }
-
-  static List<Habit> _getLearningHabits(UserPreferences prefs) {
-    final habits = <Habit>[];
-    
-    if (prefs.scheduleType == 'daily' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Read for 20 minutes',
-          description: 'Learn something new every day',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.book,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Listen to a podcast',
-          description: 'Expand your knowledge while multitasking',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.musicNote,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Learn 5 new words',
-          description: 'Build your vocabulary',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.globe,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Watch educational video',
-          description: 'Learn from experts online',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.book,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Practice a skill',
-          description: 'Dedicate time to improve',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.code,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Read an article',
-          description: 'Learn something new from an article',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.bookOpen,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Take notes',
-          description: 'Write notes on what you learned',
-          color: const Color(0xFF8B9BA8),
-          icon: PhosphorIconsRegular.notebook,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Watch TED talk',
-          description: 'Learn from inspiring speakers',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.book,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-      ]);
-    }
-
-    if (prefs.scheduleType == 'weekly' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Learn a new skill',
-          description: 'Practice or study something new',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.graduationCap,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [6, 7], // Weekend
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Complete a course lesson',
-          description: 'Make progress on your learning path',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.book,
-          category: HabitCategory.learning,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [6, 7],
-        ),
-      ]);
-    }
-
-    return habits;
-  }
-
-  static List<Habit> _getMindfulnessHabits(UserPreferences prefs) {
-    final habits = <Habit>[];
-    
-    if (prefs.scheduleType == 'daily' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Meditation or breathing',
-          description: '5-10 minutes of mindfulness',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.leaf,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.morning,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Gratitude journal',
-          description: 'Write 3 things you\'re grateful for',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.notebook,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Mindful breathing',
-          description: 'Take 5 deep breaths',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.leaf,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Digital detox hour',
-          description: 'Unplug and be present',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.moon,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Nature connection',
-          description: 'Spend time outdoors mindfully',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.tree,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Self-reflection',
-          description: 'Check in with yourself',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.heart,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Gratitude practice',
-          description: 'Write 3 things you\'re grateful for',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.heart,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Nature connection',
-          description: 'Spend time outdoors mindfully',
-          color: const Color(0xFF6B7D5A),
-          icon: PhosphorIconsRegular.tree,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Mindful eating',
-          description: 'Eat without distractions',
-          color: const Color(0xFF8B9BA8),
-          icon: PhosphorIconsRegular.forkKnife,
-          category: HabitCategory.mindfulness,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-      ]);
-    }
-
-    return habits;
-  }
-
-  static List<Habit> _getCreativityHabits(UserPreferences prefs) {
-    final habits = <Habit>[];
-    
-    if (prefs.scheduleType == 'daily' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Creative practice',
-          description: 'Draw, write, or create something',
-          color: const Color(0xFFC99FA3),
-          icon: PhosphorIconsRegular.pencil,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Write in journal',
-          description: 'Express your thoughts and ideas',
-          color: const Color(0xFFC9A882),
-          icon: PhosphorIconsRegular.pencil,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.evening,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Take a photo',
-          description: 'Capture something beautiful',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.pencil,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Play music or sing',
-          description: 'Express yourself through sound',
-          color: const Color(0xFFC99FA3),
-          icon: PhosphorIconsRegular.musicNote,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Take a photo',
-          description: 'Capture something beautiful',
-          color: const Color(0xFF9B8FA8),
-          icon: PhosphorIconsRegular.camera,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Doodle or sketch',
-          description: 'Free-form creative expression',
-          color: const Color(0xFFC99FA3),
-          icon: PhosphorIconsRegular.pencilSimple,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.easy,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-        Habit(
-          id: _uuid.v4(),
-          title: 'Creative craft',
-          description: 'Work on a creative project',
-          color: const Color(0xFF8B9BA8),
-          icon: PhosphorIconsRegular.palette,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [1, 2, 3, 4, 5, 6, 7],
-        ),
-      ]);
-    }
-
-    if (prefs.scheduleType == 'weekly' || prefs.scheduleType == 'mixed') {
-      habits.addAll([
-        Habit(
-          id: _uuid.v4(),
-          title: 'Creative project time',
-          description: 'Work on a personal creative project',
-          color: const Color(0xFFC99FA3),
-          icon: PhosphorIconsRegular.pencil,
-          category: HabitCategory.creativity,
-          timeBlock: HabitTimeBlock.anytime,
-          difficulty: HabitDifficulty.medium,
-          activeWeekdays: const [6, 7], // Weekend
-        ),
-      ]);
-    }
-
-    return habits;
-  }
+  static const List<_HabitTemplate> _creativityTemplates = [
+    _HabitTemplate(
+      title: 'Creative practice',
+      description: 'Draw, write, or create something',
+      color: Color(0xFFC99FA3),
+      icon: PhosphorIconsRegular.paintBrush,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Write in journal',
+      description: 'Express your thoughts and ideas',
+      color: Color(0xFFC9A882),
+      icon: PhosphorIconsRegular.penNib,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Take a photo',
+      description: 'Capture something beautiful',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.camera,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Play music or sing',
+      description: 'Express yourself through sound',
+      color: Color(0xFFC99FA3),
+      icon: PhosphorIconsRegular.musicNote,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Doodle or sketch',
+      description: 'Free-form creative expression',
+      color: Color(0xFFC99FA3),
+      icon: PhosphorIconsRegular.pencil,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Creative craft',
+      description: 'Work on a creative project',
+      color: Color(0xFF8B9BA8),
+      icon: PhosphorIconsRegular.scissors,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.anytime,
+      difficulty: HabitDifficulty.medium,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Brainstorm ideas',
+      description: 'Generate 10 new ideas',
+      color: Color(0xFF9B8FA8),
+      icon: PhosphorIconsRegular.lightbulb,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.morning,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+    _HabitTemplate(
+      title: 'Read fiction',
+      description: 'Stimulate imagination',
+      color: Color(0xFFC99FA3),
+      icon: PhosphorIconsRegular.bookOpen,
+      category: HabitCategory.creativity,
+      timeBlock: HabitTimeBlock.evening,
+      difficulty: HabitDifficulty.easy,
+      activeWeekdays: [1, 2, 3, 4, 5, 6, 7],
+    ),
+  ];
 }
