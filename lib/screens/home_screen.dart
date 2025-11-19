@@ -307,14 +307,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'BOOTSTRAP YOUR LIFE',
-          style: GoogleFonts.fraunces(
-            fontSize: 18,
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.w800,
-            color: colors.textPrimary,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                'BOOTSTRAP YOUR LIFE',
+                style: GoogleFonts.fraunces(
+                  fontSize: 18,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+            if (kDebugMode)
+              IconButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const OnboardingScreen(),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.info_outline_rounded,
+                  size: 20,
+                  color: colors.textSecondary,
+                ),
+                tooltip: 'Open Onboarding',
+              ),
+          ],
         ),
         const SizedBox(height: 20),
         // New Date Strip
@@ -323,28 +347,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onDateSelected: _onDateSelected,
         ),
         
-        // TODO: Remove this dev-only button before release
-        if (kDebugMode)
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const OnboardingScreen(),
-                  ),
-                );
-              },
-              icon: Icon(
-                Icons.info_outline_rounded,
-                size: 20,
-                color: colors.textSecondary,
-              ),
-              tooltip: 'Open Onboarding',
-            ),
-          ),
-
         const SizedBox(height: 18),
         Text('Future Journal', style: textStyles.captionUppercase),
         const SizedBox(height: 8),

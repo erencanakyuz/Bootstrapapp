@@ -195,9 +195,10 @@ class HabitPlanGenerator {
     }
 
     // 9. Convert to Habits
-    // Align targets (monthly/weekly) logic is handled inside Habit model usually or we can keep the helper
+    // Apply schedule preference so generated habits respect the user's choice.
     return selectedTemplates.map((t) {
       var habit = t.toHabit();
+      habit = _applySchedulePreference(habit, preferences.scheduleType);
       return _alignTargetsWithSchedule(habit);
     }).toList();
   }
@@ -219,6 +220,50 @@ class HabitPlanGenerator {
       weeklyTarget: cappedWeeklyTarget,
       monthlyTarget: cappedMonthlyTarget,
     );
+  }
+
+  static const List<int> _allWeekdays = [
+    DateTime.monday,
+    DateTime.tuesday,
+    DateTime.wednesday,
+    DateTime.thursday,
+    DateTime.friday,
+    DateTime.saturday,
+    DateTime.sunday,
+  ];
+
+  static const List<int> _defaultWeeklyDays = [
+    DateTime.monday,
+    DateTime.wednesday,
+    DateTime.friday,
+  ];
+
+  static const List<int> _weekendDays = [
+    DateTime.saturday,
+    DateTime.sunday,
+  ];
+
+  static Habit _applySchedulePreference(
+    Habit habit,
+    String scheduleType,
+  ) {
+    switch (scheduleType) {
+      case 'daily':
+        if (habit.activeWeekdays.length < 5) {
+          return habit.copyWith(activeWeekdays: _allWeekdays);
+        }
+        return habit;
+      case 'weekly':
+        if (habit.activeWeekdays.length > 4 ||
+            habit.activeWeekdays.isEmpty) {
+          return habit.copyWith(activeWeekdays: _defaultWeeklyDays);
+        }
+        return habit;
+      case 'weekend':
+        return habit.copyWith(activeWeekdays: _weekendDays);
+      default:
+        return habit;
+    }
   }
 
 
