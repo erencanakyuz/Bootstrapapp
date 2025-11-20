@@ -80,18 +80,12 @@ class _HabitSearchBarState extends State<HabitSearchBar> {
       ),
       decoration: BoxDecoration(
         color: colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.3),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardSoft(colors.background),
       ),
       child: TextField(
         controller: _controller,

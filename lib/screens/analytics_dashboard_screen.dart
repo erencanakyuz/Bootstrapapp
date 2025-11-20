@@ -140,7 +140,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 ),
                 decoration: BoxDecoration(
                   color: colors.elevatedSurface,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXL),
                   border: Border.all(
                     color: colors.outline.withValues(alpha: 0.5),
                     width: 1,
@@ -302,7 +302,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSizes.paddingXL),
       decoration: BoxDecoration(
         color: colors.elevatedSurface, // Use theme elevatedSurface
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
           width: 1,
@@ -345,7 +345,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
         color: colors.elevatedSurface, // Use theme elevatedSurface
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
           width: 1,
@@ -392,7 +392,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
         color: colors.elevatedSurface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(
           color: colors.outline.withValues(alpha: 0.5),
           width: 1,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/habit.dart';
 import '../models/habit_template.dart' as templates;
 import '../screens/savings_analysis_screen.dart';
@@ -106,7 +107,11 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
         elevation: 0,
         title: Text(
           'Habit Templates',
-          style: textStyles.titlePage,
+          style: GoogleFonts.fraunces(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+          ),
         ),
         bottom: TabBar(
           controller: _tabController,
@@ -115,6 +120,16 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
           labelColor: colors.textPrimary,
           unselectedLabelColor: colors.textSecondary,
           indicatorColor: colors.primary,
+          indicatorSize: TabBarIndicatorSize.label,
+          dividerColor: Colors.transparent,
+          labelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          unselectedLabelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
           tabs: [
             const Tab(text: 'All'),
             ...HabitCategory.values.map((cat) => Tab(text: cat.label)),
@@ -126,23 +141,39 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
           // Search bar
           Padding(
             padding: const EdgeInsets.all(AppSizes.paddingL),
-            child: TextField(
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Search templates...',
-                prefixIcon: Icon(Icons.search, color: colors.textSecondary),
-                filled: true,
-                fillColor: colors.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                  borderSide: BorderSide(
-                    color: colors.outline.withValues(alpha: 0.3),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+                boxShadow: AppShadows.cardSoft(colors.background),
+              ),
+              child: TextField(
+                onChanged: _onSearchChanged,
+                style: textStyles.body,
+                decoration: InputDecoration(
+                  hintText: 'Search templates...',
+                  hintStyle: textStyles.body.copyWith(color: colors.textTertiary),
+                  prefixIcon: Icon(Icons.search, color: colors.textSecondary),
+                  filled: true,
+                  fillColor: Colors.transparent,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+                    borderSide: BorderSide.none,
                   ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                  borderSide: BorderSide(
-                    color: colors.outline.withValues(alpha: 0.3),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+                    borderSide: BorderSide(
+                      color: colors.primary.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingL,
+                    vertical: AppSizes.paddingM,
                   ),
                 ),
               ),
@@ -173,7 +204,11 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
                         const SizedBox(height: AppSizes.paddingL),
                         Text(
                           'No templates found',
-                          style: textStyles.bodyBold,
+                          style: GoogleFonts.fraunces(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSizes.paddingS),
                         Text(
@@ -186,6 +221,7 @@ class _HabitTemplatesScreenState extends ConsumerState<HabitTemplatesScreen>
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSizes.paddingL,
+                      vertical: AppSizes.paddingS,
                     ),
                     itemCount: _filteredTemplates.length,
                     itemBuilder: (context, index) {
@@ -222,34 +258,39 @@ class _TemplateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.paddingM),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: AppShadows.cardSoft(colors.background),
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-          child: Container(
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+          child: Padding(
             padding: const EdgeInsets.all(AppSizes.paddingL),
-            decoration: BoxDecoration(
-              color: colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(AppSizes.radiusL),
-              border: Border.all(
-                color: colors.outline.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: template.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                    border: Border.all(
+                      color: template.color.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Icon(
                     template.icon,
                     color: template.color,
-                    size: 24,
+                    size: 28,
                   ),
                 ),
                 const SizedBox(width: AppSizes.paddingL),
@@ -259,16 +300,20 @@ class _TemplateCard extends StatelessWidget {
                     children: [
                       Text(
                         template.title,
-                        style: textStyles.titleCard,
+                        style: GoogleFonts.fraunces(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         template.description,
-                        style: textStyles.bodySecondary,
+                        style: textStyles.bodySecondary.copyWith(fontSize: 13),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           _DifficultyBadge(
@@ -286,8 +331,9 @@ class _TemplateCard extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.add_circle_outline,
-                  color: colors.textSecondary,
+                  Icons.add_circle_outline_rounded,
+                  color: colors.primary.withValues(alpha: 0.5),
+                  size: 28,
                 ),
               ],
             ),
@@ -310,77 +356,96 @@ class _SavingsTemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingL),
       decoration: BoxDecoration(
-        color: colors.success.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppSizes.radiusXXL),
+        gradient: LinearGradient(
+          colors: [
+            colors.success.withValues(alpha: 0.15),
+            colors.success.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         border: Border.all(
           color: colors.success.withValues(alpha: 0.3),
         ),
+        boxShadow: AppShadows.cardSoft(colors.background),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: colors.success.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                ),
-                child: Icon(
-                  Icons.savings,
-                  color: colors.success,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppSizes.paddingL),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.paddingL),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'Tasarruf Et',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: colors.success.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                      ),
+                      child: Icon(
+                        Icons.savings_rounded,
+                        color: colors.success,
+                        size: 26,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Sigara, dışarıdan yemek vb. harcamaları azalt ve mini uygulamada birikimini izle.',
-                      style: TextStyle(
-                        color: colors.textSecondary,
+                    const SizedBox(width: AppSizes.paddingL),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Savings Challenge',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Reduce expenses and track your savings with this mini-app.',
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.paddingM),
-          OutlinedButton.icon(
-            onPressed: onTap,
-            icon: Icon(Icons.arrow_forward, color: colors.success),
-            label: Text(
-              'Tasarruf mini uygulamasını aç',
-              style: TextStyle(color: colors.success),
+                const SizedBox(height: AppSizes.paddingM),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Open Mini App',
+                      style: TextStyle(
+                        color: colors.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: colors.success,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ],
             ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: colors.success),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingL,
-                vertical: AppSizes.paddingS,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusL),
-              ),
-            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -399,19 +464,24 @@ class _DifficultyBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 8,
+        horizontal: 10,
         vertical: 4,
       ),
       decoration: BoxDecoration(
         color: difficulty.badgeColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: difficulty.badgeColor.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
       ),
       child: Text(
         difficulty.label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           color: difficulty.badgeColor,
+          letterSpacing: 0.3,
         ),
       ),
     );
@@ -431,22 +501,26 @@ class _TimeBlockBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 8,
+        horizontal: 10,
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: colors.outline.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
+        color: colors.textSecondary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colors.textSecondary.withValues(alpha: 0.15),
+          width: 0.5,
+        ),
       ),
       child: Text(
         timeBlock.label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w500,
           color: colors.textSecondary,
+          letterSpacing: 0.3,
         ),
       ),
     );
   }
 }
-
