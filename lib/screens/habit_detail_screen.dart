@@ -84,12 +84,34 @@ class HabitDetailScreen extends ConsumerWidget {
               icon: Icon(Icons.arrow_back, color: colors.textPrimary),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            title: Text(
-              habit.title,
-              style: GoogleFonts.fraunces(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colors.textPrimary,
+            title: Hero(
+              tag: 'habit_title_${habit.id}',
+              flightShuttleBuilder: (
+                BuildContext flightContext,
+                Animation<double> animation,
+                HeroFlightDirection flightDirection,
+                BuildContext fromHeroContext,
+                BuildContext toHeroContext,
+              ) {
+                return DefaultTextStyle(
+                  style: GoogleFonts.fraunces(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                  child: Text(habit.title),
+                );
+              },
+              child: Material(
+                color: Colors.transparent,
+                child: Text(
+                  habit.title,
+                  style: GoogleFonts.fraunces(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
               ),
             ),
             actions: [
@@ -121,75 +143,71 @@ class HabitDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Hero card matching habit card style
-                Hero(
-                  tag: 'habit-${habit.id}',
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                    decoration: BoxDecoration(
-                      color: colors
-                          .elevatedSurface, // Same as habit card - use theme elevatedSurface
-                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                      border: Border.all(
-                        color: colors.outline.withValues(alpha: 0.5),
-                        width: 1,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  decoration: BoxDecoration(
+                    color: colors
+                        .elevatedSurface, // Same as habit card - use theme elevatedSurface
+                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                    border: Border.all(
+                      color: colors.outline.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                    boxShadow: AppShadows.cardSoft(null),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colors.outline.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          habit.icon,
+                          color: colors.textPrimary.withValues(alpha: 0.7),
+                          size: 24,
+                        ),
                       ),
-                      boxShadow: AppShadows.cardSoft(null),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: colors.outline.withValues(alpha: 0.2),
-                              width: 1,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              habit.title,
+                              style: GoogleFonts.fraunces(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                height: 1.25,
+                                color: colors.textPrimary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          child: Icon(
-                            habit.icon,
-                            color: colors.textPrimary.withValues(alpha: 0.7),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                habit.title,
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.25,
-                                  color: colors.textPrimary,
+                            const SizedBox(height: 4),
+                            Text(
+                              '${habit.category.label.toUpperCase()} - ${habit.timeBlock.label}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: colors.textPrimary.withValues(
+                                  alpha: 0.65,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: true,
+                                letterSpacing: 0.3,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${habit.category.label.toUpperCase()} - ${habit.timeBlock.label}',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: colors.textPrimary.withValues(
-                                    alpha: 0.65,
-                                  ),
-                                  letterSpacing: 0.3,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
-                              ),
-                            ],
-                          ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: AppSizes.paddingXXL),

@@ -158,7 +158,7 @@ class _PulsingGlowState extends State<PulsingGlow>
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
-                color: widget.glowColor.withOpacity(0.4 * _animation.value),
+                color: widget.glowColor.withValues(alpha: 0.4 * _animation.value),
                 blurRadius: widget.maxBlurRadius * _animation.value,
                 spreadRadius: 2 * _animation.value,
               ),
@@ -281,7 +281,7 @@ class _AchievementUnlockAnimationState extends State<AchievementUnlockAnimation>
                     boxShadow: [
                       BoxShadow(
                         color: widget.accentColor
-                            .withOpacity(0.5 * _glowAnimation.value),
+                            .withValues(alpha: 0.5 * _glowAnimation.value),
                         blurRadius: 30 * _glowAnimation.value,
                         spreadRadius: 5 * _glowAnimation.value,
                       ),

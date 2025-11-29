@@ -101,10 +101,10 @@ class _SavingsAnalysisScreenState extends ConsumerState<SavingsAnalysisScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _OverviewTab(),
-          _ChartsTab(),
-          _EntriesTab(),
-          _GoalsTab(),
+          _overviewTab(),
+          _chartsTab(),
+          _entriesTab(),
+          _goalsTab(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -147,71 +147,54 @@ class _SavingsAnalysisScreenState extends ConsumerState<SavingsAnalysisScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Filtrele', style: textStyles.titleSection),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Tümü'),
-              leading: Radio<SavingsTimeFilter>(
-                value: SavingsTimeFilter.all,
-                groupValue: filter.timeFilter,
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(savingsFilterProvider.notifier).reset();
-                    Navigator.pop(context);
-                  }
-                },
+        content: RadioGroup<SavingsTimeFilter>(
+          groupValue: filter.timeFilter,
+          onChanged: (value) {
+            if (value != null) {
+              if (value == SavingsTimeFilter.all) {
+                ref.read(savingsFilterProvider.notifier).reset();
+              } else {
+                ref.read(savingsFilterProvider.notifier).setFilter(
+                    SavingsFilter(timeFilter: value));
+              }
+              Navigator.pop(context);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Tümü'),
+                leading: Radio<SavingsTimeFilter>(
+                  value: SavingsTimeFilter.all,
+                ),
               ),
-            ),
-            ListTile(
-              title: const Text('Bugün'),
-              leading: Radio<SavingsTimeFilter>(
-                value: SavingsTimeFilter.today,
-                groupValue: filter.timeFilter,
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(savingsFilterProvider.notifier).setFilter(
-                        SavingsFilter(timeFilter: value));
-                    Navigator.pop(context);
-                  }
-                },
+              ListTile(
+                title: const Text('Bugün'),
+                leading: Radio<SavingsTimeFilter>(
+                  value: SavingsTimeFilter.today,
+                ),
               ),
-            ),
-            ListTile(
-              title: const Text('Bu Hafta'),
-              leading: Radio<SavingsTimeFilter>(
-                value: SavingsTimeFilter.thisWeek,
-                groupValue: filter.timeFilter,
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(savingsFilterProvider.notifier).setFilter(
-                        SavingsFilter(timeFilter: value));
-                    Navigator.pop(context);
-                  }
-                },
+              ListTile(
+                title: const Text('Bu Hafta'),
+                leading: Radio<SavingsTimeFilter>(
+                  value: SavingsTimeFilter.thisWeek,
+                ),
               ),
-            ),
-            ListTile(
-              title: const Text('Bu Ay'),
-              leading: Radio<SavingsTimeFilter>(
-                value: SavingsTimeFilter.thisMonth,
-                groupValue: filter.timeFilter,
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(savingsFilterProvider.notifier).setFilter(
-                        SavingsFilter(timeFilter: value));
-                    Navigator.pop(context);
-                  }
-                },
+              ListTile(
+                title: const Text('Bu Ay'),
+                leading: Radio<SavingsTimeFilter>(
+                  value: SavingsTimeFilter.thisMonth,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _OverviewTab() {
+  Widget _overviewTab() {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     final todayTotal = ref.watch(todaySavingsProvider);
@@ -258,7 +241,7 @@ class _SavingsAnalysisScreenState extends ConsumerState<SavingsAnalysisScreen>
     );
   }
 
-  Widget _ChartsTab() {
+  Widget _chartsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.paddingL),
       child: Column(
@@ -273,7 +256,7 @@ class _SavingsAnalysisScreenState extends ConsumerState<SavingsAnalysisScreen>
     );
   }
 
-  Widget _EntriesTab() {
+  Widget _entriesTab() {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     final entries = ref.watch(filteredSavingsEntriesProvider);
@@ -326,7 +309,7 @@ class _SavingsAnalysisScreenState extends ConsumerState<SavingsAnalysisScreen>
     );
   }
 
-  Widget _GoalsTab() {
+  Widget _goalsTab() {
     final goal = ref.watch(savingsGoalProvider);
     final monthlyTotal = ref.watch(monthlySavingsProvider);
 

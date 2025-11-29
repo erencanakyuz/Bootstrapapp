@@ -138,7 +138,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     final navColor = isDarkMode
         ? Color.alphaBlend(
-            Colors.white.withOpacity(0.08),
+            Colors.white.withValues(alpha: 0.08),
             colors.elevatedSurface,
           )
         : colors.surface;

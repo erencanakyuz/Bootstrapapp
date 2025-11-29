@@ -1372,13 +1372,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     bool isSelected,
     VoidCallback onTap,
   ) {
-    return AnimatedContainer(
-      duration: AppAnimations.moderate,
-      curve: Curves.easeOutCubic,
-      transform: Matrix4.identity()
-        ..translate(0.0, isSelected ? -1.5 : 0.0, 0.0)
-        ..scale(isSelected ? 1.015 : 1.0, isSelected ? 1.015 : 1.0, 1.0),
-      child: Material(
+    return Transform.scale(
+      scale: isSelected ? 1.015 : 1.0,
+      child: Transform.translate(
+        offset: Offset(0.0, isSelected ? -1.5 : 0.0),
+        child: AnimatedContainer(
+          duration: AppAnimations.moderate,
+          curve: Curves.easeOutCubic,
+          child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
@@ -1554,6 +1555,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ],
             ),
           ),
+        ),
+      ),
         ),
       ),
     );

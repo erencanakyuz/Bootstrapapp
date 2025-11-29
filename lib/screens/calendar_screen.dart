@@ -560,7 +560,7 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = habit.isActiveOnDate(date);
     final isCompleted = habit.isCompletedOn(date);
-    
+
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final normalizedToday = DateTime(now.year, now.month, now.day);
     final normalizedCreatedAt = DateTime(

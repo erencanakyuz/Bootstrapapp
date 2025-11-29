@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 /// Smooth animated bottom sheet with slide + fade effect
-/// Uses easeOutBack curve for satisfying bounce
 Future<T?> showAnimatedBottomSheet<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
@@ -40,7 +39,6 @@ class _AnimatedBottomSheetContentState
     extends State<_AnimatedBottomSheetContent>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
@@ -50,17 +48,6 @@ class _AnimatedBottomSheetContentState
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    );
-
-    // Slide from bottom with bouncy easeOutBack curve
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3), // Start slightly below
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack, // Bouncy!
-      ),
     );
 
     // Fade in smoothly
@@ -86,15 +73,14 @@ class _AnimatedBottomSheetContentState
 
   @override
   Widget build(BuildContext context) {
+    // Native bottom sheet already handles slide up animation
+    // We only add a fade in for the content
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return SlideTransition(
-          position: _slideAnimation,
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: child,
-          ),
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: child,
         );
       },
       child: widget.child,

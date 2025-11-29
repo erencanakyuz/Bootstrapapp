@@ -288,7 +288,7 @@ class _AnimatedLinearProgressState extends State<AnimatedLinearProgress>
                       child: CustomPaint(
                         painter: _WavePainter(
                           progress: _waveController.value,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                     ),
@@ -397,7 +397,7 @@ class AnimatedStepProgress extends StatelessWidget {
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: activeColor.withOpacity(0.4),
+                        color: activeColor.withValues(alpha: 0.4),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),
@@ -415,174 +415,5 @@ class AnimatedStepProgress extends StatelessWidget {
         }
       }),
     );
-  }
-}
-
-/// Radial gauge progress
-class AnimatedRadialGauge extends StatefulWidget {
-  final double value; // 0-100
-  final double size;
-  final Color progressColor;
-  final Color backgroundColor;
-  final Duration duration;
-  final String? label;
-  final TextStyle? labelStyle;
-  final TextStyle? valueStyle;
-
-  const AnimatedRadialGauge({
-    super.key,
-    required this.value,
-    this.size = 150,
-    this.progressColor = Colors.blue,
-    this.backgroundColor = const Color(0xFFE0E0E0),
-    this.duration = const Duration(milliseconds: 1500),
-    this.label,
-    this.labelStyle,
-    this.valueStyle,
-  });
-
-  @override
-  State<AnimatedRadialGauge> createState() => _AnimatedRadialGaugeState();
-}
-
-class _AnimatedRadialGaugeState extends State<AnimatedRadialGauge>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-
-    _animation = Tween<double>(begin: 0, end: widget.value).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(AnimatedRadialGauge oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value) {
-      _animation = Tween<double>(
-        begin: _animation.value,
-        end: widget.value,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-      );
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.size,
-      height: widget.size,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: _GaugePainter(
-              value: _animation.value,
-              progressColor: widget.progressColor,
-              backgroundColor: widget.backgroundColor,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${_animation.value.toInt()}%',
-                    style: widget.valueStyle ??
-                        TextStyle(
-                          fontSize: widget.size * 0.18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  if (widget.label != null)
-                    Text(
-                      widget.label!,
-                      style: widget.labelStyle ??
-                          TextStyle(
-                            fontSize: widget.size * 0.08,
-                            color: Colors.grey,
-                          ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _GaugePainter extends CustomPainter {
-  final double value;
-  final Color progressColor;
-  final Color backgroundColor;
-
-  _GaugePainter({
-    required this.value,
-    required this.progressColor,
-    required this.backgroundColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.4;
-    const strokeWidth = 12.0;
-    const startAngle = math.pi * 0.75;
-    const sweepAngle = math.pi * 1.5;
-
-    // Background arc
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      bgPaint,
-    );
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final progressSweep = sweepAngle * (value / 100);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      progressSweep,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_GaugePainter oldDelegate) {
-    return oldDelegate.value != value;
   }
 }

@@ -70,7 +70,6 @@ class _FloatingWidgetState extends State<FloatingWidget>
 }
 
 /// Breathing scale animation - subtle expand/contract
-/// Great for avatars, icons, focus elements
 class BreathingWidget extends StatefulWidget {
   final Widget child;
   final double minScale;
@@ -139,153 +138,8 @@ class _BreathingWidgetState extends State<BreathingWidget>
   }
 }
 
-/// Orbit animation - rotate around a point
-class OrbitWidget extends StatefulWidget {
-  final Widget child;
-  final double radius;
-  final Duration duration;
-  final bool clockwise;
-  final bool enabled;
-
-  const OrbitWidget({
-    super.key,
-    required this.child,
-    this.radius = 20,
-    this.duration = const Duration(seconds: 4),
-    this.clockwise = true,
-    this.enabled = true,
-  });
-
-  @override
-  State<OrbitWidget> createState() => _OrbitWidgetState();
-}
-
-class _OrbitWidgetState extends State<OrbitWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-
-    if (widget.enabled) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final angle = widget.clockwise
-            ? _controller.value * 2 * math.pi
-            : -_controller.value * 2 * math.pi;
-        return Transform.translate(
-          offset: Offset(
-            math.cos(angle) * widget.radius,
-            math.sin(angle) * widget.radius,
-          ),
-          child: widget.child,
-        );
-      },
-    );
-  }
-}
-
-/// Wiggle animation - shake left/right
-/// Perfect for attention-grabbing elements
-class WiggleWidget extends StatefulWidget {
-  final Widget child;
-  final double angle;
-  final Duration duration;
-  final int shakes;
-  final bool enabled;
-
-  const WiggleWidget({
-    super.key,
-    required this.child,
-    this.angle = 0.05,
-    this.duration = const Duration(milliseconds: 500),
-    this.shakes = 3,
-    this.enabled = true,
-  });
-
-  @override
-  State<WiggleWidget> createState() => _WiggleWidgetState();
-}
-
-class _WiggleWidgetState extends State<WiggleWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-
-    _animation = TweenSequence<double>(
-      List.generate(widget.shakes * 2, (index) {
-        final isEven = index % 2 == 0;
-        return TweenSequenceItem(
-          tween: Tween(
-            begin: isEven ? 0.0 : widget.angle,
-            end: isEven ? widget.angle : 0.0,
-          ),
-          weight: 1.0,
-        );
-      }),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-
-    if (widget.enabled) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _controller.repeat();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
-
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.rotate(
-          angle: _animation.value,
-          child: widget.child,
-        );
-      },
-    );
-  }
-}
-
 /// Tap bounce effect wrapper
+/// Use this to wrap InkWells for better touch feedback
 class TapBounce extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -357,96 +211,6 @@ class _TapBounceState extends State<TapBounce>
           );
         },
       ),
-    );
-  }
-}
-
-/// Ripple effect background
-class RippleBackground extends StatefulWidget {
-  final Widget child;
-  final Color rippleColor;
-  final int rippleCount;
-  final Duration duration;
-
-  const RippleBackground({
-    super.key,
-    required this.child,
-    this.rippleColor = Colors.blue,
-    this.rippleCount = 3,
-    this.duration = const Duration(seconds: 3),
-  });
-
-  @override
-  State<RippleBackground> createState() => _RippleBackgroundState();
-}
-
-class _RippleBackgroundState extends State<RippleBackground>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(widget.rippleCount, (index) {
-      final controller = AnimationController(
-        vsync: this,
-        duration: widget.duration,
-      );
-
-      // Stagger start of each ripple
-      Future.delayed(
-        Duration(milliseconds: index * (widget.duration.inMilliseconds ~/ widget.rippleCount)),
-        () {
-          if (mounted) controller.repeat();
-        },
-      );
-
-      return controller;
-    });
-
-    _animations = _controllers.map((controller) {
-      return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(parent: controller, curve: Curves.easeOut),
-      );
-    }).toList();
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ...List.generate(widget.rippleCount, (index) {
-          return AnimatedBuilder(
-            animation: _animations[index],
-            builder: (context, child) {
-              return Container(
-                width: 100 + (200 * _animations[index].value),
-                height: 100 + (200 * _animations[index].value),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: widget.rippleColor.withOpacity(
-                      (1 - _animations[index].value) * 0.3,
-                    ),
-                    width: 2,
-                  ),
-                ),
-              );
-            },
-          );
-        }),
-        widget.child,
-      ],
     );
   }
 }
@@ -607,7 +371,7 @@ class _ParticlePainter extends CustomPainter {
       final y = center.dy + math.sin(particle.angle) * distance;
 
       final paint = Paint()
-        ..color = color.withOpacity(1 - progress)
+        ..color = color.withValues(alpha: 1 - progress)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(

@@ -27,9 +27,22 @@ class AnimatedCounter extends StatelessWidget {
       duration: duration,
       curve: curve,
       builder: (context, animatedValue, child) {
-        return Text(
-          '${prefix ?? ''}${animatedValue.toInt()}${suffix ?? ''}',
-          style: style,
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.5),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+              child: FadeTransition(opacity: animation, child: child),
+            );
+          },
+          child: Text(
+            '${prefix ?? ''}${animatedValue.toInt()}${suffix ?? ''}',
+            key: ValueKey<int>(animatedValue.toInt()),
+            style: style,
+          ),
         );
       },
     );

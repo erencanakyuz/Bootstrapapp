@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// Shimmer effect widget - use for loading states or highlighting
+/// Shimmer effect widget - Optimized using gradient overlay instead of ShaderMask
 class ShimmerEffect extends StatefulWidget {
   final Widget child;
   final Color? baseColor;
@@ -65,36 +65,52 @@ class _ShimmerEffectState extends State<ShimmerEffect>
     if (!widget.enabled) return widget.child;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = widget.baseColor ??
-        (isDark ? Colors.grey[800]! : Colors.grey[300]!);
     final highlightColor = widget.highlightColor ??
         (isDark ? Colors.grey[700]! : Colors.grey[100]!);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
-              stops: [
-                (_animation.value - 0.3).clamp(0.0, 1.0),
-                _animation.value.clamp(0.0, 1.0),
-                (_animation.value + 0.3).clamp(0.0, 1.0),
-              ],
-            ).createShader(bounds);
-          },
-          child: widget.child,
-        );
-      },
+    return Stack(
+      children: [
+        widget.child,
+        Positioned.fill(
+          child: LayoutBuilder(builder: (context, constraints) {
+            return AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          highlightColor.withValues(alpha: 0.4),
+                          Colors.transparent
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                        begin: Alignment(-1.0 + (_animation.value), 0),
+                        end: Alignment(1.0 + (_animation.value), 0),
+                        transform: _SlidingGradientTransform(
+                            slidePercent: _animation.value),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
+        ),
+      ],
     );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  final double slidePercent;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
   }
 }
 
@@ -158,7 +174,7 @@ class _PulsingGlowState extends State<PulsingGlow>
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
-                color: widget.glowColor.withOpacity(0.4 * _animation.value),
+                color: widget.glowColor.withValues(alpha: 0.4 * _animation.value),
                 blurRadius: widget.maxBlurRadius * _animation.value,
                 spreadRadius: 2 * _animation.value,
               ),
@@ -281,7 +297,7 @@ class _AchievementUnlockAnimationState extends State<AchievementUnlockAnimation>
                     boxShadow: [
                       BoxShadow(
                         color: widget.accentColor
-                            .withOpacity(0.5 * _glowAnimation.value),
+                            .withValues(alpha: 0.5 * _glowAnimation.value),
                         blurRadius: 30 * _glowAnimation.value,
                         spreadRadius: 5 * _glowAnimation.value,
                       ),

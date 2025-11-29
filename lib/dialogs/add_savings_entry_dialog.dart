@@ -37,6 +37,7 @@ class _AddSavingsEntryDialogState
   String? _selectedDifficulty;
   final List<String> _selectedTags = [];
   bool _isLoading = false;
+  bool _hasMissingCategory = false; // Track if original category is missing
 
   final List<String> _moodOptions = ['Mutlu', 'Normal', 'Üzgün', 'Stresli', 'Yorgun'];
   final List<String> _difficultyOptions = ['Kolay', 'Orta', 'Zor'];
@@ -71,15 +72,17 @@ class _AddSavingsEntryDialogState
     if (widget.entryToEdit != null && _selectedCategory == null) {
       final categories = ref.read(savingsCategoriesProvider);
       final entry = widget.entryToEdit!;
-      _selectedCategory = categories.firstWhere(
-        (c) => c.id == entry.categoryId,
-        orElse: () => categories.isNotEmpty ? categories.first : SavingsCategory(
-          name: 'Genel',
-          defaultAmount: 0,
-          icon: Icons.category,
-          color: const Color(0xFFC9A882),
-        ),
-      );
+      
+      try {
+        _selectedCategory = categories.firstWhere(
+          (c) => c.id == entry.categoryId,
+        );
+        _hasMissingCategory = false;
+      } catch (e) {
+        // Category not found - mark as missing and require user to select a valid one
+        _hasMissingCategory = true;
+        _selectedCategory = categories.isNotEmpty ? categories.first : null;
+      }
     }
   }
 
@@ -130,6 +133,8 @@ class _AddSavingsEntryDialogState
           ? null
           : double.tryParse(_wouldHaveSpentController.text);
 
+      // Use the selected category's ID (which is guaranteed to exist in the categories list)
+      // If the original category was missing, the user has selected a valid replacement
       final entry = SavingsEntry(
         id: widget.entryToEdit?.id,
         categoryId: _selectedCategory!.id,
@@ -221,6 +226,38 @@ class _AddSavingsEntryDialogState
                     ),
                   )
                 else ...[
+                  // Show warning if original category is missing
+                  if (_hasMissingCategory && widget.entryToEdit != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: AppSizes.paddingM),
+                      padding: const EdgeInsets.all(AppSizes.paddingM),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSizes.paddingS),
+                          Expanded(
+                            child: Text(
+                              'Bu girişin orijinal kategorisi bulunamadı. Lütfen yeni bir kategori seçin.',
+                              style: textStyles.bodySecondary.copyWith(
+                                color: Colors.orange.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Text('Kategori', style: textStyles.bodyBold),
                   const SizedBox(height: AppSizes.paddingS),
                   Wrap(
