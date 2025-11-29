@@ -114,7 +114,7 @@ class HabitDetailScreen extends ConsumerWidget {
               left: AppSizes.paddingXXL,
               right: AppSizes.paddingXXL,
               top: AppSizes.paddingM,
-              bottom: MediaQuery.of(context).padding.bottom + AppSizes.paddingXXL, // Navigation bar için padding
+              bottom: MediaQuery.of(context).padding.bottom + AppSizes.paddingXXL, // Extra padding above nav bar
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +172,7 @@ class HabitDetailScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${habit.category.label.toUpperCase()} • ${habit.timeBlock.label}',
+                                '${habit.category.label.toUpperCase()} - ${habit.timeBlock.label}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: colors.textPrimary.withValues(
@@ -372,7 +372,7 @@ class HabitDetailScreen extends ConsumerWidget {
                 : colors.outline.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: Colors.black.withValues(alpha: 0.3), // Tüm kareler için siyah border
+              color: Colors.black.withValues(alpha: 0.3), // Consistent border for all cells
               width: 1,
             ),
           ),
@@ -386,7 +386,7 @@ class HabitDetailScreen extends ConsumerWidget {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.85, // 1.75'ten 1.85'e çıkarıldı - yazı kaybolmasın diye
+      childAspectRatio: 1.85, // Slightly wider to keep text visible
       mainAxisSpacing: AppSizes.paddingM,
       crossAxisSpacing: AppSizes.paddingM,
       children: [
@@ -482,8 +482,8 @@ class HabitDetailScreen extends ConsumerWidget {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
-          // Klavye overlay olacak, içeriği yukarı itmeyecek
-          // Dialog açıldıktan sonra kısa bir gecikme ile klavyeyi aç - performans için
+          // Keep content stable while keyboard opens
+          // Request focus after a brief delay for smoother keyboard animation
           Future.delayed(const Duration(milliseconds: 100), () {
             focusNode.requestFocus();
           });
@@ -495,7 +495,7 @@ class HabitDetailScreen extends ConsumerWidget {
               focusNode: focusNode,
               maxLines: 4,
               decoration: const InputDecoration(hintText: 'What did you notice?'),
-              // autofocus kaldırıldı - performans için gecikmeli açılıyor
+              // Autofocus handled via delayed focus above
             ),
             actions: [
               TextButton(
@@ -523,13 +523,13 @@ class HabitDetailScreen extends ConsumerWidget {
       }
     } finally {
       focusNode.dispose();
-      // Dialog tamamen kapandıktan sonra controller'ı dispose et
-      // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
+      // Dispose controller after dialog closes
+      // Wait briefly so the dialog animation finishes before disposing
       Future.delayed(const Duration(milliseconds: 200), () {
         try {
           controller.dispose();
         } catch (e) {
-          // Controller zaten dispose edilmiş olabilir
+          // Controller may already be disposed
         }
       });
     }
@@ -685,8 +685,8 @@ class HabitDetailScreen extends ConsumerWidget {
       final result = await showDialog<String>(
         context: context,
         builder: (context) {
-          // Klavye overlay olacak, içeriği yukarı itmeyecek
-          // Dialog açıldıktan sonra kısa bir gecikme ile klavyeyi aç - performans için
+          // Keep content stable while keyboard opens
+          // Request focus after a brief delay for smoother keyboard animation
           Future.delayed(const Duration(milliseconds: 100), () {
             focusNode.requestFocus();
           });
@@ -699,7 +699,7 @@ class HabitDetailScreen extends ConsumerWidget {
               decoration: const InputDecoration(
                 hintText: 'Enter task title',
               ),
-              // autofocus kaldırıldı - performans için gecikmeli açılıyor
+              // Autofocus handled via delayed focus above
             ),
             actions: [
               TextButton(
@@ -728,13 +728,13 @@ class HabitDetailScreen extends ConsumerWidget {
       }
     } finally {
       focusNode.dispose();
-      // Dialog tamamen kapandıktan sonra controller'ı dispose et
-      // Kısa bir gecikme ekleyerek dialog animasyonunun bitmesini bekliyoruz
+      // Dispose controller after dialog closes
+      // Wait briefly so the dialog animation finishes before disposing
       Future.delayed(const Duration(milliseconds: 200), () {
         try {
           controller.dispose();
         } catch (e) {
-          // Controller zaten dispose edilmiş olabilir
+          // Controller may already be disposed
         }
       });
     }
@@ -748,20 +748,20 @@ class HabitDetailScreen extends ConsumerWidget {
     if (!context.mounted) return;
     final updatedHabit = await showModalBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true, // Tam ekran için scroll controlled
+      isScrollControlled: true, // Allow full-screen scroll
       backgroundColor: Colors.transparent,
-      useSafeArea: false, // Manuel padding kontrolü için false
+      useSafeArea: false, // Manual padding control
       isDismissible: true,
       enableDrag: true,
       builder: (context) {
         final topPadding = MediaQuery.of(context).padding.top;
-        // Klavye overlay olacak, içeriği yukarı itmeyecek
-        // Üst padding azaltıldı - drag handle daha erişilebilir olacak
+        // Keep content stable while keyboard opens
+        // Reduced top padding so the drag handle stays reachable
         
         return Padding(
           padding: EdgeInsets.only(
-            top: topPadding + 20, // Status bar + küçük boşluk (60'dan 20'ye düşürüldü)
-            // bottom padding kaldırıldı - klavye overlay olacak
+            top: topPadding + 20, // Status bar + small spacer
+            // Bottom padding removed to allow keyboard overlay
           ),
           child: AddHabitModal(habitToEdit: habit),
         );
@@ -783,7 +783,7 @@ class HabitDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete habit'),
-        content: Text('Remove ${habit.title}? This can’t be undone.'),
+        content: Text('Remove ${habit.title}? This can\'t be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -812,7 +812,7 @@ class HabitDetailScreen extends ConsumerWidget {
 
   void _shareHabit(Habit habit) {
     final message =
-        'I’m on a ${habit.getCurrentStreak()} day streak with ${habit.title}!';
+        'I\'m on a ${habit.getCurrentStreak()} day streak with ${habit.title}!';
     SharePlus.instance.share(ShareParams(text: message));
   }
 }
@@ -834,7 +834,7 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Container(
-      padding: const EdgeInsets.all(16), // 20'den 16'ya düşürüldü - padding yazıyı yutmasın
+      padding: const EdgeInsets.all(16), // Slightly reduced padding so text fits comfortably
       decoration: BoxDecoration(
         color: const Color(0xFFFFFCF9),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
@@ -848,7 +848,7 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon ve sayı yan yana
+          // Icon and value side by side
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -874,7 +874,7 @@ class _StatTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4), // 6'dan 4'e düşürüldü
+          const SizedBox(height: 4), // Compact spacing
           Text(
             title,
             style: TextStyle(
@@ -891,3 +891,6 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
+
+
+

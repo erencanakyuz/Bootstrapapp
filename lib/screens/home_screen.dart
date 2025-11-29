@@ -194,7 +194,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Update home widget only if modifying today
     if (_isToday) {
-      final activeHabits = _getActiveHabitsForSelectedDate();
+      final currentHabits = ref.read(habitsProvider).value ?? [];
+      final activeHabits = currentHabits
+          .map((h) => h.id == updatedHabit.id ? updatedHabit : h)
+          .where(
+            (h) => !h.archived && h.isActiveOnDate(_selectedDate),
+          )
+          .toList();
       final completedToday = activeHabits.where((h) => h.isCompletedOn(_selectedDate)).length;
       final totalToday = activeHabits.length;
       final topHabit = activeHabits.isNotEmpty ? activeHabits.first : null;

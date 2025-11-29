@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../constants/app_assets.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_settings_providers.dart';
 import '../providers/habit_providers.dart';
@@ -31,18 +32,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _isCreatingPlan = false;
 
   // Streamlined slides - focused on key features
-  final List<_OnboardingSlide> _slides = const [
+  // Uses AppAssets for centralized asset management
+  List<_OnboardingSlide> get _slides => [
     _OnboardingSlide(
       title: 'Welcome to Habit Tracker Pro',
       subtitle: 'Transform your daily routines into powerful habits. Build consistency, track progress, and achieve your goals with our comprehensive tracking system.',
-      illustration: 'assets/illustrations/onboarding_flow.svg',
+      illustration: AppAssets.onboarding.flowSvg,
+      illustrationType: IllustrationType.svg,
       icon: Icons.auto_awesome,
       featureType: FeatureType.welcome,
     ),
     _OnboardingSlide(
       title: 'Smart Habit Tracking',
       subtitle: 'Track habits with beautiful cards, streaks, and real-time progress. Quick actions let you complete habits instantly. Get smart suggestions tailored to your goals.',
-      illustration: null,
+      illustration: AppAssets.onboarding.tracking,
+      illustrationType: IllustrationType.webp,
       icon: Icons.check_circle_outline,
       featureType: FeatureType.tracking,
     ),
@@ -50,13 +54,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Visual Progress & Analytics',
       subtitle: 'See your progress at a glance with beautiful calendars, heatmaps, and insights. Track completions, streaks, and patterns over time. Export reports and celebrate milestones.',
       illustration: null,
+      illustrationType: IllustrationType.none,
       icon: Icons.insights,
       featureType: FeatureType.progress,
     ),
     _OnboardingSlide(
       title: 'Templates & Quick Start',
       subtitle: 'Start quickly with 20+ pre-made habit templates. Browse by category, customize to fit your lifestyle, and get personalized suggestions based on your goals.',
-      illustration: null,
+      illustration: AppAssets.onboarding.templates,
+      illustrationType: IllustrationType.webp,
       icon: Icons.auto_awesome_motion,
       featureType: FeatureType.templates,
     ),
@@ -64,13 +70,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Home Widgets & Customization',
       subtitle: 'Track habits from your home screen with customizable widgets. Personalize everything: sounds, haptics, confetti, animations, and themes. Make it truly yours.',
       illustration: null,
+      illustrationType: IllustrationType.none,
       icon: Icons.widgets,
       featureType: FeatureType.widgets,
     ),
     _OnboardingSlide(
       title: 'Smart Notifications & Features',
       subtitle: 'Get intelligent reminders that adapt to your schedule. Build habit chains, freeze without breaking streaks, set weekly/monthly targets, and organize with categories.',
-      illustration: 'assets/illustrations/onboarding_focus.svg',
+      illustration: AppAssets.onboarding.focusSvg,
+      illustrationType: IllustrationType.svg,
       icon: Icons.notifications_active,
       featureType: FeatureType.smart,
     ),
@@ -89,8 +97,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        child: Column(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background gradient image
+          Positioned.fill(
+            child: Image.asset(
+              AppAssets.backgrounds.onboarding,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback gradient if image fails
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.gradientPeachEnd,
+                        colors.background,
+                        colors.gradientPurpleLighterEnd.withValues(alpha: 0.3),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          // Main content
+          SafeArea(
+            child: Column(
           children: [
             // Progress bar at top
             if (_currentIndex < _slides.length)
@@ -242,6 +278,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ],
         ),
+          ),
+        ],
       ),
     );
   }
@@ -257,65 +295,137 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     AppTextStyles textStyles,
     _OnboardingSlide slide,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingM),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight.isFinite
-                    ? constraints.maxHeight - AppSizes.paddingM * 2
-                    : 0,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 8),
-
-                  // Illustration or Icon badge
-                  slide.illustration != null
-                      ? _buildSVGIllustration(slide.illustration!, colors)
-                      : _buildIconBadge(colors, slide.icon),
-
-                  const SizedBox(height: AppSizes.paddingM),
-
-                  // Title
-                  Text(
-                    slide.title,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.fraunces(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                      height: 1.2,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.paddingS),
-
-                  // Subtitle
-                  Text(
-                    slide.subtitle,
-                    textAlign: TextAlign.center,
-                    style: textStyles.body.copyWith(
-                      color: colors.textSecondary,
-                      height: 1.4,
-                      fontSize: 13,
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSizes.paddingM),
-
-                  // Feature-specific UI preview
-                  _buildFeaturePreview(colors, slide.featureType),
-                ],
+    final hasWebPIllustration = slide.illustrationType == IllustrationType.webp;
+    
+    if (hasWebPIllustration) {
+      // Layout for WebP 3D illustrations
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Large image
+            Expanded(
+              flex: 3,
+              child: Center(
+                child: _buildSlideIllustration(slide, colors),
               ),
             ),
-          );
-        },
+            
+            // Title
+            Text(
+              slide.title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.fraunces(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+                height: 1.2,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Subtitle
+            Text(
+              slide.subtitle,
+              textAlign: TextAlign.center,
+              style: textStyles.body.copyWith(
+                color: colors.textSecondary,
+                height: 1.5,
+                fontSize: 14,
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    }
+    
+    // Layout for non-WebP slides (icons)
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingXXL),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 16),
+          
+          _buildSlideIllustration(slide, colors),
+          
+          const SizedBox(height: 24),
+
+          // Title
+          Text(
+            slide.title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.fraunces(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              height: 1.2,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Subtitle
+          Text(
+            slide.subtitle,
+            textAlign: TextAlign.center,
+            style: textStyles.body.copyWith(
+              color: colors.textSecondary,
+              height: 1.4,
+              fontSize: 13,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          
+          Expanded(
+            child: _buildFeaturePreview(colors, slide.featureType),
+          ),
+        ],
       ),
+    );
+  }
+
+  /// Build the appropriate illustration based on slide type
+  Widget _buildSlideIllustration(_OnboardingSlide slide, AppColors colors) {
+    switch (slide.illustrationType) {
+      case IllustrationType.webp:
+        return _buildWebPIllustration(slide.illustration!, colors);
+      case IllustrationType.svg:
+        return _buildSVGIllustration(slide.illustration!, colors);
+      case IllustrationType.none:
+        return _buildIconBadge(colors, slide.icon);
+    }
+  }
+
+  /// Build WebP illustration - natural size, no forced scaling
+  Widget _buildWebPIllustration(String assetPath, AppColors colors) {
+    return Image.asset(
+      assetPath,
+      // No fixed height - let it fill available space naturally
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded) return child;
+        return AnimatedOpacity(
+          opacity: frame != null ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          child: child,
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(
+          Icons.image_outlined,
+          size: 64,
+          color: colors.textTertiary,
+        );
+      },
     );
   }
 
@@ -1340,10 +1450,21 @@ enum FeatureType {
   smart,
 }
 
+/// Type of illustration for the onboarding slide
+enum IllustrationType {
+  /// High-quality WebP raster illustration
+  webp,
+  /// SVG vector illustration (tinted by theme)
+  svg,
+  /// No illustration - show icon badge instead
+  none,
+}
+
 class _OnboardingSlide {
   final String title;
   final String subtitle;
   final String? illustration;
+  final IllustrationType illustrationType;
   final IconData icon;
   final FeatureType featureType;
 
@@ -1351,6 +1472,7 @@ class _OnboardingSlide {
     required this.title,
     required this.subtitle,
     this.illustration,
+    this.illustrationType = IllustrationType.none,
     required this.icon,
     required this.featureType,
   });
