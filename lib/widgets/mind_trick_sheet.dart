@@ -808,7 +808,7 @@ class _MindTrickSheetState extends ConsumerState<MindTrickSheet>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              habitColor.withValues(alpha: 0.15),
+              habitColor.withValues(alpha: 1),
               colors.surface,
             ],
           ),
@@ -853,15 +853,15 @@ class _MindTrickSheetState extends ConsumerState<MindTrickSheet>
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: habitColor.withValues(alpha: 0.2),
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: habitColor.withValues(alpha: 0.4),
-                      width: 2,
+                      color: habitColor,
+                      width: 3,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: habitColor.withValues(alpha: 0.2),
+                        color: habitColor.withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
                       ),
@@ -890,8 +890,16 @@ class _MindTrickSheetState extends ConsumerState<MindTrickSheet>
                 const SizedBox(height: 8),
 
                 Text(
-                  'Focus on this. You\'ve got this! 💪',
-                  style: textStyles.bodySecondary.copyWith(fontSize: 15),
+                  'Go ahead and do it. Come back when you\'re done.',
+                  style: textStyles.bodyBold.copyWith(fontSize: 15),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Take your time—you can close your screen and return whenever you\'re ready.',
+                  style: textStyles.bodySecondary.copyWith(fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
 

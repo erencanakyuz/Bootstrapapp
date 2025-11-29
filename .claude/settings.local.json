@@ -14,7 +14,9 @@
       "Bash(flutter analyze:*)",
       "Bash(choco install:*)",
       "Bash(claude --version:*)",
-      "Bash(npx claude:*)"
+      "Bash(npx claude:*)",
+      "Bash(findstr:*)",
+      "Bash(dart run:*)"
     ],
     "deny": [],
     "ask": []

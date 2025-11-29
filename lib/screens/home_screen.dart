@@ -361,16 +361,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onDateSelected: _onDateSelected,
           hasHabitsOnDate: _hasHabitsOnDate,
         ),
-        
-        const SizedBox(height: 18),
-        Text('Future Journal', style: textStyles.captionUppercase),
-        const SizedBox(height: 8),
-        Text('Future Moments', style: textStyles.titleSection),
-        const SizedBox(height: 8),
-        Text(
-          'Weekly notes to inspire your everyday journey.',
-          style: textStyles.bodySecondary,
-        ),
       ],
     );
   }
