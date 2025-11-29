@@ -177,8 +177,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: (_currentIndex + 1) / _slides.length,
-                    backgroundColor: colors.outline.withValues(alpha: 0.2),
-                    valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
+                    backgroundColor: colors.textPrimary.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary.withValues(alpha: 0.7)),
                     minHeight: 3,
                   ),
                 ),
@@ -217,12 +217,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   (index) => AnimatedContainer(
                     duration: AppAnimations.normal,
                     curve: Curves.easeInOut,
-                    width: _currentIndex == index ? 20 : 6,
-                    height: 6,
+                    width: _currentIndex == index ? 24 : 8,
+                    height: 8,
                     decoration: BoxDecoration(
                       color: _currentIndex == index
-                          ? colors.textPrimary
-                          : colors.outline.withValues(alpha: 0.3),
+                          ? colors.textPrimary.withValues(alpha: 0.8)
+                          : colors.textPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -447,30 +447,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildIconBadge(AppColors colors, IconData icon) {
     return Container(
-      width: 70,
-      height: 70,
+      width: 80,
+      height: 80,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            colors.gradientPeachStart,
-            colors.gradientPeachEnd,
+            colors.gradientPeachStart.withValues(alpha: 0.8),
+            colors.gradientPeachEnd.withValues(alpha: 0.6),
           ],
         ),
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(
+          color: colors.textPrimary.withValues(alpha: 0.1),
+          width: 1.5,
+        ),
       ),
       child: Icon(
         icon,
-        size: 36,
-        color: colors.textPrimary,
+        size: 40,
+        color: colors.textPrimary.withValues(alpha: 0.9),
       ),
     );
   }
@@ -482,26 +479,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.elevatedSurface,
-            colors.surface,
-          ],
-        ),
+        // Glassmorphism - semi-transparent with blur effect
+        color: colors.surface.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(AppSizes.radiusM),
         border: Border.all(
-          color: colors.outline.withValues(alpha: 0.2),
+          color: colors.textPrimary.withValues(alpha: 0.08),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: _buildFeatureUI(colors, featureType),
     );
@@ -644,10 +628,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colors.surface,
+            color: colors.textPrimary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: colors.outline.withValues(alpha: 0.3),
+              color: colors.textPrimary.withValues(alpha: 0.1),
             ),
           ),
           child: Column(
@@ -678,8 +662,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: 0.6,
-                  backgroundColor: colors.outline.withValues(alpha: 0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(colors.accentGreen),
+                  backgroundColor: colors.textPrimary.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.accentGreen.withValues(alpha: 0.8)),
                   minHeight: 5,
                 ),
               ),
@@ -791,12 +775,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       height: 48,
       decoration: BoxDecoration(
         color: active
-            ? colors.accentGreen.withValues(alpha: 0.15)
-            : colors.elevatedSurface,
+            ? colors.accentGreen.withValues(alpha: 0.2)
+            : colors.textPrimary.withValues(alpha: 0.05),
         shape: BoxShape.circle,
         border: Border.all(
-          color: active ? colors.accentGreen : colors.outline.withValues(alpha: 0.3),
-          width: 2,
+          color: active 
+              ? colors.accentGreen.withValues(alpha: 0.6) 
+              : colors.textPrimary.withValues(alpha: 0.15),
+          width: 1.5,
         ),
       ),
       child: Icon(
@@ -814,13 +800,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       decoration: BoxDecoration(
         color: completed
             ? colors.accentGreen.withValues(alpha: 0.15)
-            : colors.elevatedSurface,
+            : colors.textPrimary.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: completed
-              ? colors.accentGreen
-              : colors.outline.withValues(alpha: 0.3),
-          width: completed ? 2 : 1,
+              ? colors.accentGreen.withValues(alpha: 0.5)
+              : colors.textPrimary.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
       child: Column(
@@ -893,8 +879,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       height: 24,
       decoration: BoxDecoration(
         color: completed
-            ? colors.accentGreen
-            : colors.outline.withValues(alpha: 0.1),
+            ? colors.accentGreen.withValues(alpha: 0.7)
+            : colors.textPrimary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
       ),
     );
@@ -905,14 +891,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: selected
-            ? colors.primary.withValues(alpha: 0.15)
-            : colors.elevatedSurface,
+            ? colors.primary.withValues(alpha: 0.2)
+            : colors.textPrimary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: selected
-              ? colors.primary
-              : colors.outline.withValues(alpha: 0.3),
-          width: selected ? 2 : 1,
+              ? colors.primary.withValues(alpha: 0.5)
+              : colors.textPrimary.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
       child: Text(
@@ -930,10 +916,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: colors.elevatedSurface,
+        color: colors.textPrimary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colors.outline.withValues(alpha: 0.3),
+          color: colors.textPrimary.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -961,38 +947,73 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           const SizedBox(height: 8),
           
-          // Header with illustration
+          // Header with ultra-glassmorphic design
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  colors.gradientPeachStart.withValues(alpha: 0.1),
-                  colors.gradientPeachEnd.withValues(alpha: 0.1),
+                  colors.gradientPeachStart.withValues(alpha: 0.25),
+                  colors.gradientPeachEnd.withValues(alpha: 0.18),
+                  colors.gradientPurpleLighterStart.withValues(alpha: 0.15),
                 ],
+                stops: const [0.0, 0.5, 1.0],
               ),
-              borderRadius: BorderRadius.circular(AppSizes.radiusM),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors.gradientPeachStart.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.gradientPeachStart.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: colors.surface.withValues(alpha: 0.6),
+                  blurRadius: 1,
+                  offset: const Offset(0, -1),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.gradientPeachStart.withValues(alpha: 0.8),
+                        colors.gradientPurpleStart.withValues(alpha: 0.7),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: colors.surface.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.gradientPeachStart.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
-                    Icons.psychology,
-                    color: colors.textPrimary,
-                    size: 20,
+                    Icons.psychology_rounded,
+                    color: colors.textPrimary.withValues(alpha: 0.95),
+                    size: 28,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1000,17 +1021,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       Text(
                         'Let\'s create your plan',
                         style: GoogleFonts.fraunces(
-                          fontSize: 18,
+                          fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
+                          letterSpacing: -0.3,
+                          shadows: [
+                            Shadow(
+                              color: colors.surface.withValues(alpha: 0.8),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         'We\'ll personalize it just for you',
                         style: textStyles.body.copyWith(
                           color: colors.textSecondary,
-                          fontSize: 12,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -1119,15 +1147,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           
           const SizedBox(height: 16),
           
-          // Commitment level
+          // Commitment level - ultra-glassmorphic style
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(AppSizes.radiusM),
-              border: Border.all(
-                color: colors.outline.withValues(alpha: 0.3),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colors.gradientPurpleStart.withValues(alpha: 0.25),
+                  colors.gradientPurpleLighterStart.withValues(alpha: 0.18),
+                  colors.gradientPeachEnd.withValues(alpha: 0.15),
+                ],
+                stops: const [0.0, 0.5, 1.0],
               ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: colors.gradientPurpleStart.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.gradientPurpleStart.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: colors.surface.withValues(alpha: 0.6),
+                  blurRadius: 1,
+                  offset: const Offset(0, -1),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1135,66 +1186,124 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.gradientPurpleStart.withValues(alpha: 0.6),
+                            colors.gradientPeachStart.withValues(alpha: 0.5),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colors.surface.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.gradientPurpleStart.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Icon(
-                        Icons.track_changes,
-                        size: 16,
-                        color: colors.primary,
+                        Icons.track_changes_rounded,
+                        size: 22,
+                        color: colors.textPrimary.withValues(alpha: 0.95),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'How many habits to start?',
                         style: textStyles.bodyBold.copyWith(
                           color: colors.textPrimary,
-                          fontSize: 13,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
-                      child: Slider(
-                        value: _commitmentLevel.toDouble(),
-                        min: 3,
-                        max: 10,
-                        divisions: 7,
-                        label: '$_commitmentLevel habits',
-                        activeColor: colors.textPrimary,
-                        inactiveColor: colors.outline.withValues(alpha: 0.3),
-                        onChanged: (value) {
-                          setState(() {
-                            _commitmentLevel = value.round();
-                          });
-                          HapticFeedback.selectionClick();
-                        },
+                      child: SliderTheme(
+                        data: SliderThemeData(
+                          trackHeight: 5,
+                          activeTrackColor: colors.gradientPurpleStart.withValues(alpha: 0.8),
+                          inactiveTrackColor: colors.textPrimary.withValues(alpha: 0.12),
+                          thumbColor: colors.surface,
+                          overlayColor: colors.gradientPurpleStart.withValues(alpha: 0.15),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 11,
+                            elevation: 4,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 20,
+                          ),
+                          trackShape: const RoundedRectSliderTrackShape(),
+                        ),
+                        child: Slider(
+                          value: _commitmentLevel.toDouble(),
+                          min: 3,
+                          max: 10,
+                          divisions: 7,
+                          label: '$_commitmentLevel habits',
+                          onChanged: (value) {
+                            setState(() {
+                              _commitmentLevel = value.round();
+                            });
+                            HapticFeedback.selectionClick();
+                          },
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [colors.gradientPeachStart, colors.gradientPeachEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.gradientPurpleStart.withValues(alpha: 0.8),
+                            colors.gradientPeachStart.withValues(alpha: 0.7),
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colors.surface.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.gradientPurpleStart.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: Text(
                           '$_commitmentLevel',
                           style: GoogleFonts.fraunces(
-                            fontSize: 18,
+                            fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: colors.surface,
+                            color: colors.textPrimary,
+                            letterSpacing: -0.5,
+                            shadows: [
+                              Shadow(
+                                color: colors.surface.withValues(alpha: 0.8),
+                                blurRadius: 4,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1255,8 +1364,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 7,
+          runSpacing: 7,
           children: options.map((option) {
             final isSelected = selected.contains(option.label);
             return _buildOptionChip(
@@ -1278,8 +1387,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     VoidCallback onTap,
   ) {
     return AnimatedContainer(
-      duration: AppAnimations.normal,
-      curve: Curves.easeInOut,
+      duration: AppAnimations.moderate,
+      curve: Curves.easeOutCubic,
+      transform: Matrix4.identity()
+        ..translate(0.0, isSelected ? -1.5 : 0.0, 0.0)
+        ..scale(isSelected ? 1.015 : 1.0, isSelected ? 1.015 : 1.0, 1.0),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -1287,58 +1399,170 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             HapticFeedback.selectionClick();
             onTap();
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          splashColor: colors.gradientPeachStart.withValues(alpha: 0.15),
+          highlightColor: colors.gradientPeachEnd.withValues(alpha: 0.1),
           child: AnimatedContainer(
-            duration: AppAnimations.normal,
+            duration: AppAnimations.moderate,
             padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
+              horizontal: 14,
+              vertical: 10,
             ),
             decoration: BoxDecoration(
+              // Ultra glassmorphic background
               gradient: isSelected
                   ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
-                        colors.gradientPeachStart.withValues(alpha: 0.2),
-                        colors.gradientPeachEnd.withValues(alpha: 0.2),
+                        colors.gradientPeachStart.withValues(alpha: 0.45),
+                        colors.gradientPeachEnd.withValues(alpha: 0.35),
+                        colors.gradientPurpleStart.withValues(alpha: 0.25),
                       ],
+                      stops: const [0.0, 0.6, 1.0],
                     )
-                  : null,
-              color: isSelected ? null : colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(10),
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.surface.withValues(alpha: 0.6),
+                        colors.surface.withValues(alpha: 0.4),
+                      ],
+                    ),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected
-                    ? colors.primary
-                    : colors.outline.withValues(alpha: 0.3),
-                width: isSelected ? 2 : 1,
+                    ? colors.gradientPeachStart.withValues(alpha: 0.7)
+                    : colors.textPrimary.withValues(alpha: 0.12),
+                width: isSelected ? 2 : 1.5,
               ),
+              // Multi-layer shadow system for depth
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: colors.gradientPeachStart.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        spreadRadius: -2,
+                        offset: const Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: colors.gradientPurpleStart.withValues(alpha: 0.15),
+                        blurRadius: 24,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: colors.surface.withValues(alpha: 0.8),
+                        blurRadius: 2,
+                        spreadRadius: 0,
+                        offset: const Offset(0, -1),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: colors.textPrimary.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  option.icon,
-                  size: 16,
-                  color: isSelected
-                      ? colors.primary
-                      : colors.textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  option.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                // Floating icon container with gradient
+                AnimatedContainer(
+                  duration: AppAnimations.moderate,
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colors.gradientPeachStart.withValues(alpha: 0.6),
+                              colors.gradientPurpleStart.withValues(alpha: 0.5),
+                            ],
+                          )
+                        : LinearGradient(
+                            colors: [
+                              colors.textPrimary.withValues(alpha: 0.08),
+                              colors.textPrimary.withValues(alpha: 0.05),
+                            ],
+                          ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: colors.gradientPeachStart.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    option.icon,
+                    size: 17,
                     color: isSelected
-                        ? colors.textPrimary
+                        ? colors.textPrimary.withValues(alpha: 0.95)
                         : colors.textSecondary,
                   ),
                 ),
+                const SizedBox(width: 10),
+                // Label with animated weight
+                AnimatedDefaultTextStyle(
+                  duration: AppAnimations.moderate,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected
+                        ? colors.textPrimary.withValues(alpha: 0.95)
+                        : colors.textSecondary,
+                    letterSpacing: isSelected ? -0.1 : 0,
+                    shadows: isSelected
+                        ? [
+                            Shadow(
+                              color: colors.surface.withValues(alpha: 0.8),
+                              blurRadius: 4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(option.label),
+                ),
+                // Animated checkmark with scale effect
                 if (isSelected) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.check_circle,
-                    size: 14,
-                    color: colors.primary,
+                  const SizedBox(width: 8),
+                  AnimatedScale(
+                    duration: AppAnimations.normal,
+                    scale: isSelected ? 1.0 : 0.0,
+                    curve: Curves.elasticOut,
+                    child: Container(
+                      padding: const EdgeInsets.all(2.5),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.gradientPeachStart,
+                            colors.gradientPurpleStart,
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.gradientPeachStart.withValues(alpha: 0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: colors.surface,
+                      ),
+                    ),
                   ),
                 ],
               ],

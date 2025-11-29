@@ -20,8 +20,9 @@ import '../widgets/daily_motivation_widget.dart';
 import '../widgets/category_filter_bar.dart';
 import '../widgets/habit_suggestions_widget.dart';
 import '../widgets/empty_states.dart';
-import '../widgets/savings_card.dart';
+import '../widgets/compact_savings_bar.dart';
 import '../widgets/week_calendar_strip.dart';
+import '../widgets/mind_trick_sheet.dart';
 import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
 import 'habit_templates_screen.dart';
@@ -546,7 +547,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildGuidedCTA(AppColors colors, AppTextStyles textStyles) {
     final isDarkMode = colors.background.computeLuminance() < 0.5;
     return InkWell(
-      onTap: () => _showAddHabitModal(),
+      onTap: () => _openMindTrickSheet(),
       borderRadius: BorderRadius.circular(AppSizes.radiusL),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -557,8 +558,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    Color(0xFFE8D5C4), // Muted cream-beige
-                    Color(0xFFF5E6D3), // Muted peach-cream
+                    Color(0xFFE8D5F0), // Soft purple-lavender
+                    Color(0xFFF5E6F8), // Light purple-pink
                   ],
                 ),
           color: isDarkMode ? colors.elevatedSurface : null,
@@ -573,14 +574,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: Row(
           children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? colors.gradientPurpleStart.withValues(alpha: 0.2)
+                    : colors.gradientPurpleStart.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.psychology_rounded,
+                size: 24,
+                color: colors.gradientPurpleEnd,
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Your One Perfect Day', style: textStyles.titleCard),
+                  Text('Mind Trick', style: textStyles.titleCard),
                   const SizedBox(height: 4),
                   Text(
-                    'Update your rituals to match your future self.',
+                    'Outsmart your procrastination with science',
                     style: textStyles.bodySecondary,
                   ),
                 ],
@@ -591,6 +607,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _openMindTrickSheet() async {
+    HapticFeedback.lightImpact();
+    if (!mounted) return;
+
+    final activeHabits = _getActiveHabitsForSelectedDate();
+
+    await showMindTrickSheet(
+      context,
+      activeHabits: activeHabits,
+      onHabitCompleted: (habit) {
+        _toggleHabitCompletion(habit);
+      },
     );
   }
 
@@ -882,6 +913,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: _buildHeader(colors, textStyles, dateLabel),
         ),
       ),
+      // Compact Savings Bar - right after header
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          0,
+          horizontalPadding,
+          16,
+        ),
+        sliver: SliverToBoxAdapter(
+          child: CompactSavingsBar(
+            onTap: () => _openSavingsAnalysis(),
+          ),
+        ),
+      ),
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         sliver: SliverToBoxAdapter(
@@ -950,20 +995,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           sliver: SliverToBoxAdapter(
             child: RepaintBoundary(
               child: _buildGuidedCTA(colors, textStyles),
-            ),
-          ),
-        ),
-        // Savings Card - En üstte
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            20,
-            horizontalPadding,
-            0,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: SavingsCard(
-              onTapDetails: () => _openSavingsAnalysis(),
             ),
           ),
         ),

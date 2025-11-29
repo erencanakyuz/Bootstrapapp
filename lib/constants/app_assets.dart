@@ -109,7 +109,7 @@ class _OnboardingAssets {
 
   /// Slide 3: Visual Progress & Analytics hero
   /// Minimal isometric analytics panel with calendar heatmap
-  String get progress => '$_base/onboarding_progress.webp';
+  String get progress => '$_base/onboarding_progress.svg';
 
   /// Slide 4: Templates & Quick Start hero
   /// Fanned stack of template cards with tiny icons
@@ -117,14 +117,14 @@ class _OnboardingAssets {
 
   /// Slide 5: Home Widgets & Customization hero
   /// Isometric phone homescreen with widgets
-  String get widgets => '$_base/onboarding_widgets.webp';
+  String get widgets => '$_base/onboarding_widgets.svg';
 
   /// Slide 6: Smart Notifications & Features hero
   /// Floating notification cards
-  String get smart => '$_base/onboarding_smart.webp';
+  String get smart => '$_base/onboarding_smart.svg';
 
   /// Questionnaire header illustration
-  String get questionnaire => '$_base/onboarding_questionnaire.webp';
+  String get questionnaire => '$_base/onboarding_questionnaire.svg';
 
   /// Legacy SVG illustrations (fallbacks)
   String get flowSvg => '$_base/onboarding_flow.svg';
@@ -137,25 +137,25 @@ class _HomeAssets {
   static const String _base = 'assets/illustrations';
 
   /// Behind progress card
-  String get progressIsometric => '$_base/home_progress_isometric.webp';
+  String get progressIsometric => '$_base/home_progress_isometric.svg';
 
   /// Future Moments header accent
-  String get futureJournal => '$_base/home_future_journal.webp';
+  String get futureJournal => '$_base/home_future_journal.svg';
 
   /// Guided CTA illustration
-  String get guidedCta => '$_base/home_guided_cta.webp';
+  String get guidedCta => '$_base/home_guided_cta.svg';
 
   /// Rest day card illustration
-  String get restDay => '$_base/home_rest_day.webp';
+  String get restDay => '$_base/home_rest_day.svg';
 
   /// Empty habits state hero
-  String get emptyHabits => '$_base/home_empty_habits.webp';
+  String get emptyHabits => '$_base/home_empty_habits.svg';
 
   /// Motivation quote accent
-  String get motivationQuote => '$_base/home_motivation_quote.webp';
+  String get motivationQuote => '$_base/home_motivation_quote.svg';
 
   /// Savings badge icon
-  String get savingsBadge => '$_base/home_savings_badge.webp';
+  String get savingsBadge => '$_base/home_savings_badge.svg';
 }
 
 class _CalendarAssets {
@@ -164,19 +164,19 @@ class _CalendarAssets {
   static const String _base = 'assets/illustrations';
 
   /// Weekly overview card background
-  String get weeklyOverview => '$_base/calendar_weekly_overview.webp';
+  String get weeklyOverview => '$_base/calendar_weekly_overview.svg';
 
   /// Empty state icon
-  String get empty => '$_base/calendar_empty.webp';
+  String get empty => '$_base/calendar_empty.svg';
 
   /// Legend mini-icons
-  String get legendIcons => '$_base/calendar_legend_icons.webp';
+  String get legendIcons => '$_base/calendar_legend_icons.svg';
 
   /// Share/export watermark
-  String get shareWatermark => '$_base/calendar_share_watermark.webp';
+  String get shareWatermark => '$_base/share_header.svg';
 
   /// Year empty state
-  String get yearEmpty => '$_base/calendar_year_empty.webp';
+  String get yearEmpty => '$_base/calendar_year_empty.svg';
 }
 
 class _HabitAssets {
@@ -185,16 +185,16 @@ class _HabitAssets {
   static const String _base = 'assets/illustrations';
 
   /// Chart overlay
-  String get momentumOverlay => '$_base/habit_momentum_overlay.webp';
+  String get momentumOverlay => '$_base/habit_momentum_overlay.svg';
 
   /// Habit chain header
-  String get chain => '$_base/habit_chain.webp';
+  String get chain => '$_base/habit_chain.svg';
 
   /// Note card watermark
-  String get noteCard => '$_base/habit_note_card.webp';
+  String get noteCard => '$_base/habit_note_card.svg';
 
   /// Tasks icon
-  String get tasks => '$_base/habit_tasks.webp';
+  String get tasks => '$_base/habit_tasks.svg';
 }
 
 class _InsightsAssets {
@@ -203,25 +203,25 @@ class _InsightsAssets {
   static const String _base = 'assets/illustrations';
 
   /// Your Progress hero accent
-  String get hero => '$_base/insights_hero.webp';
+  String get hero => '$_base/insights_hero.svg';
 
   /// Achievements CTA
-  String get achievementsCta => '$_base/insights_achievements_cta.webp';
+  String get achievementsCta => '$_base/insights_achievements_cta.svg';
 
   /// Analytics CTA
-  String get analyticsCta => '$_base/insights_analytics_cta.webp';
+  String get analyticsCta => '$_base/insights_analytics_cta.svg';
 
   /// Motivational card background
-  String get motivation => '$_base/insights_motivation.webp';
+  String get motivation => '$_base/insights_motivation.svg';
 
   /// Analytics empty state
-  String get analyticsEmpty => '$_base/analytics_empty.webp';
+  String get analyticsEmpty => '$_base/analytics_empty.svg';
 
   /// Analytics trend ribbon
-  String get analyticsTrendBg => '$_base/analytics_trend_bg.webp';
+  String get analyticsTrendBg => '$_base/analytics_trend_bg.svg';
 
   /// Reports empty state
-  String get reportsEmpty => '$_base/reports_empty.webp';
+  String get reportsEmpty => '$_base/reports_empty.svg';
 }
 
 class _AchievementsAssets {
@@ -254,10 +254,10 @@ class _WidgetsAssets {
   static const String _base = 'assets/illustrations';
 
   /// Widget preview container
-  String get preview => '$_base/widgets_preview.png';
+  String get preview => '$_base/widgets_preview.svg';
 
   /// Empty widget selection
-  String get empty => '$_base/widgets_empty.png';
+  String get empty => '$_base/widgets_empty.svg';
 }
 
 class _ProfileAssets {
@@ -266,10 +266,10 @@ class _ProfileAssets {
   static const String _base = 'assets/illustrations';
 
   /// Avatar frames
-  String get avatarFrames => '$_base/profile_avatar_frames.webp';
+  String get avatarFrames => '$_base/profile_avatar_frames.svg';
 
   /// Data backup accent
-  String get dataBackup => '$_base/profile_data_backup.webp';
+  String get dataBackup => '$_base/profile_data_backup.svg';
 }
 
 class _SavingsAssets {
@@ -278,16 +278,16 @@ class _SavingsAssets {
   static const String _base = 'assets/illustrations';
 
   /// Overview tab hero
-  String get overview => '$_base/savings_overview.webp';
+  String get overview => '$_base/savings_overview.svg';
 
   /// Empty entries state
-  String get emptyEntries => '$_base/savings_empty_entries.webp';
+  String get emptyEntries => '$_base/savings_empty_entries.svg';
 
   /// Goals tab hero
-  String get goal => '$_base/savings_goal.webp';
+  String get goal => '$_base/savings_goal.svg';
 
   /// Quick-add chip icon
-  String get quickAdd => 'assets/icons/savings_quickadd.webp';
+  String get quickAdd => 'assets/icons/savings_quickadd.svg';
 }
 
 class _TemplatesAssets {
@@ -296,13 +296,13 @@ class _TemplatesAssets {
   static const String _base = 'assets/illustrations';
 
   /// Header hero
-  String get header => '$_base/templates_header.webp';
+  String get header => '$_base/templates_header.svg';
 
   /// Empty search state
-  String get empty => '$_base/templates_empty.webp';
+  String get empty => '$_base/templates_empty.svg';
 
   /// Savings template card icon
-  String get savingsMini => '$_base/templates_savings_mini.webp';
+  String get savingsMini => '$_base/templates_savings_mini.svg';
 }
 
 class _IconAssets {
@@ -318,7 +318,7 @@ class _IconAssets {
   String get achievementTrophy => '$_categoriesBase/achievement_trophy.png';
 
   // Report icons
-  String get reportsExport => '$_iconsBase/reports_export.webp';
+  String get reportsExport => '$_iconsBase/reports_export.svg';
 }
 
 class _LottieAssets {
