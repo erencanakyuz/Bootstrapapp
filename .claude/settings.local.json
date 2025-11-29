@@ -16,7 +16,8 @@
       "Bash(claude --version:*)",
       "Bash(npx claude:*)",
       "Bash(findstr:*)",
-      "Bash(dart run:*)"
+      "Bash(dart run:*)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

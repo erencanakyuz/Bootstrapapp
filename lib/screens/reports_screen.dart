@@ -6,6 +6,7 @@ import '../services/report_service.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../widgets/animated_bottom_sheet.dart';
 
 /// Screen for viewing and exporting weekly/monthly reports
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -53,20 +54,40 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     ref.read(soundServiceProvider).playClick();
     
     final habitsAsync = ref.read(habitsProvider);
+    final colors = Theme.of(context).extension<AppColors>()!;
+
     await habitsAsync.when(
       loading: () async {},
       error: (_, _) async {},
       data: (habits) async {
-        final action = await showModalBottomSheet<String>(
+        HapticFeedback.lightImpact();
+
+        showAnimatedBottomSheet(
           context: context,
-          builder: (context) => _ExportOptionsSheet(),
+          builder: (context) => AnimatedOptionSheet(
+            title: 'Export Data',
+            items: [
+              OptionSheetItem(
+                icon: Icons.code,
+                title: 'Export as JSON',
+                color: colors.primary,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await ReportService.exportToJson(habits);
+                },
+              ),
+              OptionSheetItem(
+                icon: Icons.table_chart,
+                title: 'Export as CSV',
+                color: colors.primary,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await ReportService.exportToCsv(habits);
+                },
+              ),
+            ],
+          ),
         );
-        
-        if (action == 'json') {
-          await ReportService.exportToJson(habits);
-        } else if (action == 'csv') {
-          await ReportService.exportToCsv(habits);
-        }
       },
     );
   }
@@ -194,32 +215,6 @@ class _ReportCard extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExportOptionsSheet extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.paddingL),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.code, color: colors.primary),
-            title: const Text('Export as JSON'),
-            onTap: () => Navigator.pop(context, 'json'),
-          ),
-          ListTile(
-            leading: Icon(Icons.table_chart, color: colors.primary),
-            title: const Text('Export as CSV'),
-            onTap: () => Navigator.pop(context, 'csv'),
           ),
         ],
       ),

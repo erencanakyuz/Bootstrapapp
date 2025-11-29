@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 
 /// Empty state widget for when user has no habits
+/// Animated with fade + scale on mount
 class EmptyHabitsState extends ConsumerWidget {
   final VoidCallback onAddHabit;
   final VoidCallback? onBrowseTemplates;
@@ -21,13 +22,28 @@ class EmptyHabitsState extends ConsumerWidget {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.paddingXXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        // Clamp value to 0.0-1.0 range (easeOutBack can overshoot)
+        final clampedValue = value.clamp(0.0, 1.0);
+        return Transform.scale(
+          scale: 0.8 + (0.2 * clampedValue),
+          child: Opacity(
+            opacity: clampedValue,
+            child: child,
+          ),
+        );
+      },
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.paddingXXL),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
@@ -114,6 +130,7 @@ class EmptyHabitsState extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

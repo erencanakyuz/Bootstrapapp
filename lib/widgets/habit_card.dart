@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
+import 'animated_completion_checkbox.dart';
 
 /// Habit card that matches RefactorUi.md `promiseCard` spec exactly:
 /// flat white surface, subtle border, soft elevation, and checkbox meta row.
@@ -130,18 +130,14 @@ class HabitCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        // Checkbox - Right side (larger and more tappable)
+                        // Checkbox - Right side (larger and more tappable) with smooth animation
                         Padding(
                           padding: const EdgeInsets.all(4), // Extra padding for larger hit area
-                          child: GestureDetector(
+                          child: AnimatedCompletionCheckbox(
+                            isCompleted: isCompletedToday,
+                            habitColor: habit.color,
                             onTap: onCompletionToggle,
-                            behavior: HitTestBehavior.opaque, // Make entire padded area tappable
-                            child: _buildCompletionCheckbox(
-                              isCompletedToday,
-                              colors,
-                              habit.color,
-                              isLarge: false, // Now uses larger default size
-                            ),
+                            isLarge: false,
                           ),
                         ),
                       ],
@@ -312,40 +308,6 @@ class HabitCard extends StatelessWidget {
 
   // Enhanced checkbox: larger size (36px), more tappable, better visibility
   // borderColorOff: chipOutline (#D7C9BA), borderColorOn: habit.color
-  Widget _buildCompletionCheckbox(
-    bool isCompleted,
-    AppColors colors,
-    Color habitColor, {
-    bool isLarge = false,
-  }) {
-    // Increased default size from 24 to 36 for better usability
-    final size = isLarge ? 44.0 : 36.0;
-    final iconSize = isLarge ? 26.0 : 22.0;
-    final borderWidth = isLarge ? 2.5 : 2.0; // Increased border width for better visibility
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: isCompleted ? habitColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isCompleted
-              ? habitColor
-              : colors.chipOutline,
-          width: borderWidth,
-        ),
-      ),
-      child: isCompleted
-          ? Icon(
-              PhosphorIconsFill.check,
-              color: colors.surface,
-              size: iconSize,
-            )
-          : null,
-    );
-  }
-
   // RefactorUi.md tagCategory: borderRadius pill, backgroundColor with alpha
   Widget _buildTagChip(
     AppColors colors,

@@ -9,6 +9,7 @@ import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/add_habit_modal.dart';
+import '../widgets/animated_bottom_sheet.dart';
 import '../widgets/streak_heatmap_widget.dart';
 import '../widgets/habit_chain_widget.dart';
 
@@ -746,23 +747,12 @@ class HabitDetailScreen extends ConsumerWidget {
     Habit habit,
   ) async {
     if (!context.mounted) return;
-    final updatedHabit = await showModalBottomSheet<Habit>(
+    final updatedHabit = await showAnimatedBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true, // Allow full-screen scroll
-      backgroundColor: Colors.transparent,
-      useSafeArea: false, // Manual padding control
-      isDismissible: true,
-      enableDrag: true,
       builder: (context) {
         final topPadding = MediaQuery.of(context).padding.top;
-        // Keep content stable while keyboard opens
-        // Reduced top padding so the drag handle stays reachable
-        
         return Padding(
-          padding: EdgeInsets.only(
-            top: topPadding + 20, // Status bar + small spacer
-            // Bottom padding removed to allow keyboard overlay
-          ),
+          padding: EdgeInsets.only(top: topPadding + 20),
           child: AddHabitModal(habitToEdit: habit),
         );
       },

@@ -23,6 +23,7 @@ import '../widgets/empty_states.dart';
 import '../widgets/compact_savings_bar.dart';
 import '../widgets/week_calendar_strip.dart';
 import '../widgets/mind_trick_sheet.dart';
+import '../widgets/animated_bottom_sheet.dart';
 import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
 import 'habit_templates_screen.dart';
@@ -61,10 +62,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Filtering
   HabitCategory? _selectedCategory;
-  
+
   // Scroll controller for scrolling to Today's Flow section
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _todayFlowKey = GlobalKey();
+
+  // FAB visibility based on scroll
+  bool _isFabVisible = true;
+  double _lastScrollOffset = 0.0;
 
   bool get _isToday => _isSameDay(_selectedDate, DateTime.now());
 
@@ -125,6 +130,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 5),
     );
+
+    // Add scroll listener for FAB hide/show animation
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final currentOffset = _scrollController.offset;
+    final isScrollingDown = currentOffset > _lastScrollOffset;
+    final isScrollingUp = currentOffset < _lastScrollOffset;
+
+    // Hide FAB when scrolling down, show when scrolling up
+    if (isScrollingDown && _isFabVisible && currentOffset > 100) {
+      setState(() {
+        _isFabVisible = false;
+      });
+    } else if (isScrollingUp && !_isFabVisible) {
+      setState(() {
+        _isFabVisible = true;
+      });
+    }
+
+    _lastScrollOffset = currentOffset;
   }
 
   @override
@@ -269,14 +296,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _showAddHabitModal({Habit? habitToEdit}) async {
     HapticFeedback.lightImpact();
     if (!mounted) return;
-    final result = await showModalBottomSheet<Habit>(
+    final result = await showAnimatedBottomSheet<Habit>(
       context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      useSafeArea: false,
-      isDismissible: true,
-      enableDrag: true,
       builder: (context) {
         final topPadding = MediaQuery.of(context).padding.top;
         return Padding(
@@ -684,19 +705,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         (context, index) {
           final habit = activeHabits[index];
           final isNew = _isNewHabit(habit, now);
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: index == activeHabits.length - 1 ? 0 : 16,
-            ),
-            child: HabitCard(
-              key: ValueKey('${habit.id}_$_selectedDate'), // Unique key per date to force refresh
-              habit: habit,
-              showNewBadge: isNew,
-              weekStart: weekStart, 
-              today: _selectedDate, // Pass selected date as 'today' for the card
-              onTap: () => _openHabitDetail(habit),
-              onCompletionToggle: () => _toggleHabitCompletion(habit),
-              onLongPress: () => _showHabitOptions(habit),
+
+          // Stagger animation: each item delayed by 50ms
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 400 + (index * 50)),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) {
+              // Clamp value to 0.0-1.0 range (easeOutBack can overshoot)
+              final clampedValue = value.clamp(0.0, 1.0);
+              return Transform.translate(
+                offset: Offset(30 * (1 - clampedValue), 0),
+                child: Opacity(
+                  opacity: clampedValue,
+                  child: child,
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: index == activeHabits.length - 1 ? 0 : 16,
+              ),
+              child: HabitCard(
+                key: ValueKey('${habit.id}_$_selectedDate'), // Unique key per date to force refresh
+                habit: habit,
+                showNewBadge: isNew,
+                weekStart: weekStart,
+                today: _selectedDate, // Pass selected date as 'today' for the card
+                onTap: () => _openHabitDetail(habit),
+                onCompletionToggle: () => _toggleHabitCompletion(habit),
+                onLongPress: () => _showHabitOptions(habit),
+              ),
             ),
           );
         },
@@ -745,84 +784,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _showHabitOptions(Habit habit) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet(
+    final colors = Theme.of(context).extension<AppColors>()!;
+
+    showAnimatedBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) {
-        final colors = Theme.of(context).extension<AppColors>()!;
-        final viewPadding = MediaQuery.viewPaddingOf(context);
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            color: Colors.transparent,
-            child: GestureDetector(
-              onTap: () {}, // Prevent tap from closing when tapping inside
-              child: Container(
-                margin: EdgeInsets.only(bottom: viewPadding.bottom),
-                decoration: BoxDecoration(
-                  color: colors.elevatedSurface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Drag handle
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: colors.outline.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Menu items
-                      ListTile(
-                        leading: Icon(Icons.edit_rounded, color: colors.accentBlue),
-                        title: Text(
-                          'Edit Habit',
-                          style: TextStyle(color: colors.textPrimary),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            _showAddHabitModal(habitToEdit: habit);
-                          });
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.delete_rounded,
-                          color: colors.statusIncomplete,
-                          ),
-                        title: Text(
-                          'Delete Habit',
-                          style: TextStyle(color: colors.textPrimary),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _deleteHabit(habit);
-                        },
-                      ),
-                      SizedBox(height: viewPadding.bottom > 0 ? 8 : 16),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      builder: (context) => AnimatedOptionSheet(
+        items: [
+          OptionSheetItem(
+            icon: Icons.edit_rounded,
+            title: 'Edit Habit',
+            color: colors.accentBlue,
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 200), () {
+                _showAddHabitModal(habitToEdit: habit);
+              });
+            },
           ),
-        );
-      },
+          OptionSheetItem(
+            icon: Icons.delete_rounded,
+            title: 'Delete Habit',
+            color: colors.statusIncomplete,
+            onTap: () => _deleteHabit(habit),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1083,9 +1068,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       floatingActionButton: AnimatedScale(
-        scale: 1.0,
-        duration: AppAnimations.normal,
-        curve: AppAnimations.spring,
+        scale: _isFabVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutBack,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSizes.radiusPill),

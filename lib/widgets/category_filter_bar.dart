@@ -108,7 +108,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
+class _CategoryChip extends StatefulWidget {
   final String label;
   final int count;
   final bool isSelected;
@@ -124,34 +124,95 @@ class _CategoryChip extends StatelessWidget {
   });
 
   @override
+  State<_CategoryChip> createState() => _CategoryChipState();
+}
+
+class _CategoryChipState extends State<_CategoryChip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    if (widget.isSelected) {
+      _controller.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(_CategoryChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        // Animate selection with bounce
+        _scaleAnimation = Tween<double>(begin: 0.9, end: 1.05).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+        );
+        _controller.forward(from: 0.0);
+      } else {
+        // Deselect with simple scale down
+        _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+        );
+        _controller.reverse(from: 1.0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 40,
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            height: 40,
           padding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 8,
           ),
           decoration: BoxDecoration(
-            color: isSelected
-                ? colors.textPrimary
-                : colors.elevatedSurface,
+            color: widget.isSelected
+                ? widget.colors.textPrimary
+                : widget.colors.elevatedSurface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                  ? colors.textPrimary
-                  : colors.outline.withValues(alpha: 0.15),
+              color: widget.isSelected
+                  ? widget.colors.textPrimary
+                  : widget.colors.outline.withValues(alpha: 0.15),
               width: 0.5,
             ),
-            boxShadow: isSelected
+            boxShadow: widget.isSelected
                 ? [
                     BoxShadow(
-                      color: colors.textPrimary.withValues(alpha: 0.15),
+                      color: widget.colors.textPrimary.withValues(alpha: 0.15),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -165,12 +226,12 @@ class _CategoryChip extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  label,
+                  widget.label,
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? colors.surface : colors.textPrimary,
+                    color: widget.isSelected ? widget.colors.surface : widget.colors.textPrimary,
                     letterSpacing: -0.1,
                     height: 1.2,
                   ),
@@ -185,18 +246,18 @@ class _CategoryChip extends StatelessWidget {
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? colors.surface.withValues(alpha: 0.2)
-                      : colors.textPrimary.withValues(alpha: 0.06),
+                  color: widget.isSelected
+                      ? widget.colors.surface.withValues(alpha: 0.2)
+                      : widget.colors.textPrimary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  count.toString(),
+                  widget.count.toString(),
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isSelected ? colors.surface : colors.textPrimary,
+                    color: widget.isSelected ? widget.colors.surface : widget.colors.textPrimary,
                     letterSpacing: 0,
                     height: 1.2,
                   ),
@@ -206,6 +267,7 @@ class _CategoryChip extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
