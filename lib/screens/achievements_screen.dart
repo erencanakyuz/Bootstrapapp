@@ -7,6 +7,8 @@ import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../providers/habit_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shimmer_glow_effects.dart';
+import '../widgets/animated_progress.dart';
 
 class AchievementsScreen extends ConsumerWidget {
   const AchievementsScreen({super.key});
@@ -48,8 +50,11 @@ class AchievementsScreen extends ConsumerWidget {
           ),
           body: ListView.separated(
             padding: const EdgeInsets.all(AppSizes.paddingXXL),
-            itemBuilder: (context, index) =>
-                _AchievementTile(data: achievements[index]),
+            itemBuilder: (context, index) => AchievementUnlockAnimation(
+              isUnlocked: achievements[index].isUnlocked,
+              accentColor: colors.accentAmber,
+              child: _AchievementTile(data: achievements[index]),
+            ),
             separatorBuilder: (context, index) =>
                 const SizedBox(height: AppSizes.paddingL),
             itemCount: achievements.length,
@@ -175,16 +180,14 @@ class _AchievementTile extends StatelessWidget {
           const SizedBox(height: AppSizes.paddingS),
           Text(data.description, style: TextStyle(color: colors.textSecondary)),
           const SizedBox(height: AppSizes.paddingM),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radiusCircle),
-            child: LinearProgressIndicator(
-              value: data.ratio,
-              minHeight: 8,
-              backgroundColor: colors.outline.withValues(alpha: 0.3),
-              valueColor: AlwaysStoppedAnimation(
-                data.isUnlocked ? colors.accentGreen : colors.accentBlue,
-              ),
-            ),
+          AnimatedStepProgress(
+            currentStep: data.progress,
+            totalSteps: data.target,
+            activeColor: data.isUnlocked ? colors.accentGreen : colors.accentBlue,
+            completedColor: colors.accentGreen,
+            inactiveColor: colors.outline.withValues(alpha: 0.3),
+            dotSize: 8,
+            lineHeight: 8,
           ),
           const SizedBox(height: AppSizes.paddingS),
           Text(

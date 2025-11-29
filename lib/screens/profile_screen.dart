@@ -16,6 +16,7 @@ import '../screens/widget_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../utils/mock_data_generator.dart';
 import '../utils/notification_permissions.dart';
+import '../widgets/micro_animations.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -61,17 +62,22 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSizes.paddingXXL),
               children: [
                 Center(
-                  child: CircleAvatar(
-                    radius: 48,
-                    backgroundColor: colors.outline.withValues(alpha: 0.1),
-                    child: Text(
-                      settings.name.isNotEmpty
-                          ? settings.name[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: colors.textPrimary,
+                  child: BreathingWidget(
+                    minScale: 0.98,
+                    maxScale: 1.02,
+                    duration: const Duration(milliseconds: 3000),
+                    child: CircleAvatar(
+                      radius: 48,
+                      backgroundColor: colors.outline.withValues(alpha: 0.1),
+                      child: Text(
+                        settings.name.isNotEmpty
+                            ? settings.name[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: colors.textPrimary,
+                        ),
                       ),
                     ),
                   ),

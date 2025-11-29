@@ -24,6 +24,10 @@ import '../widgets/compact_savings_bar.dart';
 import '../widgets/week_calendar_strip.dart';
 import '../widgets/mind_trick_sheet.dart';
 import '../widgets/animated_bottom_sheet.dart';
+import '../widgets/animated_counter.dart';
+import '../widgets/micro_animations.dart';
+import '../widgets/shimmer_glow_effects.dart';
+import '../widgets/staggered_animations.dart';
 import '../services/home_widget_service.dart';
 import 'habit_detail_screen.dart';
 import 'habit_templates_screen.dart';
@@ -507,6 +511,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Icons.local_fire_department_rounded,
                           'Current streak',
                           '$totalStreak d',
+                          showGlow: true,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -706,22 +711,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final habit = activeHabits[index];
           final isNew = _isNewHabit(habit, now);
 
-          // Stagger animation: each item delayed by 50ms
-          return TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 400 + (index * 50)),
-            curve: Curves.easeOutBack,
-            builder: (context, value, child) {
-              // Clamp value to 0.0-1.0 range (easeOutBack can overshoot)
-              final clampedValue = value.clamp(0.0, 1.0);
-              return Transform.translate(
-                offset: Offset(30 * (1 - clampedValue), 0),
-                child: Opacity(
-                  opacity: clampedValue,
-                  child: child,
-                ),
-              );
-            },
+          return StaggeredListItem(
+            index: index,
+            delay: const Duration(milliseconds: 60),
             child: Padding(
               padding: EdgeInsets.only(
                 bottom: index == activeHabits.length - 1 ? 0 : 16,
@@ -753,9 +745,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppTextStyles textStyles,
     IconData icon,
     String label,
-    String value,
-  ) {
-    return Container(
+    String value, {
+    bool showGlow = false,
+  }) {
+    // Extract numeric value and suffix (e.g., "7 d" -> 7, " d")
+    final numericMatch = RegExp(r'(\d+)').firstMatch(value);
+    final numericValue = numericMatch != null ? int.parse(numericMatch.group(1)!) : 0;
+    final suffix = value.replaceAll(RegExp(r'\d+'), '').trim();
+
+    Widget statContent = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: colors.elevatedSurface.withValues(alpha: 0.7),
@@ -767,12 +765,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Icon(icon, size: 18, color: colors.textPrimary),
           const SizedBox(height: 6),
-          Text(value, style: textStyles.titleCard.copyWith(fontSize: 20)),
+          AnimatedCounter(
+            value: numericValue,
+            suffix: suffix.isNotEmpty ? ' $suffix' : null,
+            style: textStyles.titleCard.copyWith(fontSize: 20),
+            duration: const Duration(milliseconds: 1000),
+          ),
           const SizedBox(height: 2),
           Text(label, style: textStyles.caption),
         ],
       ),
     );
+
+    // Add pulsing glow for high streaks
+    if (showGlow && numericValue >= 7) {
+      return PulsingGlow(
+        glowColor: colors.primary,
+        maxBlurRadius: 12.0,
+        duration: const Duration(milliseconds: 2000),
+        enabled: true,
+        child: statContent,
+      );
+    }
+
+    return statContent;
   }
 
   Widget _buildEmptyState(AppColors colors, AppTextStyles textStyles) {
@@ -1071,28 +1087,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         scale: _isFabVisible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutBack,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-          boxShadow: AppShadows.floatingButton(colors.background),
-          ),
-          child: FloatingActionButton.extended(
-            heroTag: "add-habit-button", // Unique hero tag
-            onPressed: () {
-              _showAddHabitModal();
-            },
-            backgroundColor: colors.textPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-            ),
-            icon: Icon(
-              Icons.add_rounded,
-              color: colors.surface,
-            ),
-            label: Text(
-              'New Habit',
-              style: textStyles.buttonLabel.copyWith(
-                color: colors.surface,
+        child: PulsingGlow(
+          glowColor: colors.primary,
+          maxBlurRadius: 15.0,
+          duration: const Duration(milliseconds: 2000),
+          enabled: true,
+          child: TapBounce(
+            onTap: () => _showAddHabitModal(),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                boxShadow: AppShadows.floatingButton(colors.background),
+              ),
+              child: FloatingActionButton.extended(
+                heroTag: "add-habit-button", // Unique hero tag
+                onPressed: () {
+                  _showAddHabitModal();
+                },
+                backgroundColor: colors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                ),
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: colors.surface,
+                ),
+                label: Text(
+                  'New Habit',
+                  style: textStyles.buttonLabel.copyWith(
+                    color: colors.surface,
+                  ),
+                ),
               ),
             ),
           ),

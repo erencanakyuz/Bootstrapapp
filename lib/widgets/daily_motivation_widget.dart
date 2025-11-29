@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/motivation_service.dart';
 import '../theme/app_theme.dart';
+import 'micro_animations.dart';
 
 /// Clean Apple-style daily motivation widget
 class DailyMotivationWidget extends ConsumerStatefulWidget {
@@ -103,18 +104,29 @@ class _DailyMotivationWidgetState extends ConsumerState<DailyMotivationWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Quote text
-                Text(
-                  _quote!,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: colors.textSecondary,
-                    letterSpacing: 0,
-                  ),
-                  maxLines: _isExpanded ? null : 3,
-                  overflow: _isExpanded ? null : TextOverflow.ellipsis,
-                ),
+                // Quote text with typewriter effect
+                _isExpanded
+                    ? TypewriterText(
+                        text: _quote!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: colors.textSecondary,
+                          letterSpacing: 0,
+                        ),
+                        charDuration: const Duration(milliseconds: 30),
+                      )
+                    : Text(
+                        _quote!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: colors.textSecondary,
+                          letterSpacing: 0,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                 if (!_isExpanded && _quote!.length > 100)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),

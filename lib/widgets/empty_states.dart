@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import 'micro_animations.dart';
 
 /// Empty state widget for when user has no habits
 /// Animated with fade + scale on mount
@@ -43,23 +44,27 @@ class EmptyHabitsState extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: colors.elevatedSurface,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: colors.outline.withValues(alpha: 0.2),
-                  width: 2,
+              FloatingWidget(
+                floatHeight: 15,
+                duration: const Duration(milliseconds: 2500),
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colors.elevatedSurface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colors.outline.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome_outlined,
+                    size: 64,
+                    color: colors.textTertiary,
+                  ),
                 ),
               ),
-              child: Icon(
-                Icons.auto_awesome_outlined,
-                size: 64,
-                color: colors.textTertiary,
-              ),
-            ),
             const SizedBox(height: AppSizes.paddingXXL),
             Text(
               'Start Your Journey',

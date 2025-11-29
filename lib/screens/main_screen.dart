@@ -10,6 +10,7 @@ import '../providers/habit_providers.dart';
 import '../services/sound_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/skeletons.dart';
+import '../widgets/animated_bottom_nav.dart';
 import 'calendar_screen.dart';
 import 'home_screen.dart';
 import 'insights_screen.dart';
@@ -67,7 +68,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         error: (error, stack) => _buildErrorState(colors, error, ref), 
         data: (habits) => _buildContent(colors, habits, ref),
       ),
-      bottomNavigationBar: _buildBottomNavigation(colors, ref),
+      bottomNavigationBar: AnimatedBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => _onTabSelected(index, ref),
+        items: const [
+          AnimatedNavItem(icon: Icons.home_outlined, activeIcon: Icons.home),
+          AnimatedNavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month),
+          AnimatedNavItem(icon: Icons.insights_outlined, activeIcon: Icons.insights),
+          AnimatedNavItem(icon: Icons.person_outline, activeIcon: Icons.person),
+        ],
+        backgroundColor: colors.elevatedSurface,
+        activeColor: colors.textPrimary,
+        inactiveColor: colors.textTertiary,
+        indicatorColor: colors.primary,
+      ),
     );
   }
 
@@ -116,6 +130,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   /// Bottom Navigation - Reference image style: white bar with rounded top corners
+  // Deprecated: Replaced with AnimatedBottomNavBar
+  // ignore: unused_element
   Widget _buildBottomNavigation(AppColors colors, WidgetRef ref) {
     final textStyles = AppTextStyles(colors);
     final isDarkMode = colors.background.computeLuminance() < 0.5;

@@ -4,10 +4,13 @@ import '../constants/app_constants.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import 'animated_completion_checkbox.dart';
+import 'shimmer_glow_effects.dart';
+import 'animated_progress.dart';
+import 'micro_animations.dart';
 
 /// Habit card that matches RefactorUi.md `promiseCard` spec exactly:
 /// flat white surface, subtle border, soft elevation, and checkbox meta row.
-class HabitCard extends StatelessWidget {
+class HabitCard extends StatefulWidget {
   final Habit habit;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -28,18 +31,42 @@ class HabitCard extends StatelessWidget {
   });
 
   @override
+  State<HabitCard> createState() => _HabitCardState();
+}
+
+class _HabitCardState extends State<HabitCard> {
+  bool _showParticles = false;
+
+  void _handleCompletionToggle() {
+    final today = widget.today ?? DateTime.now();
+    final wasCompleted = widget.habit.isCompletedOn(today);
+    
+    widget.onCompletionToggle?.call();
+    
+    // Show particles if habit was just completed
+    if (!wasCompleted) {
+      setState(() => _showParticles = true);
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          setState(() => _showParticles = false);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final textStyles = AppTextStyles(colors);
     
     // OPTIMIZED: Use today from parent if provided, otherwise calculate once
-    final today = this.today ?? DateTime.now();
-    final isCompletedToday = habit.isCompletedOn(today);
+    final today = widget.today ?? DateTime.now();
+    final isCompletedToday = widget.habit.isCompletedOn(today);
 
     // Calculate weekly completions - OPTIMIZED: Use habit.getWeeklyProgress if weekStart provided
-    final weeklyCompletions = weekStart != null
-        ? habit.getWeeklyProgress(weekStart!)
-        : habit.getWeeklyProgress(DateTime.now());
+    final weeklyCompletions = widget.weekStart != null
+        ? widget.habit.getWeeklyProgress(widget.weekStart!)
+        : widget.habit.getWeeklyProgress(DateTime.now());
 
     // Check if dark mode
     final isDarkMode = colors.background.computeLuminance() < 0.5;
@@ -80,8 +107,8 @@ class HabitCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
           child: Stack(
             children: [
@@ -103,7 +130,7 @@ class HabitCard extends StatelessWidget {
                             children: [
                               // Category/Tür
                               Text(
-                                habit.category.label.toUpperCase(),
+                                widget.habit.category.label.toUpperCase(),
                                 style: textStyles.captionUppercase.copyWith(
                                   color: colors.textPrimary.withValues(
                                     alpha: 0.65,
@@ -115,7 +142,7 @@ class HabitCard extends StatelessWidget {
                               const SizedBox(height: 4),
                               // Title/İsim - Fraunces for elegant headings
                               Text(
-                                habit.title,
+                                widget.habit.title,
                                 style: GoogleFonts.fraunces(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -131,14 +158,30 @@ class HabitCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         // Checkbox - Right side (larger and more tappable) with smooth animation
-                        Padding(
-                          padding: const EdgeInsets.all(4), // Extra padding for larger hit area
-                          child: AnimatedCompletionCheckbox(
-                            isCompleted: isCompletedToday,
-                            habitColor: habit.color,
-                            onTap: onCompletionToggle,
-                            isLarge: false,
-                          ),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(4), // Extra padding for larger hit area
+                              child: AnimatedCompletionCheckbox(
+                                isCompleted: isCompletedToday,
+                                habitColor: widget.habit.color,
+                                onTap: _handleCompletionToggle,
+                                isLarge: false,
+                              ),
+                            ),
+                            if (_showParticles)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: ParticleExplosion(
+                                    color: widget.habit.color,
+                                    particleCount: 20,
+                                    size: 6,
+                                    duration: const Duration(milliseconds: 800),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),
@@ -159,18 +202,18 @@ class HabitCard extends StatelessWidget {
                             ),
                           ),
                           child: Icon(
-                            habit.icon,
+                            widget.habit.icon,
                             color: colors.textPrimary.withValues(alpha: 0.7),
                             size: 20,
                           ),
                         ),
                         const SizedBox(width: 10),
                         // Description/Açıklama
-                        if (habit.description != null &&
-                            habit.description!.isNotEmpty)
+                        if (widget.habit.description != null &&
+                            widget.habit.description!.isNotEmpty)
                           Expanded(
                             child: Text(
-                              habit.description!,
+                              widget.habit.description!,
                               style: textStyles.bodySecondary.copyWith(
                                 fontSize: 12,
                                 height: 1.35,
@@ -191,8 +234,8 @@ class HabitCard extends StatelessWidget {
                         _buildTagChip(
                           colors,
                           textStyles,
-                          habit.timeBlock.icon,
-                          habit.timeBlock.label,
+                          widget.habit.timeBlock.icon,
+                          widget.habit.timeBlock.label,
                           colors.elevatedSurface,
                         ),
                         const Spacer(),
@@ -208,25 +251,17 @@ class HabitCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Container(
+                            SizedBox(
                               width: 60,
-                              height: 6,
-                              decoration: BoxDecoration(
+                              child: AnimatedLinearProgress(
+                                progress: weeklyCompletions / 7,
+                                height: 6,
+                                progressColor: isCompletedToday
+                                    ? widget.habit.color
+                                    : colors.textPrimary,
+                                backgroundColor: colors.outline.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(3),
-                                color: colors.outline.withValues(alpha: 0.25),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(3),
-                                child: LinearProgressIndicator(
-                                  value: weeklyCompletions / 7,
-                                  minHeight: 6,
-                                  backgroundColor: Colors.transparent,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    isCompletedToday
-                                        ? habit.color
-                                        : colors.textPrimary,
-                                  ),
-                                ),
+                                duration: const Duration(milliseconds: 800),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -237,12 +272,12 @@ class HabitCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: isCompletedToday
-                                    ? habit.color.withValues(alpha: 0.15)
+                                    ? widget.habit.color.withValues(alpha: 0.15)
                                     : colors.outline.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isCompletedToday
-                                      ? habit.color.withValues(alpha: 0.3)
+                                      ? widget.habit.color.withValues(alpha: 0.3)
                                       : colors.outline.withValues(alpha: 0.2),
                                   width: 1,
                                 ),
@@ -251,7 +286,7 @@ class HabitCard extends StatelessWidget {
                                 '$weeklyCompletions/7',
                                 style: textStyles.bodyBold.copyWith(
                                   color: isCompletedToday
-                                      ? habit.color
+                                      ? widget.habit.color
                                       : colors.textSecondary,
                                   fontSize: 12,
                                 ),
@@ -264,37 +299,41 @@ class HabitCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // NEW Badge - Left of checkbox
-              if (showNewBadge)
+              // NEW Badge - Left of checkbox with shimmer effect
+              if (widget.showNewBadge)
                 Positioned(
                   top: 12,
                   right: 60, // Positioned to the left of checkbox (14px padding + 4px padding + 36px checkbox + 6px spacing)
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.textPrimary, // badgeNewBackground
-                      borderRadius: BorderRadius.circular(999),
-                      // No shadows in dark mode
-                      boxShadow: isDarkMode
-                          ? []
-                          : [
-                              BoxShadow(
-                                color: colors.textPrimary.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                    ),
-                    child: Text(
-                      'NEW',
-                      style: textStyles.captionUppercase.copyWith(
-                        color:
-                            colors.surface, // badgeNewText - use theme surface
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                  child: ShimmerEffect(
+                    enabled: true,
+                    duration: const Duration(milliseconds: 1500),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.textPrimary, // badgeNewBackground
+                        borderRadius: BorderRadius.circular(999),
+                        // No shadows in dark mode
+                        boxShadow: isDarkMode
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: colors.textPrimary.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                      ),
+                      child: Text(
+                        'NEW',
+                        style: textStyles.captionUppercase.copyWith(
+                          color:
+                              colors.surface, // badgeNewText - use theme surface
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

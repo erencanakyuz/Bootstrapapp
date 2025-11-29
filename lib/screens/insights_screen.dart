@@ -7,6 +7,7 @@ import '../utils/responsive.dart';
 import '../utils/page_transitions.dart';
 import '../widgets/stats_card.dart';
 import '../widgets/all_habits_heatmap_widget.dart';
+import '../widgets/animated_progress.dart';
 import 'achievements_screen.dart';
 import 'analytics_dashboard_screen.dart';
 
@@ -145,6 +146,33 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            // Circular Progress for Completion Rate
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              sliver: SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.paddingL),
+                    child: AnimatedCircularProgress(
+                      progress: _completionRate / 100,
+                      size: 120,
+                      strokeWidth: 10,
+                      progressColor: colors.accentGreen,
+                      backgroundColor: colors.outline.withValues(alpha: 0.2),
+                      showPercentage: true,
+                      percentageStyle: GoogleFonts.fraunces(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                      gradient: LinearGradient(
+                        colors: [colors.accentBlue, colors.accentGreen],
+                      ),
+                    ),
                   ),
                 ),
               ),
