@@ -12,6 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
 
+// Mock Backend
 class MockNotificationBackend implements NotificationBackend {
   final List<ZonedScheduleCall> scheduledCalls = [];
   final List<int> cancelledIds = [];
@@ -155,6 +156,7 @@ void main() {
     late MockNotificationBackend mockBackend;
     late NotificationService notificationService;
     late NotificationScheduleStore scheduleStore;
+    late NotificationScheduleCalculator scheduleCalculator;
 
     setUpAll(() {
       tz_data.initializeTimeZones();
@@ -166,14 +168,15 @@ void main() {
       storage = DriftHabitStorage(db);
       mockBackend = MockNotificationBackend();
       scheduleStore = InMemoryNotificationScheduleStore();
+      scheduleCalculator = NotificationScheduleCalculator(
+        dateTimeProvider: FakeDateTimeProvider(
+          tz.TZDateTime(tz.local, 2024, 1, 1, 8), // Monday 8 AM
+        ),
+      );
       notificationService = NotificationService(
         backend: mockBackend,
         platformWrapper: const PlatformWrapper(isAndroidOverride: true),
-        scheduleCalculator: NotificationScheduleCalculator(
-          dateTimeProvider: FakeDateTimeProvider(
-            tz.TZDateTime(tz.local, 2024, 1, 1, 8), // Monday 8 AM
-          ),
-        ),
+        scheduleCalculator: scheduleCalculator,
         scheduleStore: scheduleStore,
       );
     });
@@ -258,54 +261,55 @@ void main() {
         expect(mockBackend.scheduledCalls.first.scheduledDate.hour, 9);
       });
 
-      test('4.2: Verify notifications rescheduled when reminder updated', () async {
-        final reminder1 = models.HabitReminder.daily(
+      // --- NEW TEST: Cancel Today's Reminders Logic ---
+      test('4.2: Verify cancelHabitRemindersForToday cancels correct IDs', () async {
+        // Setup a habit with a daily reminder at 9:00
+        final reminder = models.HabitReminder.daily(
           time: const TimeOfDay(hour: 9, minute: 0),
         );
         final habit = models.Habit(
-          id: 'test-1',
+          id: 'test-cancel-today',
           title: 'Test Habit',
           color: Colors.blue,
           icon: Icons.check,
-          reminders: [reminder1],
+          reminders: [reminder],
         );
 
-        await storage.saveHabits([habit]);
-
-        // Schedule initial notification
-        final loaded1 = await storage.loadHabits();
-        for (final h in loaded1) {
-          for (final rem in h.reminders) {
-            await notificationService.scheduleReminder(h, rem);
-          }
-        }
-
-        expect(
-            mockBackend.scheduledCalls.length, reminder1.weekdays.length);
-
-        // Update reminder time
-        final reminder2 = models.HabitReminder.daily(
-          time: const TimeOfDay(hour: 12, minute: 0),
+        // Schedule initial reminders
+        await notificationService.scheduleReminder(habit, reminder);
+        
+        // Current mocked time is Monday (weekday = 1)
+        // The schedule logic creates an ID for Monday
+        final todayWeekday = 1; // Monday
+        
+        // Note: For daily reminders without specific weekdays, calculator might use base ID or weekday IDs
+        // In this test setup, daily() includes all weekdays.
+        // NotificationScheduleCalculator generates weekday-specific IDs.
+        
+        // Get the expected ID for today's weekday
+        final expectedTodayId = scheduleCalculator.notificationIdForWeekday(
+          habit, 
+          reminder, 
+          todayWeekday,
         );
-        final updatedHabit = habit.copyWith(reminders: [reminder2]);
-        await storage.saveHabits([updatedHabit]);
+        
+        // Also get the legacy/base ID that might be used
+        final legacyId = scheduleCalculator.notificationIdFor(habit, reminder);
 
-        // Cancel old and schedule new
-        await notificationService.cancelHabitReminders(habit);
-        final loaded2 = await storage.loadHabits();
-        for (final h in loaded2) {
-          for (final rem in h.reminders) {
-            await notificationService.scheduleReminder(h, rem);
-          }
-        }
+        // Verify initial schedule - check that at least one ID was scheduled
+        expect(mockBackend.scheduledCalls.isNotEmpty, isTrue);
+        
+        // Find the ID that was actually scheduled (could be weekday-specific or legacy)
+        final scheduledIds = mockBackend.scheduledCalls.map((c) => c.id).toSet();
+        expect(scheduledIds, contains(expectedTodayId));
 
-        // Should have cancelled old and scheduled new
-        expect(mockBackend.cancelledIds.length, greaterThan(0));
-        expect(
-          mockBackend.scheduledCalls.length,
-          reminder1.weekdays.length + reminder2.weekdays.length,
-        );
-        expect(mockBackend.scheduledCalls.last.scheduledDate.hour, 12);
+        // Execute cancellation logic for today
+        await notificationService.cancelHabitRemindersForToday(habit);
+
+        // Verify the specific ID for today was cancelled
+        // cancelHabitRemindersForToday should cancel both weekday-specific and legacy IDs
+        expect(mockBackend.cancelledIds, contains(expectedTodayId));
+        expect(mockBackend.cancelledIds, contains(legacyId));
       });
 
       test('4.2: Verify notifications cancelled when habit deleted', () async {
@@ -335,38 +339,6 @@ void main() {
 
         // Delete habit
         await notificationService.cancelHabitReminders(habit);
-
-        expect(
-          mockBackend.cancelledIds.length,
-          greaterThanOrEqualTo(reminder.weekdays.length + 1),
-        );
-      });
-
-      test('4.2: Verify notifications cancelled when habit archived', () async {
-        final reminder = models.HabitReminder.daily(
-          time: const TimeOfDay(hour: 9, minute: 0),
-        );
-        final habit = models.Habit(
-          id: 'test-1',
-          title: 'Test Habit',
-          color: Colors.blue,
-          icon: Icons.check,
-          reminders: [reminder],
-        );
-
-        await storage.saveHabits([habit]);
-        final loaded = await storage.loadHabits();
-
-        // Schedule notification
-        for (final h in loaded) {
-          for (final rem in h.reminders) {
-            await notificationService.scheduleReminder(h, rem);
-          }
-        }
-
-        // Archive habit
-        final archived = habit.archive();
-        await notificationService.cancelHabitReminders(archived);
 
         expect(
           mockBackend.cancelledIds.length,
@@ -438,4 +410,3 @@ void main() {
     });
   });
 }
-

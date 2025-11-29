@@ -28,6 +28,7 @@ class NotificationService {
     this.onNotificationTap,
   })  : _backend = backend ?? FlutterLocalNotificationsBackend(),
         _platform = platformWrapper ?? const PlatformWrapper(),
+        _dateTimeProvider = dateTimeProvider ?? const DateTimeProvider(),
         _scheduleCalculator = scheduleCalculator ??
             NotificationScheduleCalculator(
               dateTimeProvider: dateTimeProvider ?? const DateTimeProvider(),
@@ -37,8 +38,10 @@ class NotificationService {
 
   final NotificationBackend _backend;
   final PlatformWrapper _platform;
+  final DateTimeProvider _dateTimeProvider;
   final NotificationScheduleCalculator _scheduleCalculator;
   final NotificationScheduleStore _scheduleStore;
+  
   bool _initialized = false;
   // Store scheduled dates for pending notifications (notificationId -> scheduledDate)
   final Map<int, DateTime> _scheduledDates = {};
@@ -170,6 +173,7 @@ class NotificationService {
     Duration? testDelay,
     bool? appNotificationsEnabled,
     List<Habit>? habits, // Optional: all habits for smart notifications
+    tz.TZDateTime? startFrom, // New: Allow starting from specific date
   }) async {
     await initialize();
     if (!_isPlatformSupported) return;
@@ -238,6 +242,7 @@ class NotificationService {
         habit,
         reminder,
         overrideDelay: testDelay,
+        startFrom: startFrom,
       );
 
       if (schedules.isEmpty) {
@@ -257,7 +262,7 @@ class NotificationService {
         },
       );
 
-      final today = DateTime.now();
+      final today = _dateTimeProvider.now();
       final isStreakAtRisk = smartScheduler.isStreakAtRisk(habit, today);
       final unsatisfiedDeps =
           smartScheduler.getUnsatisfiedDependencies(habit, today);
@@ -304,7 +309,7 @@ class NotificationService {
           isEveningReminder: isEveningReminder,
         );
 
-        final now = DateTime.now();
+        final now = _dateTimeProvider.now();
         final timeUntil = scheduleDate.toLocal().difference(now);
 
         // If notification is scheduled for less than 1 minute in the future,
@@ -436,6 +441,49 @@ class NotificationService {
     }
   }
 
+  /// Cancel only today's reminders for a habit.
+  /// This effectively "skips" today and reschedules starting from tomorrow.
+  Future<void> cancelHabitRemindersForToday(Habit habit) async {
+    await initialize();
+    if (!_isPlatformSupported) return;
+
+    // Determine tomorrow's date to skip today
+    final now = tz.TZDateTime.now(tz.local);
+    final tomorrow = tz.TZDateTime(tz.local, now.year, now.month, now.day + 1);
+    final todayWeekday = now.weekday;
+
+    try {
+      for (final reminder in habit.reminders) {
+        if (!reminder.enabled) continue;
+
+        // Cancel today's specific notification IDs
+        final todayId = _scheduleCalculator.notificationIdForWeekday(
+          habit,
+          reminder,
+          todayWeekday,
+        );
+        final legacyId = _scheduleCalculator.notificationIdFor(habit, reminder);
+
+        // Cancel both weekday-specific and legacy IDs for today
+        await _backend.cancel(todayId);
+        await _backend.cancel(legacyId);
+        await _forgetSchedule(todayId);
+        await _forgetSchedule(legacyId);
+
+        // Reschedule starting from tomorrow
+        await scheduleReminder(
+          habit,
+          reminder,
+          startFrom: tomorrow,
+          // We don't pass 'habits' list here as dependency checks for future dates
+          // aren't critical when just bumping the schedule forward.
+        );
+      }
+    } catch (e) {
+      debugPrint('Cancel today reminders error: $e');
+    }
+  }
+
   Future<void> cancelAll() async {
     await initialize();
     if (!_isPlatformSupported) return;
@@ -558,11 +606,13 @@ class NotificationService {
     Habit habit,
     HabitReminder reminder, {
     Duration? overrideDelay,
+    tz.TZDateTime? startFrom,
   }) {
     if (overrideDelay != null) {
       final scheduleDate = _scheduleCalculator.resolveNextSchedule(
         reminder,
         overrideDelay: overrideDelay,
+        from: startFrom,
       );
       final id = _scheduleCalculator.notificationIdFor(habit, reminder);
       return [
@@ -589,7 +639,7 @@ class NotificationService {
         : normalizedReminderDays.intersection(normalizedActiveDays);
 
     if (effectiveWeekdays.isEmpty) {
-      final fallbackDate = _scheduleCalculator.resolveNextSchedule(reminder);
+      final fallbackDate = _scheduleCalculator.resolveNextSchedule(reminder, from: startFrom);
       final fallbackId = _scheduleCalculator.notificationIdFor(
         habit,
         reminder,
@@ -616,6 +666,7 @@ class NotificationService {
             scheduleDate: _scheduleCalculator.resolveNextScheduleForWeekday(
               reminder,
               weekday: weekday,
+              from: startFrom,
             ),
             matchComponents: DateTimeComponents.dayOfWeekAndTime,
           ),
@@ -642,7 +693,7 @@ class NotificationService {
 
       for (final request in pending) {
         if (!stored.containsKey(request.id)) {
-          final fallbackDate = DateTime.now();
+          final fallbackDate = _dateTimeProvider.now();
           await _rememberSchedule(request.id, fallbackDate);
         }
       }
@@ -677,6 +728,7 @@ class NotificationService {
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
+  // For Testing
   tz.TZDateTime resolveNextSchedule(
     HabitReminder reminder, {
     tz.TZDateTime? from,

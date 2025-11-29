@@ -535,15 +535,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHighlightsSection(
-    BuildContext context,
-    AppColors colors,
-    AppTextStyles textStyles,
-    double horizontalPadding,
-  ) {
-    return const SizedBox.shrink();
-  }
-
   Widget _buildGuidedCTA(AppColors colors, AppTextStyles textStyles) {
     final isDarkMode = colors.background.computeLuminance() < 0.5;
     return InkWell(
@@ -974,17 +965,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ]);
     } else {
       slivers.addAll([
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(horizontalPadding, 24, 0, 0),
-          sliver: SliverToBoxAdapter(
-            child: _buildHighlightsSection(
-              context,
-              colors,
-              textStyles,
-              horizontalPadding,
-            ),
-          ),
-        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,

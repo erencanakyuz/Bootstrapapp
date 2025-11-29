@@ -381,13 +381,15 @@ void main() {
         final reminder = models.HabitReminder.daily(
           time: const TimeOfDay(hour: 9, minute: 0),
         );
+        final now = DateTime.now();
+        final completionDate = DateTime(2024, 1, 1); // Monday - weekday 1 (active day)
         final task = models.HabitTask(
           id: 'task-1',
           title: 'Test Task',
-          createdAt: DateTime.now(),
+          createdAt: now,
         );
         final note = models.HabitNote(
-          date: DateTime.now(),
+          date: now,
           text: 'Test note',
         );
 
@@ -400,10 +402,14 @@ void main() {
           category: models.HabitCategory.health,
           reminders: [reminder],
           tasks: [task],
-          activeWeekdays: [1, 3, 5],
+          activeWeekdays: [1, 3, 5], // Monday, Wednesday, Friday
           dependencyIds: [],
           tags: ['test', 'health'],
-        ).upsertNote(note).toggleCompletion(DateTime.now());
+          createdAt: DateTime(2023, 12, 1), // Create before completion date
+        ).upsertNote(note).toggleCompletion(
+          completionDate,
+          allowPastDatesBeforeCreation: true,
+        );
 
         await storage.saveHabits([habit]);
 

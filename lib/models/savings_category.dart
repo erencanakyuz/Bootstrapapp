@@ -52,15 +52,29 @@ class SavingsCategory {
   }
 
   factory SavingsCategory.fromJson(Map<String, dynamic> json) {
+    // Use const IconData for default to enable tree-shaking
+    final iconCodePoint = json['iconCodePoint'] as int?;
+    final iconFontFamily = json['iconFontFamily'] as String?;
+    final iconFontPackage = json['iconFontPackage'] as String?;
+    
+    final IconData icon;
+    if (iconCodePoint != null) {
+      // Non-const IconData for JSON-loaded icons (tree-shaking disabled for these)
+      icon = IconData(
+        iconCodePoint,
+        fontFamily: iconFontFamily,
+        fontPackage: iconFontPackage,
+      );
+    } else {
+      // Use const default icon to enable tree-shaking
+      icon = Icons.savings;
+    }
+    
     return SavingsCategory(
       id: json['id'] as String?,
       name: json['name'] as String? ?? 'Savings',
       defaultAmount: (json['defaultAmount'] as num?)?.toDouble() ?? 0,
-      icon: IconData(
-        json['iconCodePoint'] as int? ?? Icons.savings.codePoint,
-        fontFamily: json['iconFontFamily'] as String?,
-        fontPackage: json['iconFontPackage'] as String?,
-      ),
+      icon: icon,
       color: Color(json['color'] as int? ?? Colors.green.value), // ignore: deprecated_member_use
       isCustom: json['isCustom'] as bool? ?? false,
     );

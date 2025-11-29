@@ -509,26 +509,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildWelcomeUI(AppColors colors) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildFeatureIcon(colors, Icons.check_circle, true),
-            _buildFeatureIcon(colors, Icons.local_fire_department, true),
-            _buildFeatureIcon(colors, Icons.trending_up, false),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Start your journey today',
-          style: TextStyle(
-            fontSize: 11,
-            color: colors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        _buildFeatureIcon(colors, Icons.check_circle, true),
+        _buildFeatureIcon(colors, Icons.local_fire_department, true),
+        _buildFeatureIcon(colors, Icons.trending_up, false),
       ],
     );
   }

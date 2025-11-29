@@ -243,6 +243,28 @@ class HabitsNotifier extends AsyncNotifier<List<Habit>> {
         updatedHabit,
         allowPastDatesBeforeCreation: allowPastDates,
       );
+    }, onSuccess: () async {
+      // Handle notification cancellation/rescheduling after successful toggle
+      final repository = _repository;
+      final updatedHabit = repository.byId(habitId);
+      if (updatedHabit == null) return;
+
+      final now = DateTime.now();
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+      final isCompletedToday = updatedHabit.isCompletedOn(date);
+
+      if (isToday) {
+        final notifier = ref.read(notificationServiceProvider);
+        if (isCompletedToday) {
+          // Habit completed today - cancel today's reminders
+          await notifier.cancelHabitRemindersForToday(updatedHabit);
+        } else {
+          // Habit uncompleted (tick removed) - reschedule reminders
+          await _rescheduleReminders(updatedHabit);
+        }
+      }
     });
   }
 

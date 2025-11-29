@@ -1,13 +1,3 @@
-/// Centralized asset management for Bootstrap Your Life app
-/// 
-/// This file provides a single source of truth for all asset paths,
-/// making it easy to update assets and maintain consistency across the app.
-/// 
-/// Usage:
-/// ```dart
-/// Image.asset(AppAssets.onboarding.tracking)
-/// Image.asset(AppAssets.backgrounds.onboarding)
-/// ```
 
 class AppAssets {
   AppAssets._();
