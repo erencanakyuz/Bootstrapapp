@@ -37,8 +37,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OnboardingSlide(
       title: 'Welcome to Habit Tracker Pro',
       subtitle: 'Transform your daily routines into powerful habits. Build consistency, track progress, and achieve your goals with our comprehensive tracking system.',
-      illustration: AppAssets.onboarding.flowSvg,
-      illustrationType: IllustrationType.svg,
+      illustration: null,
+      illustrationType: IllustrationType.none,
       icon: Icons.auto_awesome,
       featureType: FeatureType.welcome,
     ),
@@ -77,8 +77,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OnboardingSlide(
       title: 'Smart Notifications & Features',
       subtitle: 'Get intelligent reminders that adapt to your schedule. Build habit chains, freeze without breaking streaks, set weekly/monthly targets, and organize with categories.',
-      illustration: AppAssets.onboarding.focusSvg,
-      illustrationType: IllustrationType.svg,
+      illustration: null,
+      illustrationType: IllustrationType.none,
       icon: Icons.notifications_active,
       featureType: FeatureType.smart,
     ),

@@ -115,10 +115,6 @@ class _OnboardingAssets {
 
   /// Questionnaire header illustration
   String get questionnaire => '$_base/onboarding_questionnaire.svg';
-
-  /// Legacy SVG illustrations (fallbacks)
-  String get flowSvg => '$_base/onboarding_flow.svg';
-  String get focusSvg => '$_base/onboarding_focus.svg';
 }
 
 class _HomeAssets {

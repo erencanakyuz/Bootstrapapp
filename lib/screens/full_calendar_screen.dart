@@ -399,9 +399,22 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     final now = DateTime.now();
 
     if (_isFullScreen) {
-      return Scaffold(
-        backgroundColor: colors.background,
-        body: Stack(
+      return PopScope(
+        canPop: false, // Block automatic pop to handle orientation restoration
+        onPopInvokedWithResult: (bool didPop, dynamic result) async {
+          if (didPop) return;
+          // Restore portrait orientation before popping
+          _restorePortrait();
+          // Wait for orientation animation to complete (150ms is safer than 50ms)
+          await Future.delayed(const Duration(milliseconds: 150));
+          // Now safely pop after orientation is restored
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: colors.background,
+          body: Stack(
           children: [
             _viewMode == CalendarViewMode.monthly
                 ? _buildFullScreenMonthlyView(colors, completedDates, now)
@@ -424,10 +437,24 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
             ),
           ],
         ),
+        ),
       );
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false, // Block automatic pop to handle orientation restoration
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        // Restore portrait orientation before popping
+        _restorePortrait();
+        // Wait for orientation animation to complete (150ms is safer than 50ms)
+        await Future.delayed(const Duration(milliseconds: 150));
+        // Now safely pop after orientation is restored
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: colors.background,
       appBar: AppBar(
@@ -571,6 +598,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
                   ),
                 ],
               ),
+        ),
       ),
     );
   }
@@ -1268,9 +1296,14 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
     int daysInMonth,
     Set<DateTime> monthCompletedDates,
     DateTime now,
-    double tableWidth,
-  ) {
+    double tableWidth, {
+    bool printerFriendly = false,
+  }) {
     final habits = _getHabits();
+    final dividerHeight = printerFriendly ? 2.0 : 1.0;
+    final borderWidth = printerFriendly ? 2.0 : 1.0;
+    final borderAlpha = printerFriendly ? 1.0 : 0.25;
+    
     final rows = <Widget>[
       _MonthlyHeaderRow(
         colors: colors,
@@ -1279,7 +1312,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         now: now,
         monthCompletedDates: monthCompletedDates,
       ),
-      const Divider(height: 1),
+      Divider(height: dividerHeight, thickness: dividerHeight, color: colors.outline),
     ];
 
     for (var i = 0; i < habits.length; i++) {
@@ -1296,7 +1329,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         ),
       );
       if (i != habits.length - 1) {
-        rows.add(const Divider(height: 1));
+        rows.add(Divider(height: dividerHeight, thickness: dividerHeight, color: colors.outline));
       }
     }
 
@@ -1305,8 +1338,11 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: colors.outline.withValues(alpha: 0.25)),
-          boxShadow: AppShadows.cardSoft(null),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: borderAlpha),
+            width: borderWidth,
+          ),
+          boxShadow: printerFriendly ? null : AppShadows.cardSoft(null),
         ),
         child: SizedBox(
           width: tableWidth,
@@ -1691,13 +1727,33 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
       );
 
       // Safely extract result values with defaults
+      final shareMode = result['shareMode'] as String? ?? 'social';
+      final printerFriendly = result['printerFriendly'] as bool? ?? false;
       final includeStats = result['includeStats'] as bool? ?? true;
       final includeWatermark = result['includeWatermark'] as bool? ?? true;
       final customMessage = result['customMessage'] as String?;
 
+      // Use printer-friendly colors if print mode is selected
+      final shareColors = printerFriendly
+          ? CalendarShareService.getPrinterFriendlyColors()
+          : colors;
+
+      // Rebuild table widget with appropriate colors for printer-friendly mode
+      final finalTableWidget = printerFriendly
+          ? _buildMonthlyTable(
+              shareColors,
+              days,
+              daysInMonth,
+              monthCompletedDates,
+              now,
+              shareTableWidth,
+              printerFriendly: true,
+            )
+          : tableWidget;
+
       // Build shareable widget in a separate overlay
       final shareableWidget = _shareService.buildShareableWidget(
-        calendarWidget: tableWidget,
+        calendarWidget: finalTableWidget,
         month: _selectedMonth,
         habits: widget.habits,
         completedDates: completedDates,
@@ -1705,6 +1761,7 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
         includeStats: includeStats,
         includeWatermark: includeWatermark,
         customMessage: customMessage,
+        printerFriendly: printerFriendly,
       );
 
       // Store context values before async operations
@@ -1788,7 +1845,15 @@ class _FullCalendarScreenState extends ConsumerState<FullCalendarScreen>
           );
         }
       } finally {
-        overlayEntry?.remove();
+        // Safely remove overlay entry only if widget is still mounted
+        if (mounted && overlayEntry != null) {
+          try {
+            overlayEntry.remove();
+          } catch (e) {
+            // Overlay might already be disposed, ignore error
+            debugPrint('Error removing overlay entry: $e');
+          }
+        }
       }
     } catch (e, stackTrace) {
       debugPrint('Error sharing calendar: $e');
@@ -2261,6 +2326,7 @@ class _ShareCalendarDialog extends StatefulWidget {
 }
 
 class _ShareCalendarDialogState extends State<_ShareCalendarDialog> {
+  String? _selectedMode; // 'social' or 'print'
   bool _includeStats = true;
   bool _includeWatermark = true;
   final TextEditingController _messageController = TextEditingController();
@@ -2281,35 +2347,164 @@ class _ShareCalendarDialogState extends State<_ShareCalendarDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Customize your calendar share',
+              'Choose how you want to share',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
-            CheckboxListTile(
-              value: _includeStats,
-              onChanged: (value) => setState(() => _includeStats = value ?? true),
-              title: const Text('Include statistics'),
-              subtitle: const Text('Completion rate, streaks, etc.'),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            CheckboxListTile(
-              value: _includeWatermark,
-              onChanged: (value) =>
-                  setState(() => _includeWatermark = value ?? true),
-              title: const Text('Include app watermark'),
-              subtitle: const Text('Show Bootstrap Your Life branding'),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                labelText: 'Custom message (optional)',
-                hintText: 'Add a personal note...',
-                border: OutlineInputBorder(),
+            // Social Media Option
+            InkWell(
+              onTap: () => setState(() => _selectedMode = 'social'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _selectedMode == 'social'
+                        ? widget.colors.primary
+                        : widget.colors.outline.withValues(alpha: 0.3),
+                    width: _selectedMode == 'social' ? 2.0 : 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  color: _selectedMode == 'social'
+                      ? widget.colors.primary.withValues(alpha: 0.05)
+                      : Colors.transparent,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.share,
+                      color: _selectedMode == 'social'
+                          ? widget.colors.primary
+                          : widget.colors.textSecondary,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Share on Social Media',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: widget.colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Colorful design perfect for Instagram, Twitter, and more',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: widget.colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_selectedMode == 'social')
+                      Icon(
+                        Icons.check_circle,
+                        color: widget.colors.primary,
+                        size: 24,
+                      ),
+                  ],
+                ),
               ),
-              maxLines: 2,
             ),
+            const SizedBox(height: 12),
+            // Print Option
+            InkWell(
+              onTap: () => setState(() => _selectedMode = 'print'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _selectedMode == 'print'
+                        ? widget.colors.primary
+                        : widget.colors.outline.withValues(alpha: 0.3),
+                    width: _selectedMode == 'print' ? 2.0 : 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  color: _selectedMode == 'print'
+                      ? widget.colors.primary.withValues(alpha: 0.05)
+                      : Colors.transparent,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.print,
+                      color: _selectedMode == 'print'
+                          ? widget.colors.primary
+                          : widget.colors.textSecondary,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Print for Fridge',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: widget.colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'High-contrast black & white, printer-friendly design',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: widget.colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_selectedMode == 'print')
+                      Icon(
+                        Icons.check_circle,
+                        color: widget.colors.primary,
+                        size: 24,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // Additional options (only for social media)
+            if (_selectedMode == 'social') ...[
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: _includeStats,
+                onChanged: (value) => setState(() => _includeStats = value ?? true),
+                title: const Text('Include statistics'),
+                subtitle: const Text('Completion rate, streaks, etc.'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              CheckboxListTile(
+                value: _includeWatermark,
+                onChanged: (value) =>
+                    setState(() => _includeWatermark = value ?? true),
+                title: const Text('Include app watermark'),
+                subtitle: const Text('Show Bootstrap Your Life branding'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Custom message (optional)',
+                  hintText: 'Add a personal note...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
           ],
         ),
       ),
@@ -2319,23 +2514,27 @@ class _ShareCalendarDialogState extends State<_ShareCalendarDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
-            try {
-              final message = _messageController.text.trim();
-              final resultMap = <String, dynamic>{
-                'includeStats': _includeStats,
-                'includeWatermark': _includeWatermark,
-              };
-              if (message.isNotEmpty) {
-                resultMap['customMessage'] = message;
-              }
-              Navigator.pop(context, resultMap);
-            } catch (e) {
-              debugPrint('Error in share dialog: $e');
-              Navigator.pop(context, null);
-            }
-          },
-          child: const Text('Share'),
+          onPressed: _selectedMode == null
+              ? null
+              : () {
+                  try {
+                    final message = _messageController.text.trim();
+                    final resultMap = <String, dynamic>{
+                      'shareMode': _selectedMode,
+                      'includeStats': _includeStats,
+                      'includeWatermark': _includeWatermark,
+                      'printerFriendly': _selectedMode == 'print',
+                    };
+                    if (message.isNotEmpty) {
+                      resultMap['customMessage'] = message;
+                    }
+                    Navigator.pop(context, resultMap);
+                  } catch (e) {
+                    debugPrint('Error in share dialog: $e');
+                    Navigator.pop(context, null);
+                  }
+                },
+          child: Text(_selectedMode == 'print' ? 'Generate Print Version' : 'Share'),
         ),
       ],
     );
