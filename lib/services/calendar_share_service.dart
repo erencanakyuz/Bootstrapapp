@@ -153,7 +153,7 @@ class CalendarShareService {
       final shareText = _buildShareText(month, habits, completedDates);
       final shareSubject = 'My ${DateFormat('MMMM yyyy').format(month)} Calendar';
 
-      final result = await SharePlus.instance.share(
+      await SharePlus.instance.share(
         ShareParams(
           files: [xFile],
           text: shareText,
@@ -161,8 +161,9 @@ class CalendarShareService {
         ),
       );
       
-      return result.status == ShareResultStatus.success || 
-             result.status == ShareResultStatus.dismissed; 
+      // SharePlus.share doesn't return a status in all versions
+      // If no exception was thrown, we assume success
+      return true; 
 
     } catch (e, stackTrace) {
       debugPrint('Error sharing calendar image: $e');
@@ -221,6 +222,8 @@ class CalendarShareService {
   }
 
   /// Builds the visual widget hierarchy that will be converted to an image.
+  /// Uses smart framing: fixed width (1920px), dynamic height based on content.
+  /// Centers content horizontally and balances vertical spacing.
   Widget buildShareableWidget({
     required Widget calendarWidget,
     required DateTime month,
@@ -234,11 +237,18 @@ class CalendarShareService {
   }) {
     final stats = _calculateStats(month, habits, completedDates);
     
-    // Fixed resolution canvas (1920x1080) - Logical Layout Size
-    // This is distinct from the capture resolution.
-    // We layout at 1920 for good proportions, but capture at 2160+ width.
+    // SABİT GENİŞLİK, DİNAMİK YÜKSEKLİK STRATEJİSİ
     const double shareWidth = 1920.0;
-    const double shareHeight = 1080.0;
+    
+    // Yüksekliği içeriğe göre tahmin edelim
+    // Header (~150px) + Footer (~150px) + Padding (~120px) + (Habit Sayısı * Satır Yüksekliği)
+    // Not: Satır yüksekliği FullCalendarScreen'deki _habitRowHeight (54.0) ile uyumlu olmalı
+    const double estimatedRowHeight = 60.0; 
+    const double baseHeight = 450.0; // Header, footer ve padding payı
+    final double contentHeight = baseHeight + (habits.length * estimatedRowHeight);
+    
+    // Minimum 1080px olsun (Hikaye/Post standardı), ama içerik çoksa uzasın
+    final double shareHeight = contentHeight < 1080.0 ? 1080.0 : contentHeight;
 
     final bgColor = printerFriendly ? Colors.white : Colors.white;
 
@@ -251,40 +261,46 @@ class CalendarShareService {
           height: shareHeight,
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: 60,
-              vertical: 50,
+              horizontal: 80, // Yanlardan biraz daha fazla boşluk (çerçeveleme için)
+              vertical: 60,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center, // KRİTİK: Yatayda Ortala
               children: [
-                _buildHeader(month, customMessage, printerFriendly),
-                
-                const SizedBox(height: 32),
-                
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SingleChildScrollView(
-                      child: calendarWidget,
-                    ),
-                  ),
+                // 1. Header (Tüm genişliği kaplasın)
+                SizedBox(
+                  width: double.infinity,
+                  child: _buildHeader(month, customMessage, printerFriendly),
                 ),
                 
+                // Dikey boşluğu esnek yapıyoruz
+                const Spacer(flex: 1), 
+                
+                // 2. Calendar Content (Tablo) - Ortalanmış
+                calendarWidget,
+                
+                // Dikey boşluğu esnek yapıyoruz
+                const Spacer(flex: 1),
+                
+                // 3. Footer (Stats + Watermark) - Geniş layout
                 if (includeStats || includeWatermark) ...[
-                  const SizedBox(height: 32),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      if (includeStats) 
-                        Expanded(child: _buildStatsSection(stats, printerFriendly)),
-                      
-                      if (includeStats && includeWatermark)
-                        const SizedBox(width: 40),
+                  SizedBox(
+                    width: double.infinity, // Footer tüm genişliği kaplasın
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Sağa ve sola yasla
+                      children: [
+                        if (includeStats) 
+                          Expanded(child: _buildStatsSection(stats, printerFriendly)),
+                        
+                        if (includeStats && includeWatermark)
+                          const SizedBox(width: 60), // Aradaki boşluk
 
-                      if (includeWatermark)
-                        _buildWatermark(printerFriendly),
-                    ],
+                        if (includeWatermark)
+                          _buildWatermark(printerFriendly),
+                      ],
+                    ),
                   ),
                 ]
               ],
@@ -432,7 +448,7 @@ class CalendarShareService {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
                 letterSpacing: 0.5,
               ),
             ),
@@ -472,7 +488,7 @@ class CalendarShareService {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: color.withOpacity(0.6),
+            color: color.withValues(alpha: 0.6),
           ),
         ),
       ],
