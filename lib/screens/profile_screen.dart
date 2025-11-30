@@ -209,9 +209,9 @@ class ProfileScreen extends ConsumerWidget {
                 const Divider(height: 20),
                 ListTile(
                   leading: Icon(Icons.widgets, color: colors.primary),
-                  title: const Text('Home Widget Setup'),
+                  title: const Text('Available Widgets'),
                   subtitle: const Text(
-                    'Select and configure widgets for your home screen',
+                    'View all available home screen widgets (all enabled by default)',
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
@@ -469,10 +469,10 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete all habits'),
+        title: const Text('Archive All Habits?'),
         content: const Text(
-          'This will permanently delete all your habits. '
-          'This action cannot be undone. Continue?',
+          'This option archives all your habits. Don\'t worry - you can restore them anytime from the archived habits section.\n\n'
+          'Your progress history will be preserved.',
         ),
         actions: [
           TextButton(
@@ -482,9 +482,9 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: colors.statusIncomplete,
+              foregroundColor: colors.accentAmber,
             ),
-            child: const Text('Delete All'),
+            child: const Text('Archive All'),
           ),
         ],
       ),
@@ -500,7 +500,7 @@ class ProfileScreen extends ConsumerWidget {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('All habits deleted successfully'),
+            content: Text('All habits archived successfully'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -518,11 +518,26 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) return;
+    final colors = Theme.of(context).extension<AppColors>()!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear all data'),
-        content: const Text('This removes every habit and history. Continue?'),
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: colors.statusIncomplete, size: 28),
+            const SizedBox(width: 12),
+            const Text('Permanent Data Loss'),
+          ],
+        ),
+        content: const Text(
+          '⚠️ WARNING: This will permanently delete ALL your data:\n\n'
+          '• All habits (active & archived)\n'
+          '• Complete progress history\n'
+          '• All notes and tasks\n'
+          '• Streaks and statistics\n\n'
+          'This action CANNOT be undone!\n\n'
+          'Are you absolutely sure?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -530,7 +545,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear'),
+            style: TextButton.styleFrom(
+              foregroundColor: colors.statusIncomplete,
+            ),
+            child: const Text('DELETE EVERYTHING'),
           ),
         ],
       ),

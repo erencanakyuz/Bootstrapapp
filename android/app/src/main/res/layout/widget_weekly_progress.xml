@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Weekly Progress"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#1F2937"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Week Days Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <!-- Day 1 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="M"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_1"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_1_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 2 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_2"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_2_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 3 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="W"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_3"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_3_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 4 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_4"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_4_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 5 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="F"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_5"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_5_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 6 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="S"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_6"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_6_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Day 7 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="S"
+                android:textSize="10sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="4dp" />
+
+            <View
+                android:id="@+id/day_7"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/day_7_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="10sp"
+                android:textColor="#374151"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Overall Progress -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="This Week"
+                android:textSize="12sp"
+                android:textColor="#6B7280" />
+
+            <TextView
+                android:id="@+id/weekly_percentage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#22C55E" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/weekly_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="#22C55E" />
+    </LinearLayout>
+
+</LinearLayout>

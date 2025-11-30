@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Habit Tracker Pro</string>
+    <string name="widget_description">Track your daily habits and progress</string>
+
+    <!-- Widget Descriptions -->
+    <string name="widget_todays_habits_description">View and complete today\'s habits directly from your home screen</string>
+    <string name="widget_weekly_progress_description">See your weekly completion rate and daily progress</string>
+    <string name="widget_quick_stats_description">Quick overview of your streaks, habits, and completion rates</string>
+    <string name="widget_streak_minimal_description">Compact streak counter with today\'s progress</string>
+    <string name="widget_mind_trick_description">Use psychological trick to overcome procrastination and pick a habit</string>
+    <string name="widget_calendar_monthly_description">Monthly calendar view showing all habit completions</string>
+    <string name="widget_calendar_yearly_description">Yearly overview with 12-month grid and completion stats</string>
+    <string name="widget_year_heatmap_description">GitHub-style activity heatmap showing your entire year</string>
+</resources>
+

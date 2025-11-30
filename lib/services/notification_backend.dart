@@ -36,7 +36,6 @@ abstract class NotificationBackend {
   Future<List<PendingNotificationRequest>> pendingNotificationRequests();
 
   Future<bool?> requestAndroidPermission();
-  Future<bool?> canScheduleExactNotifications();
   Future<void> requestIOSPermissions({
     bool alert = true,
     bool badge = true,
@@ -129,11 +128,6 @@ class FlutterLocalNotificationsBackend implements NotificationBackend {
   @override
   Future<bool?> requestAndroidPermission() async {
     return _androidImplementation()?.requestNotificationsPermission();
-  }
-
-  @override
-  Future<bool?> canScheduleExactNotifications() async {
-    return _androidImplementation()?.canScheduleExactNotifications();
   }
 
   @override

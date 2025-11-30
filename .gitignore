@@ -269,3 +269,12 @@ coverage/
 *.swp
 *.swo
 *~
+
+# Windows reserved filenames (prevent accidental creation)
+nul
+NUL
+CON
+PRN
+AUX
+COM[1-9]
+LPT[1-9]

@@ -1,8 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Notification permission required for Android 13+ (API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- Exact alarms permission required for Android 12+ (API 31+) -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <!-- Required to reschedule notifications after a reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
@@ -59,6 +57,125 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
+        </receiver>
+
+        <!-- Home Widget Providers - Multiple Widget Types -->
+
+        <!-- Original Streak Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider"
+            android:exported="true"
+            android:label="Habit Tracker">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+
+        <!-- Today's Habits Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$TodaysHabitsWidget"
+            android:exported="true"
+            android:label="Today's Habits">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_todays_habits_info" />
+        </receiver>
+
+        <!-- Weekly Progress Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$WeeklyProgressWidget"
+            android:exported="true"
+            android:label="Weekly Progress">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_weekly_progress_info" />
+        </receiver>
+
+        <!-- Quick Stats Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$QuickStatsWidget"
+            android:exported="true"
+            android:label="Quick Stats">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_stats_info" />
+        </receiver>
+
+        <!-- Streak Minimal Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$StreakMinimalWidget"
+            android:exported="true"
+            android:label="Streak Counter">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_minimal_info" />
+        </receiver>
+
+        <!-- Mind Trick Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$MindTrickWidget"
+            android:exported="true"
+            android:label="Mind Trick">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mind_trick_info" />
+        </receiver>
+
+        <!-- Calendar Monthly Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$CalendarMonthlyWidget"
+            android:exported="true"
+            android:label="Monthly Calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_calendar_monthly_info" />
+        </receiver>
+
+        <!-- Calendar Yearly Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$CalendarYearlyWidget"
+            android:exported="true"
+            android:label="Yearly Calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_calendar_yearly_info" />
+        </receiver>
+
+        <!-- Year Heatmap Widget -->
+        <receiver
+            android:name="com.ryanheise.home_widget.HomeWidgetProvider$YearHeatmapWidget"
+            android:exported="true"
+            android:label="Activity Heatmap">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_year_heatmap_info" />
         </receiver>
     </application>
 </manifest>

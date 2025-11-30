@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/white">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/heatmap_year"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="2025 Activity"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937" />
+
+        <TextView
+            android:id="@+id/habits_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12 habits"
+            android:textSize="11sp"
+            android:textColor="#6B7280" />
+    </LinearLayout>
+
+    <!-- Heatmap Grid (Simplified) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Jan  Feb  Mar  Apr  May  Jun"
+        android:textSize="9sp"
+        android:textColor="#9CA3AF"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Activity Grid Representation -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Week Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginBottom="2dp">
+
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#E5E7EB" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#22C55E" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#10B981" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#E5E7EB" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#22C55E" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#10B981" android:layout_marginEnd="2dp"/>
+            <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#22C55E"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Legend -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Less"
+            android:textSize="9sp"
+            android:textColor="#9CA3AF"
+            android:layout_marginEnd="4dp" />
+
+        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#E5E7EB" android:layout_marginEnd="2dp"/>
+        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#86EFAC" android:layout_marginEnd="2dp"/>
+        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#22C55E" android:layout_marginEnd="2dp"/>
+        <View android:layout_width="12dp" android:layout_height="12dp" android:background="#10B981" android:layout_marginEnd="4dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="More"
+            android:textSize="9sp"
+            android:textColor="#9CA3AF" />
+    </LinearLayout>
+
+</LinearLayout>

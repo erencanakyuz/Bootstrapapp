@@ -45,8 +45,6 @@ class NotificationService {
   bool _initialized = false;
   // Store scheduled dates for pending notifications (notificationId -> scheduledDate)
   final Map<int, DateTime> _scheduledDates = {};
-  // Track if we've already logged exact alarms warning (prevent log spam)
-  bool _exactAlarmsWarningLogged = false;
   // Callback for notification tap handling
   final void Function(String habitId)? onNotificationTap;
 
@@ -267,19 +265,10 @@ class NotificationService {
       final unsatisfiedDeps =
           smartScheduler.getUnsatisfiedDependencies(habit, today);
 
-      AndroidScheduleMode scheduleMode =
-          AndroidScheduleMode.exactAllowWhileIdle;
-      if (_platform.isAndroid) {
-        final canScheduleExactAlarms =
-            await _backend.canScheduleExactNotifications();
-        if (canScheduleExactAlarms == false) {
-          scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
-          if (!_exactAlarmsWarningLogged) {
-            debugPrint('Exact alarms not permitted, using inexact alarms');
-            _exactAlarmsWarningLogged = true;
-          }
-        }
-      }
+      // Use inexact alarms for better battery life and UX
+      // Habit tracker doesn't need exact timing - 5-10 min variance is acceptable
+      const AndroidScheduleMode scheduleMode =
+          AndroidScheduleMode.inexactAllowWhileIdle;
 
       // Include habit ID in payload for tap handling
       final payload = habit.id;
